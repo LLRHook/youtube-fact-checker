@@ -8,3 +8,4 @@ dist/
 build/
 *.db
 data/
+.deploy.json
