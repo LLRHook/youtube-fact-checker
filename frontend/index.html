@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Fact Checker</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header>
+      <div class="logo">
+        <svg width="40" height="40" viewBox="0 0 40 40" fill="none">
+          <rect width="40" height="40" rx="8" fill="#FF0000"/>
+          <polygon points="16,12 16,28 28,20" fill="white"/>
+        </svg>
+        <div>
+          <h1>YouTube Fact Checker</h1>
+          <p class="subtitle">Verify claims from any YouTube video</p>
+        </div>
+      </div>
+    </header>
+
+    <!-- Input Section -->
+    <section class="input-section">
+      <div class="input-wrapper">
+        <input
+          type="text"
+          id="url-input"
+          placeholder="Paste a YouTube URL (videos under 10 minutes)..."
+          autocomplete="off"
+        />
+        <button id="check-btn" onclick="submitVideo()">
+          <span class="btn-text">Check Facts</span>
+          <span class="btn-loading" style="display:none;">
+            <span class="spinner-small"></span>
+          </span>
+        </button>
+      </div>
+      <p id="input-error" class="error-text"></p>
+    </section>
+
+    <!-- Loading Section -->
+    <section id="loading-section" class="loading-section" style="display:none;">
+      <div class="loading-card">
+        <div class="spinner"></div>
+        <p id="loading-status">Starting analysis...</p>
+        <div class="progress-bar">
+          <div id="progress-fill" class="progress-fill"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Error Section -->
+    <section id="error-section" class="error-section" style="display:none;">
+      <div class="error-card">
+        <span class="error-icon">&#9888;</span>
+        <p id="error-message"></p>
+        <button onclick="resetUI()">Try Another Video</button>
+      </div>
+    </section>
+
+    <!-- Results Section -->
+    <section id="results-section" class="results-section" style="display:none;">
+      <!-- Video Info -->
+      <div class="video-info">
+        <h2 id="video-title"></h2>
+        <div class="video-meta">
+          <span id="video-duration"></span>
+          <span id="processing-time"></span>
+        </div>
+      </div>
+
+      <!-- Overall Score -->
+      <div class="overall-score">
+        <div class="score-ring" id="score-ring">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="54" stroke="#e0e0e0" stroke-width="8" fill="none"/>
+            <circle cx="60" cy="60" r="54" stroke="#4CAF50" stroke-width="8" fill="none"
+                    id="score-circle"
+                    stroke-dasharray="339.3"
+                    stroke-dashoffset="339.3"
+                    stroke-linecap="round"
+                    transform="rotate(-90 60 60)"/>
+          </svg>
+          <div class="score-text">
+            <span id="score-value">0</span>
+            <span class="score-percent">%</span>
+          </div>
+        </div>
+        <div class="score-label">
+          <h3>Overall Accuracy</h3>
+          <p id="summary-text"></p>
+        </div>
+      </div>
+
+      <!-- Filter Bar -->
+      <div class="filter-bar">
+        <button class="filter-btn active" data-filter="all" onclick="filterClaims('all')">All</button>
+        <button class="filter-btn" data-filter="fact" onclick="filterClaims('fact')">Facts</button>
+        <button class="filter-btn" data-filter="opinion" onclick="filterClaims('opinion')">Opinions</button>
+      </div>
+
+      <!-- Claims List -->
+      <div id="claims-list" class="claims-list"></div>
+
+      <!-- Reset -->
+      <div class="reset-row">
+        <button class="reset-btn" onclick="resetUI()">Check Another Video</button>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+      <a href="https://buymeacoffee.com" target="_blank" class="coffee-btn">
+        <span>&#9749;</span> Buy Me a Coffee
+      </a>
+      <p class="footer-note">
+        Results are AI-generated estimates, not definitive verdicts. Always verify important claims yourself.
+      </p>
+    </footer>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

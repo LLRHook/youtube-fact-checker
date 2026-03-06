@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin — YouTube Fact Checker</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .admin-container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .admin-header h1 { font-size: 1.4rem; font-weight: 700; }
+    .back-link { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    .back-link:hover { text-decoration: underline; }
+
+    /* Filter tabs */
+    .tab-bar { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+    .tab-btn {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer;
+    }
+    .tab-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+
+    /* Video table */
+    .video-table { width: 100%; border-collapse: collapse; }
+    .video-table th {
+      text-align: left; padding: 0.6rem 0.8rem; font-size: 0.8rem; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); text-transform: uppercase; letter-spacing: 0.05em;
+    }
+    .video-table td {
+      padding: 0.8rem; border-bottom: 1px solid var(--border); font-size: 0.9rem; cursor: pointer;
+    }
+    .video-table tr:hover td { background: var(--surface); }
+
+    .status-badge {
+      display: inline-block; padding: 0.15rem 0.5rem; border-radius: 4px;
+      font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+    }
+    .status-pending { background: rgba(255,165,2,0.15); color: var(--yellow); }
+    .status-approved { background: rgba(46,213,115,0.15); color: var(--green); }
+    .status-rejected { background: rgba(255,71,87,0.15); color: var(--red); }
+    .status-processing { background: rgba(108,99,255,0.15); color: var(--accent); }
+    .status-failed { background: rgba(255,71,87,0.15); color: var(--red); }
+    .status-completed { background: rgba(46,213,115,0.15); color: var(--green); }
+
+    /* Detail view */
+    .detail-back { background: none; border: none; color: var(--accent); cursor: pointer; font-size: 0.9rem; margin-bottom: 1rem; }
+    .detail-back:hover { text-decoration: underline; }
+
+    .detail-meta {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .detail-meta h2 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+    .detail-meta-row { display: flex; gap: 1.5rem; color: var(--text-muted); font-size: 0.85rem; flex-wrap: wrap; }
+
+    .detail-actions { display: flex; gap: 0.75rem; margin-bottom: 1.5rem; }
+    .action-btn {
+      padding: 0.6rem 1.2rem; border: none; border-radius: 8px;
+      font-size: 0.9rem; font-weight: 600; cursor: pointer;
+    }
+    .btn-approve { background: var(--green); color: #000; }
+    .btn-reject { background: var(--red); color: #fff; }
+    .btn-pending { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+
+    /* Claim cards for admin */
+    .admin-claim {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.2rem; margin-bottom: 0.75rem; transition: opacity 0.2s;
+    }
+    .admin-claim.not-creator { opacity: 0.5; }
+    .admin-claim.not-creator .admin-claim-text { text-decoration: line-through; }
+
+    .admin-claim-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+    .admin-claim-text { flex: 1; font-size: 0.95rem; }
+
+    .admin-claim-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; align-items: center; }
+    .admin-claim-meta a { color: var(--blue); text-decoration: none; }
+    .admin-claim-meta a:hover { text-decoration: underline; }
+
+    /* Toggle switch */
+    .toggle-row { display: flex; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+    .toggle-label { font-size: 0.8rem; color: var(--text-muted); }
+    .toggle-switch {
+      position: relative; width: 40px; height: 22px; background: var(--border);
+      border-radius: 11px; cursor: pointer; transition: background 0.2s;
+    }
+    .toggle-switch.on { background: var(--green); }
+    .toggle-switch::after {
+      content: ''; position: absolute; top: 2px; left: 2px; width: 18px; height: 18px;
+      background: white; border-radius: 50%; transition: transform 0.2s;
+    }
+    .toggle-switch.on::after { transform: translateX(18px); }
+
+    /* Expandable reasoning */
+    .admin-claim .claim-reasoning { display: none; }
+    .admin-claim.expanded .claim-reasoning { display: block; }
+    .admin-claim .claim-sources { display: none; }
+    .admin-claim.expanded .claim-sources { display: block; }
+
+    .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
+
+    .score-sm { font-weight: 700; }
+    .score-green { color: var(--green); }
+    .score-yellow { color: var(--yellow); }
+    .score-red { color: var(--red); }
+  </style>
+</head>
+<body>
+  <div class="admin-container">
+    <div class="admin-header">
+      <h1>Admin Review</h1>
+      <a href="/" class="back-link">Back to Checker</a>
+    </div>
+
+    <!-- Video List View -->
+    <div id="list-view">
+      <div class="tab-bar">
+        <button class="tab-btn active" data-tab="all" onclick="filterTab('all')">All</button>
+        <button class="tab-btn" data-tab="pending" onclick="filterTab('pending')">Pending</button>
+        <button class="tab-btn" data-tab="approved" onclick="filterTab('approved')">Approved</button>
+        <button class="tab-btn" data-tab="rejected" onclick="filterTab('rejected')">Rejected</button>
+      </div>
+      <table class="video-table">
+        <thead>
+          <tr>
+            <th>Title</th>
+            <th>Channel</th>
+            <th>Score</th>
+            <th>Claims</th>
+            <th>Status</th>
+            <th>Approval</th>
+            <th>Date</th>
+          </tr>
+        </thead>
+        <tbody id="video-list"></tbody>
+      </table>
+      <div id="list-empty" class="empty-state" style="display:none;">No videos found.</div>
+    </div>
+
+    <!-- Video Detail View -->
+    <div id="detail-view" style="display:none;">
+      <button class="detail-back" onclick="showList()">&larr; Back to list</button>
+      <div class="detail-meta">
+        <h2 id="detail-title"></h2>
+        <div class="detail-meta-row">
+          <span id="detail-channel"></span>
+          <span id="detail-score"></span>
+          <span id="detail-duration"></span>
+          <span id="detail-time"></span>
+          <span id="detail-date"></span>
+        </div>
+      </div>
+      <div class="detail-actions">
+        <button class="action-btn btn-approve" onclick="setApproval('approved')">Approve</button>
+        <button class="action-btn btn-reject" onclick="setApproval('rejected')">Reject</button>
+        <button class="action-btn btn-pending" onclick="setApproval('pending')">Reset to Pending</button>
+      </div>
+      <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">Claims</h3>
+      <div id="detail-claims"></div>
+    </div>
+  </div>
+
+  <script src="/admin.js"></script>
+</body>
+</html>

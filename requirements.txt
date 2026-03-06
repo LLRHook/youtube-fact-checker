@@ -1,0 +1,11 @@
+fastapi==0.135.1
+uvicorn==0.41.0
+python-dotenv==1.0.0
+pydantic>=2.5.3
+pydantic-settings==2.13.1
+youtube-transcript-api==1.2.4
+yt-dlp==2026.3.3
+anthropic==0.84.0
+httpx==0.28.1
+tenacity==9.1.4
+aiosqlite==0.21.0

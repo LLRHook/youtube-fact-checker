@@ -1,0 +1,72 @@
+"""Web search service using Brave Search API."""
+
+import httpx
+from backend.config import settings
+
+
+class SearchResult:
+    def __init__(self, title: str, url: str, snippet: str):
+        self.title = title
+        self.url = url
+        self.snippet = snippet
+
+
+async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
+    """
+    Search using Brave Search API.
+
+    Args:
+        query: Search query string
+        num_results: Number of results to return
+
+    Returns:
+        List of SearchResult objects
+    """
+    if not settings.BRAVE_API_KEY:
+        raise ValueError("BRAVE_API_KEY not set. Add it to your .env file.")
+
+    headers = {
+        "Accept": "application/json",
+        "Accept-Encoding": "gzip",
+        "X-Subscription-Token": settings.BRAVE_API_KEY,
+    }
+
+    params = {
+        "q": query,
+        "count": num_results,
+        "text_decorations": False,
+        "search_lang": "en",
+    }
+
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        response = await client.get(
+            "https://api.search.brave.com/res/v1/web/search",
+            headers=headers,
+            params=params,
+        )
+        response.raise_for_status()
+        data = response.json()
+
+    results = []
+    web_results = data.get("web", {}).get("results", [])
+    for item in web_results[:num_results]:
+        results.append(
+            SearchResult(
+                title=item.get("title", ""),
+                url=item.get("url", ""),
+                snippet=item.get("description", ""),
+            )
+        )
+
+    return results
+
+
+def format_search_results(results: list[SearchResult]) -> str:
+    """Format search results as text for LLM consumption."""
+    if not results:
+        return "No search results found."
+
+    parts = []
+    for i, r in enumerate(results, 1):
+        parts.append(f"Source {i}: {r.title}\nURL: {r.url}\nSnippet: {r.snippet}\n")
+    return "\n".join(parts)
