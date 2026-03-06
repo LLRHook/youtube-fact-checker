@@ -26,7 +26,7 @@ INCLUDE:
 
 For each claim, provide:
 1. "text" - The exact factual claim (clean it up for clarity but preserve meaning)
-2. "timestamp_seconds" - Approximate timestamp in seconds (estimate from context)
+2. "timestamp_seconds" - The timestamp in seconds where the claim STARTS. Use the exact [MM:SS] timestamp shown before the line containing the claim. Convert MM:SS to seconds (e.g., [02:15] = 135). Do NOT estimate or approximate — use the timestamp from the transcript.
 3. "category" - One of: "fact", "opinion", or "unclear"
 
 Return ONLY a JSON array. If no factual claims found, return an empty array [].
