@@ -4,11 +4,65 @@ let allVideos = [];
 let currentFilter = 'all';
 let currentVideoId = null;
 
-// --- Init ---
+// --- Auth ---
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadVideos();
+  checkAuth();
 });
+
+async function checkAuth() {
+  try {
+    const resp = await fetch('/api/admin/videos');
+    if (resp.status === 401) {
+      showLogin();
+      return;
+    }
+    if (!resp.ok) throw new Error('Failed to load');
+    allVideos = await resp.json();
+    showAdmin();
+    renderVideoList();
+  } catch (err) {
+    showLogin();
+  }
+}
+
+function showLogin() {
+  document.getElementById('login-overlay').style.display = 'flex';
+  document.getElementById('admin-content').style.display = 'none';
+}
+
+function showAdmin() {
+  document.getElementById('login-overlay').style.display = 'none';
+  document.getElementById('admin-content').style.display = 'block';
+}
+
+async function login(e) {
+  e.preventDefault();
+  const password = document.getElementById('login-password').value;
+  const errorEl = document.getElementById('login-error');
+  errorEl.textContent = '';
+
+  try {
+    const resp = await fetch('/api/admin/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password }),
+    });
+    if (!resp.ok) {
+      errorEl.textContent = 'Invalid password.';
+      return;
+    }
+    await checkAuth();
+  } catch (err) {
+    errorEl.textContent = 'Login failed.';
+  }
+}
+
+async function logout() {
+  await fetch('/api/admin/logout', { method: 'POST' });
+  showLogin();
+  document.getElementById('login-password').value = '';
+}
 
 // --- Video List ---
 

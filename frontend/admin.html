@@ -104,13 +104,61 @@
     .score-green { color: var(--green); }
     .score-yellow { color: var(--yellow); }
     .score-red { color: var(--red); }
+
+    /* Login overlay */
+    .login-overlay {
+      position: fixed; inset: 0; background: var(--bg);
+      display: flex; align-items: center; justify-content: center; z-index: 100;
+    }
+    .login-box {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 2.5rem; width: 100%; max-width: 380px; text-align: center;
+    }
+    .login-box h2 { font-size: 1.3rem; margin-bottom: 1.5rem; }
+    .login-box input {
+      width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
+      color: var(--text); padding: 0.8rem 1rem; font-size: 0.95rem; margin-bottom: 1rem; outline: none;
+    }
+    .login-box input:focus { border-color: var(--accent); }
+    .login-box button {
+      width: 100%; background: var(--accent); color: white; border: none; border-radius: 8px;
+      padding: 0.8rem; font-size: 0.95rem; font-weight: 600; cursor: pointer;
+    }
+    .login-box button:hover { background: #5a52d5; }
+    .login-error { color: var(--red); font-size: 0.85rem; margin-top: 0.5rem; min-height: 1.2rem; }
+
+    /* Logout button */
+    .logout-btn {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: 6px; padding: 0.3rem 0.8rem; font-size: 0.8rem; cursor: pointer;
+    }
+    .logout-btn:hover { border-color: var(--red); color: var(--red); }
+    .nav-links { display: flex; gap: 1rem; align-items: center; }
+    .nav-links a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
-  <div class="admin-container">
+  <!-- Login Overlay -->
+  <div id="login-overlay" class="login-overlay">
+    <div class="login-box">
+      <h2>Admin Login</h2>
+      <form onsubmit="login(event)">
+        <input type="password" id="login-password" placeholder="Enter admin password" autofocus>
+        <button type="submit">Log In</button>
+      </form>
+      <p id="login-error" class="login-error"></p>
+    </div>
+  </div>
+
+  <div id="admin-content" class="admin-container" style="display:none;">
     <div class="admin-header">
       <h1>Admin Review</h1>
-      <a href="/" class="back-link">Back to Checker</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/videos">Videos</a>
+        <button class="logout-btn" onclick="logout()">Log Out</button>
+      </div>
     </div>
 
     <!-- Video List View -->
@@ -159,7 +207,7 @@
       <h3 style="margin-bottom: 0.75rem; font-size: 1rem;">Claims</h3>
       <div id="detail-claims"></div>
     </div>
-  </div>
+  </div>  <!-- end admin-content -->
 
   <script src="/admin.js"></script>
 </body>

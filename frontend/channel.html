@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Channel — YouTube Fact Checker</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .page-container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { text-decoration: underline; }
+
+    .channel-header { margin-bottom: 1.5rem; }
+    .channel-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .channel-stats { display: flex; gap: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
+    .channel-stats .stat-value { color: var(--text); font-weight: 600; }
+
+    .video-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+
+    .video-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.2rem; cursor: pointer; transition: border-color 0.2s;
+      text-decoration: none; color: var(--text); display: block;
+    }
+    .video-card:hover { border-color: var(--accent); }
+    .video-card h3 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.3; }
+    .video-card-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
+
+    .score-badge {
+      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px;
+      font-size: 0.8rem; font-weight: 700;
+    }
+    .score-green { background: rgba(46,213,115,0.15); color: var(--green); }
+    .score-yellow { background: rgba(255,165,2,0.15); color: var(--yellow); }
+    .score-red { background: rgba(255,71,87,0.15); color: var(--red); }
+
+    .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-header">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/videos">Videos</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+
+  <script src="/channel.js"></script>
+</body>
+</html>

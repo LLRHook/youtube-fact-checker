@@ -109,3 +109,55 @@ class ClaimAttributionUpdate(BaseModel):
 
 class VideoApprovalUpdate(BaseModel):
     approval_status: ApprovalStatus
+
+
+# --- Public models ---
+
+
+class PublicVideoSummary(BaseModel):
+    id: str
+    title: str = ""
+    channel: str = ""
+    public_score: int = 0
+    claim_count: int = 0
+    created_at: str = ""
+
+
+class PublicClaimDetail(BaseModel):
+    text: str = ""
+    timestamp_seconds: float = 0
+    truth_percentage: int = 50
+    confidence: float = 0.5
+    reasoning: str = ""
+    category: str = "fact"
+    sources: list[Source] = []
+
+
+class PublicVideoDetail(BaseModel):
+    id: str
+    title: str = ""
+    channel: str = ""
+    youtube_url: str = ""
+    duration_seconds: float = 0
+    overall_truth_percentage: int = 0
+    public_score: int = 0
+    summary: str = ""
+    created_at: str = ""
+    claims: list[PublicClaimDetail] = []
+
+
+class ChannelSummary(BaseModel):
+    channel: str
+    video_count: int = 0
+    avg_score: float = 0
+
+
+class ChannelDetail(BaseModel):
+    channel: str
+    video_count: int = 0
+    avg_score: float = 0
+    videos: list[PublicVideoSummary] = []
+
+
+class LoginRequest(BaseModel):
+    password: str

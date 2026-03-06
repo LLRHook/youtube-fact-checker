@@ -1,14 +1,14 @@
 """YouTube Fact Checker — FastAPI application."""
 
-import uuid
 import time
 import asyncio
 from contextlib import asynccontextmanager
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Query
-from fastapi.staticfiles import StaticFiles
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Query, Request, Depends
 from fastapi.responses import FileResponse
+from starlette.middleware.sessions import SessionMiddleware
 
+from backend.config import settings
 from backend.models import (
     CheckRequest,
     TaskResponse,
@@ -23,6 +23,12 @@ from backend.models import (
     VideoDetail,
     ClaimAttributionUpdate,
     VideoApprovalUpdate,
+    PublicVideoSummary,
+    PublicClaimDetail,
+    PublicVideoDetail,
+    ChannelSummary,
+    ChannelDetail,
+    LoginRequest,
 )
 from backend.utils.validators import extract_video_id, is_valid_youtube_url
 from backend.services.transcript_service import (
@@ -48,6 +54,17 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="YouTube Fact Checker", version="1.0.0", lifespan=lifespan)
+app.add_middleware(SessionMiddleware, secret_key=settings.SESSION_SECRET)
+
+
+# --- Auth dependency ---
+
+
+async def get_admin(request: Request):
+    """Check session for admin access, raise 401 if not authenticated."""
+    if not request.session.get("admin"):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    return True
 
 
 async def process_video(task_id: str, video_id: str, youtube_url: str):
@@ -337,10 +354,29 @@ async def health():
 # --- Admin API ---
 
 
+@app.post("/api/admin/login")
+async def admin_login(request: Request, body: LoginRequest):
+    """Validate password and set admin session."""
+    if not settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=503, detail="Admin password not configured")
+    if body.password != settings.ADMIN_PASSWORD:
+        raise HTTPException(status_code=401, detail="Invalid password")
+    request.session["admin"] = True
+    return {"ok": True}
+
+
+@app.post("/api/admin/logout")
+async def admin_logout(request: Request):
+    """Clear admin session."""
+    request.session.clear()
+    return {"ok": True}
+
+
 @app.get("/api/admin/videos")
 async def admin_list_videos(
     status: str | None = Query(None),
     approval: str | None = Query(None),
+    _admin=Depends(get_admin),
 ):
     """List all videos with optional status/approval filters."""
     videos = await db.list_videos(status=status, approval_status=approval)
@@ -363,7 +399,7 @@ async def admin_list_videos(
 
 
 @app.get("/api/admin/videos/{video_id}")
-async def admin_get_video(video_id: str):
+async def admin_get_video(video_id: str, _admin=Depends(get_admin)):
     """Full video detail with all claims and sources."""
     video = await db.get_video(video_id)
     if not video:
@@ -407,20 +443,146 @@ async def admin_get_video(video_id: str):
 
 
 @app.patch("/api/admin/claims/{claim_id}/attribution")
-async def admin_update_attribution(claim_id: int, body: ClaimAttributionUpdate):
+async def admin_update_attribution(claim_id: int, body: ClaimAttributionUpdate, _admin=Depends(get_admin)):
     """Toggle whether a claim is attributed to the content creator."""
     await db.update_claim_attribution(claim_id, body.attributed_to_creator)
     return {"ok": True, "claim_id": claim_id, "attributed_to_creator": body.attributed_to_creator}
 
 
 @app.patch("/api/admin/videos/{video_id}/approval")
-async def admin_update_approval(video_id: str, body: VideoApprovalUpdate):
+async def admin_update_approval(video_id: str, body: VideoApprovalUpdate, _admin=Depends(get_admin)):
     """Set video approval status (pending/approved/rejected)."""
     video = await db.get_video(video_id)
     if not video:
         raise HTTPException(status_code=404, detail="Video not found.")
     await db.set_video_approval(video_id, body.approval_status.value)
     return {"ok": True, "video_id": video_id, "approval_status": body.approval_status.value}
+
+
+# --- Public API ---
+
+
+def _calculate_public_score(claims: list[dict]) -> int:
+    """Recalculate score from creator-attributed fact claims only."""
+    fact_claims = [c for c in claims if c.get("category") == "fact"]
+    if not fact_claims:
+        return 0
+    total_weight = sum(c.get("confidence", 0.5) for c in fact_claims)
+    if total_weight == 0:
+        return 0
+    weighted_sum = sum(
+        c.get("truth_percentage", 50) * c.get("confidence", 0.5) for c in fact_claims
+    )
+    return round(weighted_sum / total_weight)
+
+
+@app.get("/api/videos")
+async def public_list_videos():
+    """List approved videos only."""
+    videos = await db.list_videos(status="completed", approval_status="approved")
+    result = []
+    for v in videos:
+        claims = await db.get_public_claims_for_video(v["id"])
+        public_score = _calculate_public_score(claims)
+        result.append(
+            PublicVideoSummary(
+                id=v["id"],
+                title=v["title"],
+                channel=v["channel"],
+                public_score=public_score,
+                claim_count=len(claims),
+                created_at=v["created_at"] or "",
+            ).model_dump()
+        )
+    return result
+
+
+@app.get("/api/videos/{video_id}")
+async def public_get_video(video_id: str):
+    """Public video detail — approved only, creator-attributed claims only."""
+    video = await db.get_video(video_id)
+    if not video or video["status"] != "completed" or video["approval_status"] != "approved":
+        raise HTTPException(status_code=404, detail="Video not found.")
+
+    claims = await db.get_public_claims_for_video(video_id)
+    public_score = _calculate_public_score(claims)
+
+    public_claims = []
+    for c in claims:
+        public_claims.append(
+            PublicClaimDetail(
+                text=c["text"],
+                timestamp_seconds=c["timestamp_seconds"],
+                truth_percentage=c["truth_percentage"],
+                confidence=c["confidence"],
+                reasoning=c["reasoning"],
+                category=c["category"],
+                sources=[
+                    Source(title=s["title"], url=s["url"], snippet=s["snippet"])
+                    for s in c.get("sources", [])
+                ],
+            ).model_dump()
+        )
+
+    return PublicVideoDetail(
+        id=video["id"],
+        title=video["title"],
+        channel=video["channel"],
+        youtube_url=video["youtube_url"],
+        duration_seconds=video["duration_seconds"],
+        overall_truth_percentage=video["overall_truth_percentage"],
+        public_score=public_score,
+        summary=video["summary"],
+        created_at=video["created_at"] or "",
+        claims=public_claims,
+    ).model_dump()
+
+
+@app.get("/api/channels")
+async def public_list_channels():
+    """List channels with aggregate stats."""
+    channels = await db.list_channels()
+    return [
+        ChannelSummary(
+            channel=ch["channel"],
+            video_count=ch["video_count"],
+            avg_score=round(ch["avg_score"] or 0, 1),
+        ).model_dump()
+        for ch in channels
+    ]
+
+
+@app.get("/api/channels/{channel_name}")
+async def public_get_channel(channel_name: str):
+    """Channel detail with its approved videos."""
+    videos = await db.get_channel_videos(channel_name)
+    if not videos:
+        raise HTTPException(status_code=404, detail="Channel not found.")
+
+    video_summaries = []
+    for v in videos:
+        claims = await db.get_public_claims_for_video(v["id"])
+        public_score = _calculate_public_score(claims)
+        video_summaries.append(
+            PublicVideoSummary(
+                id=v["id"],
+                title=v["title"],
+                channel=v["channel"],
+                public_score=public_score,
+                claim_count=len(claims),
+                created_at=v["created_at"] or "",
+            ).model_dump()
+        )
+
+    all_scores = [vs["public_score"] for vs in video_summaries if vs["public_score"] > 0]
+    avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
+
+    return ChannelDetail(
+        channel=channel_name,
+        video_count=len(video_summaries),
+        avg_score=avg_score,
+        videos=video_summaries,
+    ).model_dump()
 
 
 # --- Frontend ---
@@ -449,6 +611,36 @@ async def serve_admin():
 @app.get("/admin.js")
 async def serve_admin_js():
     return FileResponse(FRONTEND_DIR / "admin.js", media_type="application/javascript")
+
+
+@app.get("/videos")
+async def serve_videos_page():
+    return FileResponse(FRONTEND_DIR / "videos.html")
+
+
+@app.get("/videos.js")
+async def serve_videos_js():
+    return FileResponse(FRONTEND_DIR / "videos.js", media_type="application/javascript")
+
+
+@app.get("/video/{video_id}")
+async def serve_video_page(video_id: str):
+    return FileResponse(FRONTEND_DIR / "video.html")
+
+
+@app.get("/video.js")
+async def serve_video_js():
+    return FileResponse(FRONTEND_DIR / "video.js", media_type="application/javascript")
+
+
+@app.get("/channel/{channel_name}")
+async def serve_channel_page(channel_name: str):
+    return FileResponse(FRONTEND_DIR / "channel.html")
+
+
+@app.get("/channel.js")
+async def serve_channel_js():
+    return FileResponse(FRONTEND_DIR / "channel.js", media_type="application/javascript")
 
 
 if __name__ == "__main__":

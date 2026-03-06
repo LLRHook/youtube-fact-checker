@@ -250,3 +250,66 @@ async def update_claim_attribution(claim_id: int, attributed_to_creator: bool):
         await db.commit()
     finally:
         await db.close()
+
+
+# --- Public queries ---
+
+
+async def get_public_claims_for_video(video_id: str) -> list[dict]:
+    """Return only creator-attributed claims with nested sources."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            "SELECT * FROM claims WHERE video_id = ? AND attributed_to_creator = 1 ORDER BY claim_index",
+            (video_id,),
+        ) as cursor:
+            claim_rows = await cursor.fetchall()
+
+        result = []
+        for cr in claim_rows:
+            claim = dict(cr)
+            async with db.execute(
+                "SELECT * FROM claim_sources WHERE claim_id = ?",
+                (claim["id"],),
+            ) as src_cursor:
+                sources = [dict(s) for s in await src_cursor.fetchall()]
+            claim["sources"] = sources
+            result.append(claim)
+
+        return result
+    finally:
+        await db.close()
+
+
+async def list_channels() -> list[dict]:
+    """List channels with aggregate stats from approved videos."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            """SELECT channel, COUNT(*) as video_count,
+                      AVG(overall_truth_percentage) as avg_score
+               FROM videos
+               WHERE status = 'completed' AND approval_status = 'approved'
+               GROUP BY channel
+               ORDER BY video_count DESC"""
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        await db.close()
+
+
+async def get_channel_videos(channel: str) -> list[dict]:
+    """List approved videos for a specific channel."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            """SELECT * FROM videos
+               WHERE channel = ? AND status = 'completed' AND approval_status = 'approved'
+               ORDER BY created_at DESC""",
+            (channel,),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        await db.close()

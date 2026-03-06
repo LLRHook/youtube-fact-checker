@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video — YouTube Fact Checker</title>
+  <link rel="stylesheet" href="/styles.css">
+  <style>
+    .page-container { max-width: 720px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
+    .nav-links { display: flex; gap: 1rem; }
+    .nav-links a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
+    .nav-links a:hover { text-decoration: underline; }
+
+    .video-info { margin-bottom: 1.5rem; }
+    .video-info h1 { font-size: 1.3rem; font-weight: 700; margin-bottom: 0.5rem; }
+    .video-meta { display: flex; gap: 1rem; color: var(--text-muted); font-size: 0.85rem; flex-wrap: wrap; }
+    .video-meta a { color: var(--blue); text-decoration: none; }
+    .video-meta a:hover { text-decoration: underline; }
+
+    .score-section {
+      display: flex; align-items: center; gap: 1.5rem;
+      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+      padding: 1.5rem; margin-bottom: 1.5rem;
+    }
+    .score-ring { position: relative; width: 100px; height: 100px; flex-shrink: 0; }
+    .score-ring svg { width: 100%; height: 100%; }
+    .score-text {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    }
+    .score-value { font-size: 1.8rem; font-weight: 700; }
+    .score-pct { font-size: 0.9rem; color: var(--text-muted); }
+    .score-label h3 { font-size: 1rem; margin-bottom: 0.3rem; }
+    .score-label p { color: var(--text-muted); font-size: 0.9rem; }
+
+    .share-btn {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.5rem 1rem; font-size: 0.85rem; cursor: pointer;
+      margin-bottom: 1.5rem;
+    }
+    .share-btn:hover { border-color: var(--accent); color: var(--text); }
+
+    .claims-heading { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
+
+    .claim-card {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+      padding: 1rem 1.2rem; margin-bottom: 0.75rem; transition: border-color 0.2s;
+    }
+    .claim-card:hover { border-color: var(--accent); }
+
+    .claim-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }
+    .claim-text { font-size: 0.95rem; flex: 1; }
+    .claim-badge {
+      display: inline-flex; padding: 0.25rem 0.7rem; border-radius: 20px;
+      font-size: 0.8rem; font-weight: 600; white-space: nowrap; flex-shrink: 0;
+    }
+    .badge-green { background: rgba(46,213,115,0.15); color: var(--green); }
+    .badge-yellow { background: rgba(255,165,2,0.15); color: var(--yellow); }
+    .badge-red { background: rgba(255,71,87,0.15); color: var(--red); }
+    .badge-gray { background: rgba(136,136,170,0.15); color: var(--text-muted); }
+
+    .claim-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .claim-meta a { color: var(--blue); text-decoration: none; }
+    .claim-meta a:hover { text-decoration: underline; }
+
+    .claim-reasoning {
+      font-size: 0.85rem; color: var(--text-muted); line-height: 1.5;
+      margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border);
+      display: none;
+    }
+    .claim-card.expanded .claim-reasoning { display: block; }
+    .claim-sources { margin-top: 0.5rem; display: none; }
+    .claim-card.expanded .claim-sources { display: block; }
+
+    .source-link {
+      display: block; font-size: 0.8rem; color: var(--blue); text-decoration: none;
+      margin-bottom: 0.2rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    }
+    .source-link:hover { text-decoration: underline; }
+
+    .claim-toggle {
+      background: none; border: none; color: var(--text-muted); font-size: 0.8rem;
+      cursor: pointer; padding: 0.3rem 0;
+    }
+    .claim-toggle:hover { color: var(--text); }
+
+    .category-tag {
+      font-size: 0.75rem; padding: 0.15rem 0.5rem; border-radius: 4px;
+      background: var(--surface-2); color: var(--text-muted); text-transform: uppercase;
+    }
+
+    .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
+
+    @media (max-width: 600px) {
+      .score-section { flex-direction: column; text-align: center; }
+      .claim-header { flex-direction: column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page-container">
+    <div class="page-header">
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/videos">Videos</a>
+      </div>
+    </div>
+
+    <div id="content">
+      <div class="empty-state">Loading...</div>
+    </div>
+  </div>
+
+  <script src="/video.js"></script>
+</body>
+</html>
