@@ -287,7 +287,7 @@ function seekTo(seconds) {
       event: 'command',
       func: 'seekTo',
       args: [seconds, true]
-    }), '*');
+    }), 'https://www.youtube-nocookie.com');
     iframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
 }

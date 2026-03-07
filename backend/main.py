@@ -79,6 +79,9 @@ app.add_middleware(
 )
 
 
+_STATIC_EXTENSIONS = {".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"}
+
+
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next):
         response: Response = await call_next(request)
@@ -86,6 +89,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        path = request.url.path
+        if any(path.endswith(ext) for ext in _STATIC_EXTENSIONS):
+            response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
         return response
 
 
@@ -127,13 +133,14 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             await db.update_video_results(
                 video_id,
                 title=transcript.title,
-                channel=getattr(transcript, "channel", ""),
+                channel=transcript.channel,
                 duration_seconds=transcript.duration_seconds,
                 transcript_text=transcript.full_text,
                 overall_truth_percentage=0,
                 summary=result.summary,
                 processing_time_seconds=result.processing_time_seconds,
             )
+            _cleanup_task(task_id)
             return
 
         # Step 3: Fact-check each claim
@@ -201,7 +208,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         await db.update_video_results(
             video_id,
             title=transcript.title,
-            channel=getattr(transcript, "channel", ""),
+            channel=transcript.channel,
             duration_seconds=transcript.duration_seconds,
             transcript_text=transcript.full_text,
             overall_truth_percentage=overall,
@@ -220,23 +227,27 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 "sources": c.get("sources", []),
             })
         await db.create_claims(video_id, claims_for_db)
+        _cleanup_task(task_id)
 
     except VideoTooLongError as e:
         logger.warning("Video %s too long: %s", video_id, e)
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = str(e)
         await db.update_video_status(video_id, "failed", str(e))
+        _cleanup_task(task_id)
     except TranscriptError as e:
         logger.warning("Transcript error for video %s: %s", video_id, e)
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = str(e)
         await db.update_video_status(video_id, "failed", str(e))
+        _cleanup_task(task_id)
     except Exception as e:
         logger.exception("Unexpected error processing video %s", video_id)
         error_msg = f"Unexpected error: {str(e)[:200]}"
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = error_msg
         await db.update_video_status(video_id, "failed", error_msg)
+        _cleanup_task(task_id)
 
 
 # --- Queue processor ---
@@ -266,6 +277,28 @@ async def queue_processor():
             logger.exception("Queue processor error")
 
 
+def _cleanup_task(task_id: str):
+    """Remove a completed/failed task from memory after persisting to DB."""
+    tasks.pop(task_id, None)
+
+
+def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:
+    """Convert DB claim rows (with nested sources) to Claim model instances."""
+    return [
+        Claim(
+            id=f"claim-{cr['claim_index']}",
+            text=cr["text"],
+            timestamp_seconds=cr["timestamp_seconds"],
+            truth_percentage=cr["truth_percentage"],
+            confidence=cr["confidence"],
+            reasoning=cr["reasoning"],
+            sources=[Source(title=s["title"], url=s["url"], snippet=s["snippet"]) for s in cr["sources"]],
+            category=ClaimCategory(cr["category"]),
+        )
+        for cr in claims_rows
+    ]
+
+
 def _get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
@@ -288,21 +321,7 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     # Dedup: if video already completed in DB, return it
     existing = await db.get_video(video_id)
     if existing and existing["status"] == "completed":
-        claims_rows = await db.get_claims_for_video(video_id)
-        claims = []
-        for cr in claims_rows:
-            claims.append(
-                Claim(
-                    id=f"claim-{cr['claim_index']}",
-                    text=cr["text"],
-                    timestamp_seconds=cr["timestamp_seconds"],
-                    truth_percentage=cr["truth_percentage"],
-                    confidence=cr["confidence"],
-                    reasoning=cr["reasoning"],
-                    sources=[Source(title=s["title"], url=s["url"], snippet=s["snippet"]) for s in cr["sources"]],
-                    category=ClaimCategory(cr["category"]),
-                )
-            )
+        claims = _build_claims_from_rows(await db.get_claims_for_video(video_id))
         result = CheckResult(
             video_title=existing["title"],
             video_id=video_id,
@@ -376,21 +395,7 @@ async def get_task_status(task_id: str):
         raise HTTPException(status_code=404, detail="Task not found.")
 
     if video["status"] == "completed":
-        claims_rows = await db.get_claims_for_video(task_id)
-        claims = []
-        for cr in claims_rows:
-            claims.append(
-                Claim(
-                    id=f"claim-{cr['claim_index']}",
-                    text=cr["text"],
-                    timestamp_seconds=cr["timestamp_seconds"],
-                    truth_percentage=cr["truth_percentage"],
-                    confidence=cr["confidence"],
-                    reasoning=cr["reasoning"],
-                    sources=[Source(title=s["title"], url=s["url"], snippet=s["snippet"]) for s in cr["sources"]],
-                    category=ClaimCategory(cr["category"]),
-                )
-            )
+        claims = _build_claims_from_rows(await db.get_claims_for_video(task_id))
         result = CheckResult(
             video_title=video["title"],
             video_id=task_id,
