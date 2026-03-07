@@ -517,6 +517,13 @@ header {
   flex: 1;
 }
 
+.claim-num {
+  color: var(--text-muted);
+  font-weight: 600;
+  font-size: 0.8rem;
+  margin-right: 0.3rem;
+}
+
 .claim-badge {
   display: inline-flex;
   align-items: center;

@@ -2,6 +2,8 @@
 
 let currentTaskId = null;
 let pollInterval = null;
+let elapsedInterval = null;
+let elapsedStart = null;
 let allClaims = [];
 
 // --- Submit ---
@@ -63,6 +65,7 @@ async function submitVideo() {
 
 function startPolling() {
   updateProgress('Starting analysis...', 10);
+  startElapsedTimer();
 
   pollInterval = setInterval(async () => {
     try {
@@ -95,7 +98,24 @@ function stopPolling() {
     clearInterval(pollInterval);
     pollInterval = null;
   }
+  stopElapsedTimer();
   resetButton();
+}
+
+function startElapsedTimer() {
+  elapsedStart = Date.now();
+  const el = document.getElementById('loading-elapsed');
+  if (el) el.textContent = 'Elapsed: 0s';
+  elapsedInterval = setInterval(() => {
+    if (el) el.textContent = `Elapsed: ${Math.round((Date.now() - elapsedStart) / 1000)}s`;
+  }, 1000);
+}
+
+function stopElapsedTimer() {
+  if (elapsedInterval) {
+    clearInterval(elapsedInterval);
+    elapsedInterval = null;
+  }
 }
 
 function estimateProgress(progressText) {
@@ -233,7 +253,7 @@ function renderClaimsList(claims) {
 
     card.innerHTML = `
       <div class="claim-header">
-        <span class="claim-text">${escapeHtml(claim.text)}</span>
+        <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(claim.text)}</span>
         <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
       </div>
       <div class="claim-meta">

@@ -23,6 +23,8 @@ async function loadVideo(videoId) {
     if (ogTitle) ogTitle.setAttribute('content', `${video.title} — YouTube Fact Checker`);
     const ogImage = document.querySelector('meta[property="og:image"]');
     if (ogImage) ogImage.setAttribute('content', `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+    const ogDesc = document.querySelector('meta[property="og:description"]');
+    if (ogDesc && video.summary) ogDesc.setAttribute('content', video.summary);
   } catch (err) {
     container.innerHTML = '<div class="empty-state">Error loading video.</div>';
   }
@@ -58,7 +60,7 @@ function renderVideo(video) {
       return `
         <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
           <div class="claim-header">
-            <span class="claim-text">${escapeHtml(c.text)}</span>
+            <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(c.text)}</span>
             <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
           </div>
           <div class="claim-meta">
@@ -229,7 +231,7 @@ function filterVideoClaims(filter) {
     return `
       <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
         <div class="claim-header">
-          <span class="claim-text">${escapeHtml(c.text)}</span>
+          <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(c.text)}</span>
           <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
         </div>
         <div class="claim-meta">
