@@ -2,9 +2,7 @@
 
 function escapeHtml(str) {
   if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
 function formatDate(dateStr) {
@@ -225,7 +223,7 @@ function buildSourcesHtml(sources, limit) {
   const items = limit ? sources.slice(0, limit) : sources;
   return '<div class="claim-sources">' +
     items.map(s =>
-      `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+      `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
       (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
     ).join('') + '</div>';
 }

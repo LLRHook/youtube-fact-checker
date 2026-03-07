@@ -47,6 +47,12 @@ async function submitVideo() {
     const data = await resp.json();
     currentTaskId = data.task_id;
 
+    if (data.status === 'completed') {
+      renderResults(data.data);
+      resetButton();
+      return;
+    }
+
     if (data.status === 'queued') {
       showSection('queued');
       resetButton();
@@ -186,8 +192,9 @@ function renderResults(data) {
   // Animate score ring
   const sc = scoreColor(score);
   const circle = document.getElementById('score-circle');
-  const circumference = 339.3;
+  const circumference = 2 * Math.PI * 54;
   const offset = circumference - (score / 100) * circumference;
+  circle.setAttribute('stroke-dasharray', circumference);
   circle.style.strokeDashoffset = offset;
   circle.style.stroke = sc;
 

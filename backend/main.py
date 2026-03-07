@@ -359,10 +359,9 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
         return {"task_id": video_id, "status": "queued"}
 
     # Check if already processing in-memory
-    for tid, t in tasks.items():
-        if tid == video_id or (t.data and t.data.video_id == video_id):
-            if t.status == TaskStatus.PROCESSING:
-                return {"task_id": tid, "status": "processing"}
+    existing_task = tasks.get(video_id)
+    if existing_task and existing_task.status == TaskStatus.PROCESSING:
+        return {"task_id": video_id, "status": "processing"}
 
     # Per-IP rate limit
     ip_count = await db.count_videos_today_by_ip(client_ip)
