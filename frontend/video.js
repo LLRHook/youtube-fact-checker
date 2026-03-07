@@ -36,7 +36,7 @@ function renderVideo(video) {
   if (video.claims && video.claims.length > 0) {
     claimsHtml = video.claims.map(c => {
       const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-      const badgeText = c.category === 'opinion' ? 'Opinion' : `${c.truth_percentage}%`;
+      const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
       const ts = formatTimestamp(c.timestamp_seconds);
       const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -249,6 +249,12 @@ function getBadgeClass(score, category) {
   if (score >= 75) return 'badge-green';
   if (score >= 50) return 'badge-yellow';
   return 'badge-red';
+}
+
+function getVerdictLabel(score) {
+  if (score >= 75) return 'True';
+  if (score >= 50) return 'Mixed';
+  return 'False';
 }
 
 function getBorderClass(score, category) {

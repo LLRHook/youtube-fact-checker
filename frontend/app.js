@@ -214,7 +214,7 @@ function renderClaimsList(claims) {
     card.dataset.category = claim.category;
 
     const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
-    const badgeText = claim.category === 'opinion' ? 'Opinion' : `${claim.truth_percentage}%`;
+    const badgeText = claim.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(claim.truth_percentage)} · ${claim.truth_percentage}%`;
 
     const timestamp = formatTimestamp(claim.timestamp_seconds);
     const ytLink = `https://youtube.com/watch?v=${document.getElementById('video-title').dataset.videoId || ''}&t=${Math.floor(claim.timestamp_seconds)}`;
@@ -333,6 +333,12 @@ function getBadgeClass(score, category) {
   return 'badge-red';
 }
 
+function getVerdictLabel(score) {
+  if (score >= 75) return 'True';
+  if (score >= 50) return 'Mixed';
+  return 'False';
+}
+
 function getBorderClass(score, category) {
   if (category === 'opinion') return 'border-gray';
   if (score >= 75) return 'border-green';
@@ -402,6 +408,8 @@ document.getElementById('url-input').addEventListener('input', showUrlPreview);
 document.getElementById('url-input').addEventListener('paste', () => {
   setTimeout(showUrlPreview, 0);
 });
+
+document.getElementById('url-input').focus();
 
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();
