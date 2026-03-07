@@ -19,6 +19,7 @@ async function loadVideos() {
     allVideos = await resp.json();
     const skel = document.getElementById('videos-skeleton');
     if (skel) skel.style.display = 'none';
+    document.title = `${allVideos.length} Videos — YouTube Fact Checker`;
     applyFilters();
   } catch (err) {
     const skel = document.getElementById('videos-skeleton');
