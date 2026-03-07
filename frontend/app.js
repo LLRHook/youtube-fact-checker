@@ -116,6 +116,7 @@ function estimateProgress(progressText) {
 function updateProgress(text, pct) {
   document.getElementById('loading-status').textContent = text;
   document.getElementById('progress-fill').style.width = pct + '%';
+  document.title = `${pct}% — ${text} | YouTube Fact Checker`;
 }
 
 // --- Render Results ---
@@ -146,6 +147,9 @@ function renderResults(data) {
   // Animate score counter
   animateCounter('score-value', 0, score, 800);
 
+  // Render breakdown stats
+  renderBreakdownBar(allClaims);
+
   // Render claims
   renderClaimsList(allClaims);
 
@@ -158,7 +162,34 @@ function renderResults(data) {
     reportLink.style.display = 'none';
   }
 
+  document.title = `${data.video_title || 'Results'} — YouTube Fact Checker`;
   showSection('results');
+}
+
+function renderBreakdownBar(claims) {
+  const container = document.getElementById('breakdown-bar');
+  if (!container) return;
+  const facts = claims.filter(c => c.category === 'fact');
+  const opinions = claims.filter(c => c.category === 'opinion');
+  const trueCount = facts.filter(c => c.truth_percentage >= 75).length;
+  const mixedCount = facts.filter(c => c.truth_percentage >= 50 && c.truth_percentage < 75).length;
+  const falseCount = facts.filter(c => c.truth_percentage < 50).length;
+  const total = claims.length || 1;
+
+  container.innerHTML = `
+    <div class="breakdown-segments">
+      ${trueCount ? `<div class="breakdown-seg seg-green" style="width:${(trueCount/total)*100}%"></div>` : ''}
+      ${mixedCount ? `<div class="breakdown-seg seg-yellow" style="width:${(mixedCount/total)*100}%"></div>` : ''}
+      ${falseCount ? `<div class="breakdown-seg seg-red" style="width:${(falseCount/total)*100}%"></div>` : ''}
+      ${opinions.length ? `<div class="breakdown-seg seg-gray" style="width:${(opinions.length/total)*100}%"></div>` : ''}
+    </div>
+    <div class="breakdown-legend">
+      ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}
+      ${mixedCount ? `<span class="legend-item"><span class="legend-dot dot-yellow"></span>${mixedCount} mixed</span>` : ''}
+      ${falseCount ? `<span class="legend-item"><span class="legend-dot dot-red"></span>${falseCount} false</span>` : ''}
+      ${opinions.length ? `<span class="legend-item"><span class="legend-dot dot-gray"></span>${opinions.length} opinion</span>` : ''}
+    </div>
+  `;
 }
 
 function renderClaimsList(claims) {
@@ -172,7 +203,8 @@ function renderClaimsList(claims) {
 
   claims.forEach((claim, i) => {
     const card = document.createElement('div');
-    card.className = `claim-card`;
+    card.className = 'claim-card claim-enter';
+    card.style.animationDelay = `${i * 60}ms`;
     card.dataset.category = claim.category;
 
     const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
@@ -295,6 +327,7 @@ function showSection(name) {
 
 function showError(message) {
   document.getElementById('error-message').textContent = message;
+  document.title = 'YouTube Fact Checker';
   showSection('error');
   resetButton();
 }
@@ -308,6 +341,7 @@ function resetButton() {
 
 function resetUI() {
   stopPolling();
+  document.title = 'YouTube Fact Checker';
   showSection(null);
   ['loading', 'error', 'results', 'queued'].forEach(s => {
     document.getElementById(`${s}-section`).style.display = 'none';

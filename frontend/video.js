@@ -112,6 +112,8 @@ function renderVideo(video) {
 
     <button class="share-btn" onclick="copyShareLink()">Share this page</button>
 
+    <div id="breakdown-bar" class="breakdown-bar-container"></div>
+
     <h3 class="claims-heading">Claims (${video.claims.length})</h3>
     <div class="filter-bar">
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
@@ -120,6 +122,34 @@ function renderVideo(video) {
       <button id="toggle-all-btn" class="filter-btn" onclick="toggleAllClaims()" style="margin-left:auto;">Expand all</button>
     </div>
     <div id="claims-container">${claimsHtml}</div>
+  `;
+
+  renderBreakdownBar(allVideoClaims);
+}
+
+function renderBreakdownBar(claims) {
+  const container = document.getElementById('breakdown-bar');
+  if (!container) return;
+  const facts = claims.filter(c => c.category === 'fact');
+  const opinions = claims.filter(c => c.category === 'opinion');
+  const trueCount = facts.filter(c => c.truth_percentage >= 75).length;
+  const mixedCount = facts.filter(c => c.truth_percentage >= 50 && c.truth_percentage < 75).length;
+  const falseCount = facts.filter(c => c.truth_percentage < 50).length;
+  const total = claims.length || 1;
+
+  container.innerHTML = `
+    <div class="breakdown-segments">
+      ${trueCount ? `<div class="breakdown-seg seg-green" style="width:${(trueCount/total)*100}%"></div>` : ''}
+      ${mixedCount ? `<div class="breakdown-seg seg-yellow" style="width:${(mixedCount/total)*100}%"></div>` : ''}
+      ${falseCount ? `<div class="breakdown-seg seg-red" style="width:${(falseCount/total)*100}%"></div>` : ''}
+      ${opinions.length ? `<div class="breakdown-seg seg-gray" style="width:${(opinions.length/total)*100}%"></div>` : ''}
+    </div>
+    <div class="breakdown-legend">
+      ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}
+      ${mixedCount ? `<span class="legend-item"><span class="legend-dot dot-yellow"></span>${mixedCount} mixed</span>` : ''}
+      ${falseCount ? `<span class="legend-item"><span class="legend-dot dot-red"></span>${falseCount} false</span>` : ''}
+      ${opinions.length ? `<span class="legend-item"><span class="legend-dot dot-gray"></span>${opinions.length} opinion</span>` : ''}
+    </div>
   `;
 }
 
