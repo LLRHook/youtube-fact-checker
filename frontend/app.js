@@ -262,7 +262,7 @@ function renderClaimsList(claims) {
       </div>
       <div class="claim-meta">
         <span class="category-tag">${claim.category}</span>
-        <a href="${ytLink}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;">${timestamp}</a>
+        <a href="${ytLink}" target="_blank" rel="noopener">${timestamp}</a>
         ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
         ${claim.sources && claim.sources.length > 0 ? `<span>${claim.sources.length} source${claim.sources.length > 1 ? 's' : ''}</span>` : ''}
       </div>
@@ -330,9 +330,6 @@ function cancelAnalysis() {
   currentTaskId = null;
   document.title = 'YouTube Fact Checker';
   showSection(null);
-  ['loading', 'error', 'results', 'queued'].forEach(s => {
-    document.getElementById(`${s}-section`).style.display = 'none';
-  });
   resetButton();
 }
 
@@ -377,9 +374,6 @@ function resetUI() {
   stopPolling();
   document.title = 'YouTube Fact Checker';
   showSection(null);
-  ['loading', 'error', 'results', 'queued'].forEach(s => {
-    document.getElementById(`${s}-section`).style.display = 'none';
-  });
   document.getElementById('url-input').value = '';
   document.getElementById('input-error').textContent = '';
   document.getElementById('url-preview').style.display = 'none';

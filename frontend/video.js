@@ -45,6 +45,42 @@ async function loadVideo(videoId) {
   }
 }
 
+function buildClaimCardHtml(c, i) {
+  const badgeClass = getBadgeClass(c.truth_percentage, c.category);
+  const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
+  const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
+  const ts = formatTimestamp(c.timestamp_seconds);
+  const seekSeconds = Math.floor(c.timestamp_seconds);
+
+  let sourcesHtml = '';
+  if (c.sources && c.sources.length > 0) {
+    sourcesHtml = '<div class="claim-sources">' +
+      c.sources.map(s =>
+        `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+        (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
+      ).join('') + '</div>';
+  }
+
+  const borderClass = getBorderClass(c.truth_percentage, c.category);
+  return `
+    <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
+      <div class="claim-header">
+        <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
+        <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
+      </div>
+      <div class="claim-meta">
+        <span class="category-tag">${c.category}</span>
+        <a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>
+        ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
+        ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
+      </div>
+      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
+      <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
+      ${sourcesHtml}
+    </div>
+  `;
+}
+
 function renderVideo(video) {
   const container = document.getElementById('content');
   const sc = scoreColor(video.public_score);
@@ -54,42 +90,8 @@ function renderVideo(video) {
   allVideoClaims = (video.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
   let claimsHtml = '';
-  if (video.claims && video.claims.length > 0) {
-    claimsHtml = video.claims.map((c, i) => {
-      const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-      const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
-      const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
-      const ts = formatTimestamp(c.timestamp_seconds);
-      const seekSeconds = Math.floor(c.timestamp_seconds);
-
-      let sourcesHtml = '';
-      if (c.sources && c.sources.length > 0) {
-        sourcesHtml = '<div class="claim-sources">' +
-          c.sources.map(s =>
-            `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
-            (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
-          ).join('') + '</div>';
-      }
-
-      const borderClass = getBorderClass(c.truth_percentage, c.category);
-      return `
-        <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
-          <div class="claim-header">
-            <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
-            <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
-          </div>
-          <div class="claim-meta">
-            <span class="category-tag">${c.category}</span>
-            <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
-            ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
-            ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
-          </div>
-          <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
-          <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
-          ${sourcesHtml}
-        </div>
-      `;
-    }).join('');
+  if (allVideoClaims.length > 0) {
+    claimsHtml = allVideoClaims.map((c, i) => buildClaimCardHtml(c, i)).join('');
   } else {
     claimsHtml = '<div class="empty-state">No claims for this video.</div>';
   }
@@ -212,41 +214,7 @@ function filterVideoClaims(filter) {
     return;
   }
 
-  container.innerHTML = filtered.map((c, i) => {
-    const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-    const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
-    const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
-    const ts = formatTimestamp(c.timestamp_seconds);
-    const seekSeconds = Math.floor(c.timestamp_seconds);
-
-    let sourcesHtml = '';
-    if (c.sources && c.sources.length > 0) {
-      sourcesHtml = '<div class="claim-sources">' +
-        c.sources.map(s =>
-          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
-          (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
-        ).join('') + '</div>';
-    }
-
-    const borderClass = getBorderClass(c.truth_percentage, c.category);
-    return `
-      <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
-        <div class="claim-header">
-          <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
-          <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
-        </div>
-        <div class="claim-meta">
-          <span class="category-tag">${c.category}</span>
-          <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
-          ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
-          ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
-        </div>
-        <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
-        <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
-        ${sourcesHtml}
-      </div>
-    `;
-  }).join('');
+  container.innerHTML = filtered.map((c, i) => buildClaimCardHtml(c, i)).join('');
   addCardClickListeners('claims-container');
 }
 

@@ -129,7 +129,6 @@ header {
 }
 
 .how-title {
-  font-size: 1rem;
   font-weight: 600;
   color: var(--text-muted);
   text-align: center;
@@ -768,6 +767,8 @@ footer {
 [data-theme="light"] .video-card:hover {
   box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
+
+[data-theme="light"] #check-btn:hover { background: #4946b8; }
 
 [data-theme="light"] .skel::after {
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
