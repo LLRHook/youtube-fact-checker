@@ -88,7 +88,7 @@
     .claim-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
       padding: 1rem 1.2rem; margin-bottom: 0.75rem; transition: border-color 0.2s;
-      border-left: 3px solid var(--border);
+      border-left: 3px solid var(--border); cursor: pointer;
     }
     .claim-card.border-green { border-left-color: var(--green); }
     .claim-card.border-yellow { border-left-color: var(--yellow); }
@@ -107,7 +107,7 @@
     .badge-red { background: rgba(255,71,87,0.15); color: var(--red); }
     .badge-gray { background: rgba(136,136,170,0.15); color: var(--text-muted); }
 
-    .claim-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; }
+    .claim-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.5rem; flex-wrap: wrap; }
     .claim-meta a { color: var(--blue); text-decoration: none; }
     .claim-meta a:hover { text-decoration: underline; }
 
