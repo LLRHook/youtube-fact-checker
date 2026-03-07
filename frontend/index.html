@@ -51,6 +51,28 @@
       </div>
     </section>
 
+    <!-- How It Works -->
+    <section class="how-it-works">
+      <h2 class="how-title">How it works</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <h3>Paste a URL</h3>
+          <p>Drop any YouTube video link (under 10 minutes)</p>
+        </div>
+        <div class="step">
+          <div class="step-number">2</div>
+          <h3>AI extracts claims</h3>
+          <p>Claude identifies every factual claim in the transcript</p>
+        </div>
+        <div class="step">
+          <div class="step-number">3</div>
+          <h3>Web verification</h3>
+          <p>Each claim is searched and scored for accuracy</p>
+        </div>
+      </div>
+    </section>
+
     <!-- Loading Section -->
     <section id="loading-section" class="loading-section" style="display:none;">
       <div class="loading-card">
@@ -124,8 +146,9 @@
       <!-- Claims List -->
       <div id="claims-list" class="claims-list"></div>
 
-      <!-- Reset -->
+      <!-- Actions -->
       <div class="reset-row">
+        <a id="view-report-link" href="#" class="report-link" style="display:none;">View full report</a>
         <button class="reset-btn" onclick="resetUI()">Check Another Video</button>
       </div>
     </section>

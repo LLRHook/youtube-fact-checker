@@ -28,6 +28,7 @@ function renderChannel(data) {
   const videosHtml = data.videos.length > 0
     ? data.videos.map(v => `
         <a class="video-card" href="/video/${v.id}">
+          <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
           <h3>${escapeHtml(v.title || v.id)}</h3>
           <div class="video-card-meta">
             <span class="score-badge ${scoreClass(v.public_score)}">${v.public_score}%</span>

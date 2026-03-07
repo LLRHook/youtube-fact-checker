@@ -147,6 +147,15 @@ function renderResults(data) {
   // Render claims
   renderClaimsList(allClaims);
 
+  // Show "View full report" link
+  const reportLink = document.getElementById('view-report-link');
+  if (data.video_id) {
+    reportLink.href = `/video/${data.video_id}`;
+    reportLink.style.display = 'inline-block';
+  } else {
+    reportLink.style.display = 'none';
+  }
+
   showSection('results');
 }
 
@@ -277,6 +286,7 @@ function resetUI() {
   document.getElementById('url-input').value = '';
   document.getElementById('input-error').textContent = '';
   document.getElementById('url-preview').style.display = 'none';
+  document.getElementById('view-report-link').style.display = 'none';
   resetButton();
   allClaims = [];
 }

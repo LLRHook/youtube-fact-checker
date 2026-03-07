@@ -108,6 +108,59 @@ header {
   min-height: 1.2rem;
 }
 
+/* === How It Works === */
+.how-it-works {
+  margin-bottom: 2rem;
+}
+
+.how-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-align: center;
+  margin-bottom: 1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  font-size: 0.8rem;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.step {
+  text-align: center;
+  padding: 1rem 0.75rem;
+}
+
+.step-number {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: white;
+  font-weight: 700;
+  font-size: 0.9rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.5rem;
+}
+
+.step h3 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.step p {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
 /* === URL Preview === */
 .url-preview {
   display: flex;
@@ -447,6 +500,17 @@ header {
 
 .reset-btn:hover { border-color: var(--accent); }
 
+.report-link {
+  display: inline-block;
+  color: var(--accent);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
+
+.report-link:hover { text-decoration: underline; }
+
 /* Footer */
 footer {
   margin-top: 3rem;
@@ -484,4 +548,5 @@ footer {
   #check-btn { width: 100%; }
   .overall-score { flex-direction: column; text-align: center; }
   .claim-header { flex-direction: column; }
+  .steps { grid-template-columns: 1fr; gap: 0.5rem; }
 }
