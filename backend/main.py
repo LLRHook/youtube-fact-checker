@@ -117,11 +117,15 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
     try:
         # Step 1: Extract transcript
-        tasks[task_id].progress = "Extracting transcript..."
+        task = tasks.get(task_id)
+        if task:
+            task.progress = "Extracting transcript..."
         transcript = await asyncio.to_thread(extract_transcript, youtube_url, settings.MAX_VIDEO_DURATION_SECONDS)
 
         # Step 2: Extract claims
-        tasks[task_id].progress = f"Analyzing transcript ({len(transcript.full_text)} chars)..."
+        task = tasks.get(task_id)
+        if task:
+            task.progress = f"Analyzing transcript ({len(transcript.full_text)} chars)..."
         raw_claims = await asyncio.to_thread(
             extract_claims,
             transcript.full_text,
@@ -140,8 +144,10 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 summary="No verifiable factual claims found in this video.",
                 processing_time_seconds=round(elapsed, 1),
             )
-            tasks[task_id].status = TaskStatus.COMPLETED
-            tasks[task_id].data = result
+            task = tasks.get(task_id)
+            if task:
+                task.status = TaskStatus.COMPLETED
+                task.data = result
 
             await db.update_video_results(
                 video_id,
@@ -162,7 +168,9 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             if t:
                 t.progress = f"Fact-checking claim {completed}/{total}..."
 
-        tasks[task_id].progress = f"Fact-checking {len(raw_claims)} claims..."
+        task = tasks.get(task_id)
+        if task:
+            task.progress = f"Fact-checking {len(raw_claims)} claims..."
         checked_claims = await fact_check_all_claims(raw_claims, on_progress=on_progress)
 
         # Step 4: Build results
@@ -180,18 +188,12 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             for i, c in enumerate(checked_claims)
         ]
 
-        total_weight = 0
-        weighted_sum = 0
-        fact_count = 0
-        opinion_count = 0
-        for c in claims:
-            if c.category == ClaimCategory.FACT:
-                fact_count += 1
-                total_weight += c.confidence
-                weighted_sum += c.truth_percentage * c.confidence
-            elif c.category == ClaimCategory.OPINION:
-                opinion_count += 1
-        overall = round(weighted_sum / total_weight) if total_weight > 0 else (50 if claims else 0)
+        fact_count = sum(1 for c in claims if c.category == ClaimCategory.FACT)
+        opinion_count = sum(1 for c in claims if c.category == ClaimCategory.OPINION)
+        overall = _calculate_public_score(
+            [{"category": c.category.value, "confidence": c.confidence,
+              "truth_percentage": c.truth_percentage} for c in claims]
+        )
 
         summary_parts = [f"Analyzed {len(claims)} statements."]
         if fact_count:
@@ -203,18 +205,20 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         summary = " ".join(summary_parts)
         processing_time = round(elapsed, 1)
 
-        tasks[task_id].status = TaskStatus.COMPLETED
-        tasks[task_id].progress = "Done!"
-        tasks[task_id].data = CheckResult(
-            video_title=transcript.title,
-            video_id=video_id,
-            video_duration_seconds=transcript.duration_seconds,
-            transcript_text=transcript.full_text[:2000],
-            claims=claims,
-            overall_truth_percentage=overall,
-            summary=summary,
-            processing_time_seconds=processing_time,
-        )
+        task = tasks.get(task_id)
+        if task:
+            task.status = TaskStatus.COMPLETED
+            task.progress = "Done!"
+            task.data = CheckResult(
+                video_title=transcript.title,
+                video_id=video_id,
+                video_duration_seconds=transcript.duration_seconds,
+                transcript_text=transcript.full_text[:2000],
+                claims=claims,
+                overall_truth_percentage=overall,
+                summary=summary,
+                processing_time_seconds=processing_time,
+            )
 
         # Write claims before marking video as completed to avoid a window
         # where the video appears completed with zero claims.
@@ -543,6 +547,7 @@ async def public_get_video(video_id: str):
         overall_truth_percentage=video["overall_truth_percentage"],
         public_score=public_score,
         summary=video["summary"],
+        processing_time_seconds=video.get("processing_time_seconds", 0),
         created_at=video["created_at"] or "",
         claims=public_claims,
     ).model_dump()

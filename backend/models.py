@@ -86,6 +86,7 @@ class PublicVideoDetail(BaseModel):
     overall_truth_percentage: int = 0
     public_score: int = 0
     summary: str = ""
+    processing_time_seconds: float = 0
     created_at: str = ""
     claims: list[PublicClaimDetail] = []
 

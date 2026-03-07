@@ -73,6 +73,7 @@ function renderVideo(video) {
       <div class="video-meta">
         ${channelLink}
         ${video.duration_seconds ? `<span>${formatTimestamp(video.duration_seconds)}</span>` : ''}
+        ${video.processing_time_seconds ? `<span>Analyzed in ${video.processing_time_seconds}s</span>` : ''}
         <span title="${absoluteDate(video.created_at)}">${formatDate(video.created_at)}</span>
       </div>
     </div>
