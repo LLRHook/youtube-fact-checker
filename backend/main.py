@@ -350,6 +350,8 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
         raise HTTPException(status_code=400, detail="Invalid YouTube URL.")
 
     video_id = extract_video_id(req.youtube_url)
+    if not video_id:
+        raise HTTPException(status_code=400, detail="Could not extract video ID from URL.")
     client_ip = _get_client_ip(request)
 
     # Dedup: if video already completed in DB, return it
@@ -372,8 +374,8 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     if existing_task and existing_task.status == TaskStatus.PROCESSING:
         return {"task_id": video_id, "status": "processing"}
 
-    # Per-IP rate limit
-    ip_count = await db.count_videos_today_by_ip(client_ip)
+    # Per-IP rate limit (skip for unresolvable IPs to avoid false positives)
+    ip_count = await db.count_videos_today_by_ip(client_ip) if client_ip else 0
     if ip_count >= settings.IP_DAILY_LIMIT:
         raise HTTPException(
             status_code=429,

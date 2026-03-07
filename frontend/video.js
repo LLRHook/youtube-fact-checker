@@ -72,6 +72,7 @@ function renderVideo(video) {
       <h1>${escapeHtml(video.title)}</h1>
       <div class="video-meta">
         ${channelLink}
+        ${video.duration_seconds ? `<span>${formatTimestamp(video.duration_seconds)}</span>` : ''}
         <span title="${absoluteDate(video.created_at)}">${formatDate(video.created_at)}</span>
       </div>
     </div>

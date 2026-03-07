@@ -27,8 +27,9 @@ function absoluteDate(dateStr) {
 }
 
 function formatTimestamp(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
+  const total = Math.round(seconds);
+  const m = Math.floor(total / 60);
+  const s = total % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
 }
 
@@ -295,7 +296,7 @@ function toggleAllClaims(containerId) {
     const toggle = c.querySelector('.claim-toggle');
     if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
   });
-  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
+  if (btn) btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
 /* --- Search Highlight --- */
