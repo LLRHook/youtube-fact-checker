@@ -21,6 +21,8 @@ async function loadChannel(channelName) {
     if (ogTitle) ogTitle.setAttribute('content', `${data.channel} — YouTube Fact Checker`);
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc) ogDesc.setAttribute('content', `${data.video_count} fact-checked video${data.video_count !== 1 ? 's' : ''} with ${Math.round(data.avg_score)}% average accuracy.`);
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc) metaDesc.setAttribute('content', `${data.video_count} fact-checked video${data.video_count !== 1 ? 's' : ''} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
   } catch (err) {
     container.innerHTML = '<div class="empty-state">Error loading channel.</div>';
   }
