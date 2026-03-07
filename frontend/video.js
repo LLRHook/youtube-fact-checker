@@ -90,6 +90,7 @@ function renderVideo(video) {
     <div class="video-embed">
       <iframe id="yt-player"
         src="https://www.youtube-nocookie.com/embed/${video.id}?enablejsapi=1&rel=0"
+        title="${escapeHtml(video.title)}"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen></iframe>
     </div>
@@ -104,7 +105,7 @@ function renderVideo(video) {
 
     <div class="score-section">
       <div class="score-ring">
-        <svg viewBox="0 0 120 120">
+        <svg viewBox="0 0 120 120" role="img" aria-label="Accuracy score: ${video.public_score}%">
           <circle cx="60" cy="60" r="54" stroke="#2a2a4a" stroke-width="8" fill="none"/>
           <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
                   id="score-ring-circle"

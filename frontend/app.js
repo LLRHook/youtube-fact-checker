@@ -463,14 +463,25 @@ document.addEventListener('keydown', (e) => {
     if (pollInterval) {
       cancelAnalysis();
     } else {
-      const input = document.getElementById('url-input');
-      if (input.value) {
-        input.value = '';
-        document.getElementById('url-preview').style.display = 'none';
-        document.getElementById('input-error').textContent = '';
-        input.focus();
+      const expanded = document.querySelectorAll('#claims-list .claim-card.expanded');
+      if (expanded.length > 0) {
+        expanded.forEach(c => {
+          c.classList.remove('expanded');
+          const toggle = c.querySelector('.claim-toggle');
+          if (toggle) toggle.innerHTML = 'Show details &#9662;';
+        });
+        const btn = document.getElementById('toggle-all-btn');
+        if (btn) btn.textContent = 'Expand all';
       } else {
-        input.blur();
+        const input = document.getElementById('url-input');
+        if (input.value) {
+          input.value = '';
+          document.getElementById('url-preview').style.display = 'none';
+          document.getElementById('input-error').textContent = '';
+          input.focus();
+        } else {
+          input.blur();
+        }
       }
     }
   }
