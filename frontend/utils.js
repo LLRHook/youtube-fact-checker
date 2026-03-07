@@ -138,10 +138,8 @@ function updateToggleIcon() {
 }
 
 function updateThemeMeta() {
-  const meta = document.querySelector('meta[name="theme-color"]');
-  if (!meta) return;
   const theme = document.documentElement.getAttribute('data-theme');
-  meta.setAttribute('content', theme === 'light' ? '#f5f5f7' : '#0f0f0f');
+  setMeta('meta[name="theme-color"]', theme === 'light' ? '#f5f5f7' : '#0f0f0f');
 }
 
 initTheme();
@@ -209,6 +207,13 @@ function scoreBadgeHtml(score) {
 function setMeta(selector, content) {
   const el = document.querySelector(selector);
   if (el) el.setAttribute('content', content);
+}
+
+/* --- Source Count --- */
+
+function sourceCountHtml(sources) {
+  if (!sources || sources.length === 0) return '';
+  return `<span>${sources.length} source${sources.length > 1 ? 's' : ''}</span>`;
 }
 
 /* --- Sources HTML --- */

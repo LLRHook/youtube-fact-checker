@@ -175,9 +175,7 @@ function renderResults(data) {
   document.getElementById('video-title').textContent = data.video_title || 'Untitled Video';
   document.getElementById('video-title').dataset.videoId = data.video_id || '';
 
-  const mins = Math.floor(data.video_duration_seconds / 60);
-  const secs = Math.round(data.video_duration_seconds % 60);
-  document.getElementById('video-duration').textContent = `${mins}:${secs.toString().padStart(2, '0')} duration`;
+  document.getElementById('video-duration').textContent = `${formatTimestamp(data.video_duration_seconds)} duration`;
   document.getElementById('processing-time').textContent = `Analyzed in ${data.processing_time_seconds}s`;
 
   // Overall score
@@ -235,7 +233,6 @@ function renderClaimsList(claims) {
     const borderClass = getBorderClass(claim.truth_percentage, claim.category);
     card.className = `claim-card claim-enter ${borderClass}`;
     card.style.animationDelay = `${i * 60}ms`;
-    card.dataset.category = claim.category;
 
     const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
     const bt = badgeText(claim.truth_percentage, claim.category);
@@ -255,7 +252,7 @@ function renderClaimsList(claims) {
         <span class="category-tag">${claim.category}</span>
         <a href="${ytLink}" target="_blank" rel="noopener">${timestamp}</a>
         ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
-        ${claim.sources && claim.sources.length > 0 ? `<span>${claim.sources.length} source${claim.sources.length > 1 ? 's' : ''}</span>` : ''}
+        ${sourceCountHtml(claim.sources)}
       </div>
       <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">
         Show details &#9662;

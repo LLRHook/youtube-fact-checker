@@ -63,7 +63,7 @@ function buildClaimCardHtml(c, i) {
         <span class="category-tag">${c.category}</span>
         <a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>
         ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
-        ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
+        ${sourceCountHtml(c.sources)}
       </div>
       <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
       <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>

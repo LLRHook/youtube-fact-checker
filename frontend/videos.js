@@ -25,16 +25,15 @@ async function loadVideos(page) {
     totalVideos = data.total;
     currentPage = data.page;
     totalPages = data.pages;
-    const skel = document.getElementById('videos-skeleton');
-    if (skel) skel.style.display = 'none';
     document.title = `${totalVideos} Videos — YouTube Fact Checker`;
     applyFilters();
     renderPagination();
   } catch (err) {
-    const skel = document.getElementById('videos-skeleton');
-    if (skel) skel.style.display = 'none';
     document.getElementById('empty').textContent = 'Error loading videos.';
     document.getElementById('empty').style.display = 'block';
+  } finally {
+    const skel = document.getElementById('videos-skeleton');
+    if (skel) skel.style.display = 'none';
   }
 }
 
