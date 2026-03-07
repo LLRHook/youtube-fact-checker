@@ -1,5 +1,4 @@
 from pydantic import BaseModel
-from typing import Optional
 from enum import Enum
 
 
@@ -52,8 +51,8 @@ class TaskResponse(BaseModel):
     task_id: str
     status: TaskStatus
     progress: str = ""
-    data: Optional[CheckResult] = None
-    error: Optional[str] = None
+    data: CheckResult | None = None
+    error: str | None = None
 
 
 # --- Public models ---

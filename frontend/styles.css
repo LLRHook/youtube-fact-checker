@@ -756,12 +756,6 @@ header {
 .share-btn:hover { border-color: var(--accent); color: var(--text); }
 .share-btn--link { text-decoration: none; display: inline-flex; align-items: center; }
 
-#claims-container {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
 /* === Video Detail Skeletons === */
 .skel-video { width: 100%; padding-bottom: 56.25%; border-radius: 12px; margin-bottom: 1.5rem; }
 .skel-title { height: 1.4rem; width: 75%; margin-bottom: 0.5rem; }

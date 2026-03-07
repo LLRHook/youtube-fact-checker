@@ -112,7 +112,7 @@ function renderVideo(video) {
       <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
       <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims('claims-container')">Expand all</button>
     </div>
-    <div id="claims-container">${claimsHtml}</div>
+    <div id="claims-container" class="claims-list">${claimsHtml}</div>
   `;
 
   addCardClickListeners('claims-container');

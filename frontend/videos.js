@@ -88,20 +88,7 @@ function renderGrid(videos) {
   empty.style.display = 'none';
 
   const query = document.getElementById('search-input').value.toLowerCase().trim();
-  grid.innerHTML = videos.map(v => `
-    <a class="video-card" href="/video/${v.id}">
-      <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
-      <h3>${highlightMatch(v.title || v.id, query)}</h3>
-      <div class="video-card-meta">
-        <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">
-          ${highlightMatch(v.channel || 'Unknown', query)}
-        </span>
-        ${scoreBadgeHtml(v.public_score)}
-        <span>${v.claim_count} claims</span>
-        <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
-      </div>
-    </a>
-  `).join('');
+  grid.innerHTML = videos.map(v => buildVideoCardHtml(v, { query, showChannel: true })).join('');
 }
 
 function renderPagination() {
@@ -151,16 +138,6 @@ function goToPage(page) {
   loadVideos(page);
 }
 
-function highlightMatch(text, query) {
-  const escaped = escapeHtml(text);
-  if (!query) return escaped;
-  const idx = text.toLowerCase().indexOf(query);
-  if (idx === -1) return escaped;
-  const before = escapeHtml(text.slice(0, idx));
-  const match = escapeHtml(text.slice(idx, idx + query.length));
-  const after = escapeHtml(text.slice(idx + query.length));
-  return `${before}<mark class="search-highlight">${match}</mark>${after}`;
-}
 
 function toggleClearBtn() {
   const btn = document.getElementById('search-clear');

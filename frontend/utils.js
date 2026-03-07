@@ -299,6 +299,38 @@ function toggleAllClaims(containerId) {
   btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
+/* --- Search Highlight --- */
+
+function highlightMatch(text, query) {
+  const escaped = escapeHtml(text);
+  if (!query) return escaped;
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return escaped;
+  const before = escapeHtml(text.slice(0, idx));
+  const match = escapeHtml(text.slice(idx, idx + query.length));
+  const after = escapeHtml(text.slice(idx + query.length));
+  return `${before}<mark class="search-highlight">${match}</mark>${after}`;
+}
+
+/* --- Video Card HTML (shared for listings) --- */
+
+function buildVideoCardHtml(v, { query, showChannel } = {}) {
+  const title = query ? highlightMatch(v.title || v.id, query) : escapeHtml(v.title || v.id);
+  const channelHtml = showChannel
+    ? `<span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">${query ? highlightMatch(v.channel || 'Unknown', query) : escapeHtml(v.channel || 'Unknown')}</span>`
+    : '';
+  return `<a class="video-card" href="/video/${v.id}">
+    <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
+    <h3>${title}</h3>
+    <div class="video-card-meta">
+      ${channelHtml}
+      ${scoreBadgeHtml(v.public_score)}
+      <span>${v.claim_count} claims</span>
+      <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
+    </div>
+  </a>`;
+}
+
 /* --- YouTube URL Regex --- */
 
 const YT_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;

@@ -51,7 +51,7 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     params = {
         "q": query,
         "count": num_results,
-        "text_decorations": False,
+        "text_decorations": "false",
         "search_lang": "en",
     }
 

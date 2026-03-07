@@ -42,17 +42,7 @@ function renderChannel(data) {
   const container = document.getElementById('content');
 
   const videosHtml = data.videos.length > 0
-    ? data.videos.map(v => `
-        <a class="video-card" href="/video/${v.id}">
-          <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
-          <h3>${escapeHtml(v.title || v.id)}</h3>
-          <div class="video-card-meta">
-            ${scoreBadgeHtml(v.public_score)}
-            <span>${v.claim_count} claims</span>
-            <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
-          </div>
-        </a>
-      `).join('')
+    ? data.videos.map(v => buildVideoCardHtml(v)).join('')
     : '<div class="empty-state">No videos for this channel.</div>';
 
   const trueCount = data.videos.filter(v => v.public_score >= 75).length;
