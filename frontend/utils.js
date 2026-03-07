@@ -133,8 +133,10 @@ function updateToggleIcon() {
   const btn = document.getElementById('theme-toggle');
   if (!btn) return;
   const theme = document.documentElement.getAttribute('data-theme');
+  const label = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
   btn.innerHTML = theme === 'light' ? '&#9790;' : '&#9728;';
-  btn.title = theme === 'light' ? 'Switch to dark mode' : 'Switch to light mode';
+  btn.title = label;
+  btn.setAttribute('aria-label', label);
 }
 
 function updateThemeMeta() {

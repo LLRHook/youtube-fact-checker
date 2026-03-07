@@ -610,8 +610,6 @@ header {
 .search-wrapper .search-input { width: 100%; min-width: 0; padding-right: 2rem; }
 
 .search-input {
-  flex: 1;
-  min-width: 200px;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -1123,7 +1121,7 @@ footer {
   .container, .page-container { max-width: 100%; padding: 0; }
   header, .input-section, .how-it-works, footer, .page-footer,
   .cancel-btn, .reset-btn, .reset-row, .filter-bar, .claim-toggle,
-  .coffee-btn, .back-to-top, .share-btn, .kbd-hint,
+  .coffee-btn, .back-to-top, .share-btn, .kbd-hint, #theme-toggle,
   #loading-section, #error-section, #queued-section { display: none !important; }
   .claim-card { break-inside: avoid; border: 1px solid #ccc; }
   .claim-card .claim-reasoning, .claim-card .claim-sources { display: block !important; }

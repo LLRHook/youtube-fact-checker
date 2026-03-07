@@ -58,7 +58,6 @@ function renderChannel(data) {
   const trueCount = data.videos.filter(v => v.public_score >= 75).length;
   const mixedCount = data.videos.filter(v => v.public_score >= 50 && v.public_score < 75).length;
   const falseCount = data.videos.filter(v => v.public_score < 50).length;
-  const total = data.videos.length || 1;
 
   const distBarHtml = data.videos.length > 0
     ? `<div class="breakdown-bar-container">${buildBreakdownHtml([

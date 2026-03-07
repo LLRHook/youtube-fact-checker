@@ -213,20 +213,8 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
         # Write claims before marking video as completed to avoid a window
         # where the video appears completed with zero claims.
-        claims_for_db = [
-            {
-                "text": c["text"],
-                "timestamp_seconds": c.get("timestamp_seconds", 0),
-                "truth_percentage": c.get("truth_percentage", 50),
-                "confidence": c.get("confidence", 0.5),
-                "reasoning": c.get("reasoning", ""),
-                "category": c.get("category", "fact"),
-                "sources": c.get("sources", []),
-            }
-            for c in checked_claims
-        ]
         await db.delete_claims_for_video(video_id)
-        await db.create_claims(video_id, claims_for_db)
+        await db.create_claims(video_id, checked_claims)
         await db.update_video_results(
             video_id,
             title=transcript.title,
