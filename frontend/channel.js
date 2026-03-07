@@ -35,7 +35,7 @@ function renderChannel(data) {
           <div class="video-card-meta">
             <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
             <span>${v.claim_count} claims</span>
-            <span>${formatDate(v.created_at)}</span>
+            <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
           </div>
         </a>
       `).join('')
@@ -85,6 +85,11 @@ function formatDate(dateStr) {
   if (diffHr < 24) return `${diffHr}h ago`;
   if (diffDay < 7) return `${diffDay}d ago`;
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function absoluteDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function escapeHtml(str) {
