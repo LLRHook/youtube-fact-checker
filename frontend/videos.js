@@ -1,6 +1,12 @@
 /* YouTube Fact Checker — Public Video Listing */
 
 let allVideos = [];
+let searchTimer = null;
+
+function debouncedApplyFilters() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(applyFilters, 200);
+}
 
 document.addEventListener('DOMContentLoaded', () => {
   loadVideos();
@@ -76,7 +82,7 @@ function renderGrid(videos) {
         <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">
           ${escapeHtml(v.channel || 'Unknown')}
         </span>
-        <span class="score-badge ${scoreClass(v.public_score)}">${v.public_score}%</span>
+        <span class="score-badge ${scoreClass(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
         <span>${v.claim_count} claims</span>
         <span>${formatDate(v.created_at)}</span>
       </div>
@@ -88,6 +94,12 @@ function scoreClass(score) {
   if (score >= 75) return 'score-green';
   if (score >= 50) return 'score-yellow';
   return 'score-red';
+}
+
+function verdictLabel(score) {
+  if (score >= 75) return 'True';
+  if (score >= 50) return 'Mixed';
+  return 'False';
 }
 
 function formatDate(dateStr) {

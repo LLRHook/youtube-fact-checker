@@ -288,6 +288,12 @@ header {
   padding: 0.6rem 1.2rem;
   cursor: pointer;
   font-size: 0.9rem;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.error-card button:hover {
+  border-color: var(--accent);
+  background: var(--surface);
 }
 
 /* === Results === */

@@ -79,7 +79,7 @@
     </div>
 
     <div class="toolbar">
-      <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="applyFilters()">
+      <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters()">
       <select class="sort-select" id="sort-select" onchange="applyFilters()">
         <option value="date-desc">Newest first</option>
         <option value="date-asc">Oldest first</option>

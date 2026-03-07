@@ -31,7 +31,7 @@ function renderChannel(data) {
           <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
           <h3>${escapeHtml(v.title || v.id)}</h3>
           <div class="video-card-meta">
-            <span class="score-badge ${scoreClass(v.public_score)}">${v.public_score}%</span>
+            <span class="score-badge ${scoreClass(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
             <span>${v.claim_count} claims</span>
             <span>${formatDate(v.created_at)}</span>
           </div>
@@ -55,6 +55,12 @@ function scoreClass(score) {
   if (score >= 75) return 'score-green';
   if (score >= 50) return 'score-yellow';
   return 'score-red';
+}
+
+function verdictLabel(score) {
+  if (score >= 75) return 'True';
+  if (score >= 50) return 'Mixed';
+  return 'False';
 }
 
 function formatDate(dateStr) {
