@@ -266,7 +266,8 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
 
 function setActiveFilter(filter) {
   document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+  const btn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
+  if (btn) btn.classList.add('active');
 }
 
 /* --- Collapse All Cards (shared) --- */

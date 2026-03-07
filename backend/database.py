@@ -134,7 +134,7 @@ async def update_video_results(
                 title = ?, channel = ?, duration_seconds = ?,
                 transcript_text = ?, overall_truth_percentage = ?,
                 summary = ?, processing_time_seconds = ?,
-                status = 'completed', updated_at = datetime('now')
+                status = 'completed', error = NULL, updated_at = datetime('now')
             WHERE id = ?""",
             (
                 title, channel, duration_seconds,

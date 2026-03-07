@@ -158,7 +158,9 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
         # Step 3: Fact-check each claim
         def on_progress(completed, total):
-            tasks[task_id].progress = f"Fact-checking claim {completed}/{total}..."
+            t = tasks.get(task_id)
+            if t:
+                t.progress = f"Fact-checking claim {completed}/{total}..."
 
         tasks[task_id].progress = f"Fact-checking {len(raw_claims)} claims..."
         checked_claims = await fact_check_all_claims(raw_claims, on_progress=on_progress)
@@ -246,9 +248,14 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
 async def queue_processor():
     """Background loop that processes queued videos."""
+    first_run = True
     while True:
         try:
-            await asyncio.sleep(settings.QUEUE_INTERVAL_MINUTES * 60)
+            if first_run:
+                first_run = False
+                await asyncio.sleep(5)
+            else:
+                await asyncio.sleep(settings.QUEUE_INTERVAL_MINUTES * 60)
             queued = await db.get_queued_videos(limit=5)
             for video in queued:
                 video_id = video["id"]
@@ -521,7 +528,7 @@ async def public_get_video(video_id: str):
                 Source(title=s["title"], url=s["url"], snippet=s["snippet"])
                 for s in c.get("sources", [])
             ],
-        ).model_dump()
+        )
         for c in claims
     ]
 
