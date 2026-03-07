@@ -215,6 +215,7 @@ function renderClaimsList(claims) {
 
     const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
     const badgeText = claim.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(claim.truth_percentage)} · ${claim.truth_percentage}%`;
+    const badgeTitle = claim.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${claim.truth_percentage}% — ${getVerdictLabel(claim.truth_percentage)}`;
 
     const timestamp = formatTimestamp(claim.timestamp_seconds);
     const ytLink = `https://youtube.com/watch?v=${document.getElementById('video-title').dataset.videoId || ''}&t=${Math.floor(claim.timestamp_seconds)}`;
@@ -232,7 +233,7 @@ function renderClaimsList(claims) {
     card.innerHTML = `
       <div class="claim-header">
         <span class="claim-text">${escapeHtml(claim.text)}</span>
-        <span class="claim-badge ${badgeClass}">${badgeText}</span>
+        <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
       </div>
       <div class="claim-meta">
         <span class="category-tag">${claim.category}</span>

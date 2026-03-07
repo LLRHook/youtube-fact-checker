@@ -17,8 +17,12 @@ async function loadVideos() {
     const resp = await fetch('/api/videos');
     if (!resp.ok) throw new Error('Failed to load videos');
     allVideos = await resp.json();
+    const skel = document.getElementById('videos-skeleton');
+    if (skel) skel.style.display = 'none';
     applyFilters();
   } catch (err) {
+    const skel = document.getElementById('videos-skeleton');
+    if (skel) skel.style.display = 'none';
     document.getElementById('empty').textContent = 'Error loading videos.';
     document.getElementById('empty').style.display = 'block';
   }
@@ -82,7 +86,7 @@ function renderGrid(videos) {
         <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">
           ${escapeHtml(v.channel || 'Unknown')}
         </span>
-        <span class="score-badge ${scoreClass(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
+        <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
         <span>${v.claim_count} claims</span>
         <span>${formatDate(v.created_at)}</span>
       </div>

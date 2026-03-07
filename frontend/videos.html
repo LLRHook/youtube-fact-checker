@@ -66,6 +66,30 @@
     }
     .sort-select:focus { border-color: var(--accent); }
     .results-count { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+    .skeleton-loader { animation: fadeIn 0.3s ease; }
+    .skel {
+      background: var(--surface);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .skel-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .skel-card { height: 240px; border-radius: 12px; }
   </style>
 </head>
 <body>
@@ -90,6 +114,14 @@
     </div>
 
     <div id="results-count" class="results-count"></div>
+    <div id="videos-skeleton" class="skeleton-loader skel-grid">
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+      <div class="skel skel-card"></div>
+    </div>
     <div id="video-grid" class="video-grid"></div>
     <div id="empty" class="empty-state" style="display:none;">No videos checked yet. <a href="/">Check one now!</a></div>
 

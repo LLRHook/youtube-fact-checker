@@ -31,7 +31,7 @@ function renderChannel(data) {
           <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
           <h3>${escapeHtml(v.title || v.id)}</h3>
           <div class="video-card-meta">
-            <span class="score-badge ${scoreClass(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
+            <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
             <span>${v.claim_count} claims</span>
             <span>${formatDate(v.created_at)}</span>
           </div>

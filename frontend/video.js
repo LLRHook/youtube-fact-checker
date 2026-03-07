@@ -37,6 +37,7 @@ function renderVideo(video) {
     claimsHtml = video.claims.map((c, i) => {
       const badgeClass = getBadgeClass(c.truth_percentage, c.category);
       const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
+      const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${getVerdictLabel(c.truth_percentage)}`;
       const ts = formatTimestamp(c.timestamp_seconds);
       const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -54,7 +55,7 @@ function renderVideo(video) {
         <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
           <div class="claim-header">
             <span class="claim-text">${escapeHtml(c.text)}</span>
-            <span class="claim-badge ${badgeClass}">${badgeText}</span>
+            <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
           </div>
           <div class="claim-meta">
             <span class="category-tag">${c.category}</span>
@@ -205,6 +206,7 @@ function filterVideoClaims(filter) {
   container.innerHTML = filtered.map((c, i) => {
     const badgeClass = getBadgeClass(c.truth_percentage, c.category);
     const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
+    const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${getVerdictLabel(c.truth_percentage)}`;
     const ts = formatTimestamp(c.timestamp_seconds);
     const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -222,7 +224,7 @@ function filterVideoClaims(filter) {
       <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
         <div class="claim-header">
           <span class="claim-text">${escapeHtml(c.text)}</span>
-          <span class="claim-badge ${badgeClass}">${badgeText}</span>
+          <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
         </div>
         <div class="claim-meta">
           <span class="category-tag">${c.category}</span>
