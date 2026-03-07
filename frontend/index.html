@@ -48,6 +48,7 @@
         </button>
       </div>
       <p id="input-error" class="error-text"></p>
+      <p class="kbd-hint">Press <kbd>/</kbd> to focus</p>
       <!-- URL Preview -->
       <div id="url-preview" class="url-preview" style="display:none;">
         <img id="preview-thumb" alt="" loading="lazy">
@@ -106,7 +107,10 @@
       <div class="error-card">
         <span class="error-icon">&#9888;</span>
         <p id="error-message"></p>
-        <button onclick="resetUI()">Try Another Video</button>
+        <div style="display:flex;gap:0.5rem;justify-content:center;margin-top:1rem;">
+          <button onclick="retryVideo()">Retry</button>
+          <button onclick="resetUI()">Try Another Video</button>
+        </div>
       </div>
     </section>
 

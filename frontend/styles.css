@@ -696,6 +696,36 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
+/* === Keyboard Hint === */
+.kbd-hint {
+  color: var(--text-muted);
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  text-align: right;
+}
+
+.kbd-hint kbd {
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 0.1rem 0.35rem;
+  font-family: inherit;
+  font-size: 0.7rem;
+}
+
+/* === Print === */
+@media print {
+  body { background: white; color: #111; }
+  .container, .page-container { max-width: 100%; padding: 0; }
+  header, .input-section, .how-it-works, footer, .page-footer,
+  .cancel-btn, .reset-btn, .reset-row, .filter-bar, .claim-toggle,
+  .coffee-btn, .back-to-top, .share-btn, .kbd-hint,
+  #loading-section, #error-section, #queued-section { display: none !important; }
+  .claim-card { break-inside: avoid; border: 1px solid #ccc; }
+  .claim-card .claim-reasoning, .claim-card .claim-sources { display: block !important; }
+  .overall-score, .score-section { border: 1px solid #ccc; }
+}
+
 /* === Reduced Motion === */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

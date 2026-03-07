@@ -404,6 +404,16 @@ function showError(message) {
   resetButton();
 }
 
+function retryVideo() {
+  const url = document.getElementById('url-input').value.trim();
+  if (url) {
+    showSection(null);
+    submitVideo();
+  } else {
+    resetUI();
+  }
+}
+
 function resetButton() {
   const btn = document.getElementById('check-btn');
   btn.disabled = false;
