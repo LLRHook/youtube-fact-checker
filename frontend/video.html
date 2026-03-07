@@ -76,7 +76,12 @@
     .claim-card {
       background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
       padding: 1rem 1.2rem; margin-bottom: 0.75rem; transition: border-color 0.2s;
+      border-left: 3px solid var(--border);
     }
+    .claim-card.border-green { border-left-color: var(--green); }
+    .claim-card.border-yellow { border-left-color: var(--yellow); }
+    .claim-card.border-red { border-left-color: var(--red); }
+    .claim-card.border-gray { border-left-color: var(--text-muted); }
     .claim-card:hover { border-color: var(--accent); }
 
     .claim-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: 0.5rem; }

@@ -203,7 +203,8 @@ function renderClaimsList(claims) {
 
   claims.forEach((claim, i) => {
     const card = document.createElement('div');
-    card.className = 'claim-card claim-enter';
+    const borderClass = getBorderClass(claim.truth_percentage, claim.category);
+    card.className = `claim-card claim-enter ${borderClass}`;
     card.style.animationDelay = `${i * 60}ms`;
     card.dataset.category = claim.category;
 
@@ -305,6 +306,13 @@ function getBadgeClass(score, category) {
   return 'badge-red';
 }
 
+function getBorderClass(score, category) {
+  if (category === 'opinion') return 'border-gray';
+  if (score >= 75) return 'border-green';
+  if (score >= 50) return 'border-yellow';
+  return 'border-red';
+}
+
 function formatTimestamp(seconds) {
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
@@ -323,6 +331,8 @@ function showSection(name) {
   ['loading', 'error', 'results', 'queued'].forEach(s => {
     document.getElementById(`${s}-section`).style.display = s === name ? 'block' : 'none';
   });
+  const howSection = document.querySelector('.how-it-works');
+  if (howSection) howSection.style.display = name ? 'none' : '';
 }
 
 function showError(message) {

@@ -49,8 +49,9 @@ function renderVideo(video) {
           ).join('') + '</div>';
       }
 
+      const borderClass = getBorderClass(c.truth_percentage, c.category);
       return `
-        <div class="claim-card">
+        <div class="claim-card ${borderClass}">
           <div class="claim-header">
             <span class="claim-text">${escapeHtml(c.text)}</span>
             <span class="claim-badge ${badgeClass}">${badgeText}</span>
@@ -204,8 +205,9 @@ function filterVideoClaims(filter) {
         ).join('') + '</div>';
     }
 
+    const borderClass = getBorderClass(c.truth_percentage, c.category);
     return `
-      <div class="claim-card">
+      <div class="claim-card ${borderClass}">
         <div class="claim-header">
           <span class="claim-text">${escapeHtml(c.text)}</span>
           <span class="claim-badge ${badgeClass}">${badgeText}</span>
@@ -235,6 +237,13 @@ function getBadgeClass(score, category) {
   if (score >= 75) return 'badge-green';
   if (score >= 50) return 'badge-yellow';
   return 'badge-red';
+}
+
+function getBorderClass(score, category) {
+  if (category === 'opinion') return 'border-gray';
+  if (score >= 75) return 'border-green';
+  if (score >= 50) return 'border-yellow';
+  return 'border-red';
 }
 
 function formatTimestamp(seconds) {
