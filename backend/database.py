@@ -70,6 +70,7 @@ async def init_db():
             CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status);
             CREATE INDEX IF NOT EXISTS idx_videos_created_at ON videos(created_at);
             CREATE INDEX IF NOT EXISTS idx_videos_status_created ON videos(status, created_at);
+            CREATE INDEX IF NOT EXISTS idx_videos_channel_status_created ON videos(channel, status, created_at);
             CREATE INDEX IF NOT EXISTS idx_claims_video_id ON claims(video_id);
             CREATE INDEX IF NOT EXISTS idx_claim_sources_claim_id ON claim_sources(claim_id);
         """)

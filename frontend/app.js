@@ -426,6 +426,21 @@ document.addEventListener('keydown', (e) => {
   }
 });
 
+// Load site stats
+(async function loadStats() {
+  try {
+    const resp = await fetch('/api/stats');
+    if (!resp.ok) return;
+    const data = await resp.json();
+    if (data.video_count > 0) {
+      document.getElementById('stat-videos').textContent = data.video_count;
+      document.getElementById('stat-claims').textContent = data.claim_count;
+      document.getElementById('stat-channels').textContent = data.channel_count;
+      document.getElementById('site-stats').style.display = '';
+    }
+  } catch (_) {}
+})();
+
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();
   const preview = document.getElementById('url-preview');

@@ -1,8 +1,11 @@
 """Fact-checking service: combines web search + LLM truth scoring."""
 
 import asyncio
+import logging
 import anthropic
 from backend.config import settings
+
+logger = logging.getLogger(__name__)
 from backend.services.search_service import search_brave, format_search_results
 from backend.utils.json_parser import parse_llm_json
 
@@ -65,7 +68,7 @@ async def fact_check_claim(claim_text: str) -> dict:
     try:
         search_results = await search_brave(search_query, num_results=settings.SEARCH_RESULTS_PER_CLAIM)
     except Exception as e:
-        # If search fails, return uncertain result
+        logger.warning("Search failed for claim '%.50s': %s", claim_text, e)
         return {
             "truth_percentage": 50,
             "confidence": 0.2,
@@ -97,6 +100,7 @@ async def fact_check_claim(claim_text: str) -> dict:
             raise ValueError("Failed to parse LLM JSON response")
 
     except Exception as e:
+        logger.warning("LLM evaluation failed for claim '%.50s': %s", claim_text, e)
         return {
             "truth_percentage": 50,
             "confidence": 0.2,

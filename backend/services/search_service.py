@@ -67,10 +67,13 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     results = []
     web_results = data.get("web", {}).get("results", [])
     for item in web_results[:num_results]:
+        url = item.get("url", "")
+        if not url or not url.startswith(("https://", "http://")):
+            continue
         results.append(
             SearchResult(
                 title=item.get("title", ""),
-                url=item.get("url", ""),
+                url=url,
                 snippet=item.get("description", ""),
             )
         )
