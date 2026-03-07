@@ -13,7 +13,15 @@ async function loadVideo(videoId) {
   try {
     const resp = await fetch(`/api/videos/${videoId}`);
     if (!resp.ok) {
-      container.innerHTML = '<div class="empty-state">Video not found.</div>';
+      container.innerHTML = `<div class="empty-state">
+        <p style="font-size:1.1rem;margin-bottom:0.75rem;">Video not found</p>
+        <p style="margin-bottom:1rem;">This video hasn't been fact-checked yet, or the URL is invalid.</p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+          <a href="/" style="color:var(--accent);text-decoration:none;font-weight:600;">Check a video</a>
+          <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+        </div>
+      </div>`;
+      document.title = 'Not Found — YouTube Fact Checker';
       return;
     }
     const video = await resp.json();
@@ -29,7 +37,11 @@ async function loadVideo(videoId) {
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc && video.summary) metaDesc.setAttribute('content', video.summary);
   } catch (err) {
-    container.innerHTML = '<div class="empty-state">Error loading video.</div>';
+    container.innerHTML = `<div class="empty-state">
+      <p style="font-size:1.1rem;margin-bottom:0.75rem;">Error loading video</p>
+      <p style="margin-bottom:1rem;">Something went wrong. Please try again later.</p>
+      <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+    </div>`;
   }
 }
 

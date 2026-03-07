@@ -536,6 +536,8 @@ header {
 .claim-text {
   font-size: 0.95rem;
   flex: 1;
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .claim-num {

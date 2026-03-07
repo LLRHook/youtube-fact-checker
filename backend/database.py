@@ -188,7 +188,7 @@ async def count_videos_today() -> int:
     """Count non-queued videos created today."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE status != 'queued' AND date(created_at) = date('now')"
+            "SELECT COUNT(*) FROM videos WHERE status != 'queued' AND created_at >= date('now')"
         ) as cursor:
             row = await cursor.fetchone()
             return row[0] if row else 0
@@ -198,7 +198,7 @@ async def count_videos_today_by_ip(ip: str) -> int:
     """Count videos submitted by a specific IP today."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND date(created_at) = date('now')",
+            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND created_at >= date('now')",
             (ip,),
         ) as cursor:
             row = await cursor.fetchone()

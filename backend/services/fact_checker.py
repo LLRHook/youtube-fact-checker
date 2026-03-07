@@ -109,11 +109,13 @@ async def fact_check_claim(claim_text: str) -> dict:
             "category": "unclear",
         }
 
-    # Combine with sources
-    sources = [
-        {"title": r.title, "url": r.url, "snippet": r.snippet}
-        for r in search_results
-    ]
+    # Combine with sources, deduplicating by URL
+    seen_urls = set()
+    sources = []
+    for r in search_results:
+        if r.url not in seen_urls:
+            seen_urls.add(r.url)
+            sources.append({"title": r.title, "url": r.url, "snippet": r.snippet})
 
     return {
         "truth_percentage": max(0, min(100, result.get("truth_percentage", 50))),
@@ -137,7 +139,7 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
     """
     total = len(claims)
     results = [None] * total
-    semaphore = asyncio.Semaphore(3)
+    semaphore = asyncio.Semaphore(settings.FACT_CHECK_CONCURRENCY)
     completed_count = 0
     lock = asyncio.Lock()
 
