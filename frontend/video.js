@@ -151,7 +151,7 @@ function renderVideo(video) {
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
       <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
       <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
-      <button id="toggle-all-btn" class="filter-btn" onclick="toggleAllClaims()" style="margin-left:auto;">Expand all</button>
+      <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims()">Expand all</button>
     </div>
     <div id="claims-container">${claimsHtml}</div>
   `;
@@ -165,14 +165,6 @@ function renderVideo(video) {
     const ring = document.getElementById('score-ring-circle');
     if (ring) ring.setAttribute('stroke-dashoffset', offset);
   });
-}
-
-function toggleClaim(btn) {
-  const card = btn.closest('.claim-card');
-  card.classList.toggle('expanded');
-  btn.innerHTML = card.classList.contains('expanded')
-    ? 'Hide details &#9652;'
-    : 'Show details &#9662;';
 }
 
 function toggleAllClaims() {
@@ -221,15 +213,6 @@ function copyShareLink() {
     btn.textContent = 'Copy failed';
     setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
   }
-}
-
-function addCardClickListeners(containerId) {
-  document.querySelectorAll(`#${containerId} .claim-card`).forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('a')) return;
-      toggleClaim(card.querySelector('.claim-toggle'));
-    });
-  });
 }
 
 document.addEventListener('keydown', (e) => {

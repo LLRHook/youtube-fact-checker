@@ -498,6 +498,8 @@ header {
   border-color: var(--accent);
 }
 
+.filter-btn--end { margin-left: auto; }
+
 /* Claims */
 .claims-list {
   display: flex;
@@ -648,6 +650,24 @@ header {
 
 .sort-select:focus { border-color: var(--accent); }
 .results-count { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
+
+.no-results {
+  text-align: center;
+  padding: 2rem;
+  grid-column: 1 / -1;
+}
+.no-results p { color: var(--text-muted); margin-bottom: 0.75rem; }
+
+.clear-search-btn {
+  background: var(--surface);
+  color: var(--accent);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+.clear-search-btn:hover { border-color: var(--accent); }
 
 .search-highlight {
   background: rgba(108,99,255,0.3);

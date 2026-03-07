@@ -146,6 +146,25 @@ function updateThemeMeta() {
 
 initTheme();
 
+/* --- Claim Card Interactions --- */
+
+function toggleClaim(btn) {
+  const card = btn.closest('.claim-card');
+  card.classList.toggle('expanded');
+  btn.innerHTML = card.classList.contains('expanded')
+    ? 'Hide details &#9652;'
+    : 'Show details &#9662;';
+}
+
+function addCardClickListeners(containerId) {
+  document.querySelectorAll(`#${containerId} .claim-card`).forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      toggleClaim(card.querySelector('.claim-toggle'));
+    });
+  });
+}
+
 /* --- Filter Counts --- */
 
 function updateFilterCounts(claims) {

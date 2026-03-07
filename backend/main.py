@@ -166,20 +166,19 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         checked_claims = await fact_check_all_claims(raw_claims, on_progress=on_progress)
 
         # Step 4: Build results
-        claims = []
-        for i, c in enumerate(checked_claims):
-            claims.append(
-                Claim(
-                    id=f"claim-{i+1}",
-                    text=c["text"],
-                    timestamp_seconds=c.get("timestamp_seconds", 0),
-                    truth_percentage=c.get("truth_percentage", 50),
-                    confidence=c.get("confidence", 0.5),
-                    reasoning=c.get("reasoning", ""),
-                    sources=[Source(**s) for s in c.get("sources", [])],
-                    category=ClaimCategory(c.get("category", "fact")),
-                )
+        claims = [
+            Claim(
+                id=f"claim-{i+1}",
+                text=c["text"],
+                timestamp_seconds=c.get("timestamp_seconds", 0),
+                truth_percentage=c.get("truth_percentage", 50),
+                confidence=c.get("confidence", 0.5),
+                reasoning=c.get("reasoning", ""),
+                sources=[Source(**s) for s in c.get("sources", [])],
+                category=ClaimCategory(c.get("category", "fact")),
             )
+            for i, c in enumerate(checked_claims)
+        ]
 
         total_weight = 0
         weighted_sum = 0

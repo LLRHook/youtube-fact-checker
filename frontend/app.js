@@ -273,21 +273,10 @@ function renderClaimsList(claims) {
       ${sourcesHtml}
     `;
 
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('a')) return;
-      toggleClaim(card.querySelector('.claim-toggle'));
-    });
-
     container.appendChild(card);
   });
-}
 
-function toggleClaim(btn) {
-  const card = btn.closest('.claim-card');
-  card.classList.toggle('expanded');
-  btn.innerHTML = card.classList.contains('expanded')
-    ? 'Hide details &#9652;'
-    : 'Show details &#9662;';
+  addCardClickListeners('claims-list');
 }
 
 function filterClaims(filter) {
