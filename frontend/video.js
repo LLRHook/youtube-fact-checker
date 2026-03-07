@@ -204,7 +204,7 @@ function filterVideoClaims(filter) {
 
   container.innerHTML = filtered.map(c => {
     const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-    const badgeText = c.category === 'opinion' ? 'Opinion' : `${c.truth_percentage}%`;
+    const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
     const ts = formatTimestamp(c.timestamp_seconds);
     const seekSeconds = Math.floor(c.timestamp_seconds);
 

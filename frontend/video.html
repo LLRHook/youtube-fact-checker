@@ -136,6 +136,35 @@
 
     .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
 
+    .skeleton-loader { animation: fadeIn 0.3s ease; }
+    .skel {
+      background: var(--surface);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .skel-video { width: 100%; padding-bottom: 56.25%; border-radius: 12px; margin-bottom: 1.5rem; }
+    .skel-title { height: 1.4rem; width: 75%; margin-bottom: 0.5rem; }
+    .skel-meta { height: 0.9rem; width: 40%; margin-bottom: 1.5rem; }
+    .skel-score-row { display: flex; gap: 1.5rem; align-items: center; margin-bottom: 1.5rem; padding: 1.5rem; background: var(--surface); border: 1px solid var(--border); border-radius: 12px; }
+    .skel-ring { width: 100px; height: 100px; border-radius: 50%; flex-shrink: 0; }
+    .skel-score-lines { flex: 1; display: flex; flex-direction: column; gap: 0.5rem; }
+    .skel-line { height: 1rem; width: 60%; }
+    .skel-line-short { height: 0.8rem; width: 90%; }
+    .skel-bar { height: 6px; width: 100%; margin-bottom: 1.5rem; border-radius: 3px; }
+    .skel-claim { height: 5rem; width: 100%; margin-bottom: 0.75rem; border-radius: 10px; }
+
     @media (max-width: 600px) {
       .score-section { flex-direction: column; text-align: center; }
       .claim-header { flex-direction: column; }
@@ -152,7 +181,22 @@
     </div>
 
     <div id="content">
-      <div class="empty-state">Loading...</div>
+      <div class="skeleton-loader">
+        <div class="skel skel-video"></div>
+        <div class="skel skel-title"></div>
+        <div class="skel skel-meta"></div>
+        <div class="skel-score-row">
+          <div class="skel skel-ring"></div>
+          <div class="skel-score-lines">
+            <div class="skel skel-line"></div>
+            <div class="skel skel-line-short"></div>
+          </div>
+        </div>
+        <div class="skel skel-bar"></div>
+        <div class="skel skel-claim"></div>
+        <div class="skel skel-claim"></div>
+        <div class="skel skel-claim"></div>
+      </div>
     </div>
 
     <footer class="page-footer">
