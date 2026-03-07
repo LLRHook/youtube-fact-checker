@@ -34,7 +34,7 @@ function renderVideo(video) {
       const badgeClass = getBadgeClass(c.truth_percentage, c.category);
       const badgeText = c.category === 'opinion' ? 'Opinion' : `${c.truth_percentage}%`;
       const ts = formatTimestamp(c.timestamp_seconds);
-      const ytLink = `https://youtube.com/watch?v=${video.id}&t=${Math.floor(c.timestamp_seconds)}`;
+      const seekSeconds = Math.floor(c.timestamp_seconds);
 
       let sourcesHtml = '';
       if (c.sources && c.sources.length > 0) {
@@ -52,7 +52,7 @@ function renderVideo(video) {
           </div>
           <div class="claim-meta">
             <span class="category-tag">${c.category}</span>
-            <a href="${ytLink}" target="_blank">${ts}</a>
+            <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
           </div>
           <button class="claim-toggle" onclick="toggleClaim(this)">Show details &#9662;</button>
           <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
@@ -69,6 +69,13 @@ function renderVideo(video) {
     : '';
 
   container.innerHTML = `
+    <div class="video-embed">
+      <iframe id="yt-player"
+        src="https://www.youtube-nocookie.com/embed/${video.id}?enablejsapi=1&rel=0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+    </div>
+
     <div class="video-info">
       <h1>${escapeHtml(video.title)}</h1>
       <div class="video-meta">
@@ -145,4 +152,16 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function seekTo(seconds) {
+  const iframe = document.getElementById('yt-player');
+  if (iframe) {
+    iframe.contentWindow.postMessage(JSON.stringify({
+      event: 'command',
+      func: 'seekTo',
+      args: [seconds, true]
+    }), '*');
+    iframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
 }

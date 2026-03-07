@@ -1,5 +1,7 @@
 /* YouTube Fact Checker — Public Video Listing */
 
+let allVideos = [];
+
 document.addEventListener('DOMContentLoaded', () => {
   loadVideos();
 });
@@ -8,12 +10,46 @@ async function loadVideos() {
   try {
     const resp = await fetch('/api/videos');
     if (!resp.ok) throw new Error('Failed to load videos');
-    const videos = await resp.json();
-    renderGrid(videos);
+    allVideos = await resp.json();
+    applyFilters();
   } catch (err) {
     document.getElementById('empty').textContent = 'Error loading videos.';
     document.getElementById('empty').style.display = 'block';
   }
+}
+
+function applyFilters() {
+  const query = document.getElementById('search-input').value.toLowerCase().trim();
+  const sort = document.getElementById('sort-select').value;
+
+  let filtered = allVideos;
+
+  if (query) {
+    filtered = filtered.filter(v =>
+      (v.title || '').toLowerCase().includes(query) ||
+      (v.channel || '').toLowerCase().includes(query)
+    );
+  }
+
+  filtered = [...filtered].sort((a, b) => {
+    switch (sort) {
+      case 'date-desc': return (b.created_at || '').localeCompare(a.created_at || '');
+      case 'date-asc': return (a.created_at || '').localeCompare(b.created_at || '');
+      case 'score-desc': return b.public_score - a.public_score;
+      case 'score-asc': return a.public_score - b.public_score;
+      case 'claims-desc': return b.claim_count - a.claim_count;
+      default: return 0;
+    }
+  });
+
+  const countEl = document.getElementById('results-count');
+  if (query) {
+    countEl.textContent = `${filtered.length} of ${allVideos.length} videos`;
+  } else {
+    countEl.textContent = `${allVideos.length} videos`;
+  }
+
+  renderGrid(filtered);
 }
 
 function renderGrid(videos) {
@@ -21,7 +57,13 @@ function renderGrid(videos) {
   const empty = document.getElementById('empty');
 
   if (videos.length === 0) {
-    empty.style.display = 'block';
+    grid.innerHTML = '';
+    if (allVideos.length === 0) {
+      empty.style.display = 'block';
+    } else {
+      empty.style.display = 'none';
+      grid.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem; grid-column: 1/-1;">No matching videos found.</p>';
+    }
     return;
   }
   empty.style.display = 'none';
