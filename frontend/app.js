@@ -258,7 +258,7 @@ function renderClaimsList(claims) {
       </div>
       <div class="claim-meta">
         <span class="category-tag">${claim.category}</span>
-        <span>${timestamp}</span>
+        <a href="${ytLink}" target="_blank" rel="noopener" style="color:var(--blue);text-decoration:none;">${timestamp}</a>
         ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
         ${claim.sources && claim.sources.length > 0 ? `<span>${claim.sources.length} source${claim.sources.length > 1 ? 's' : ''}</span>` : ''}
       </div>

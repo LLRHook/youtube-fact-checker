@@ -18,7 +18,8 @@ async function loadVideo(videoId) {
     }
     const video = await resp.json();
     renderVideo(video);
-    document.title = `${video.title} — YouTube Fact Checker`;
+    const claimCount = (video.claims || []).length;
+    document.title = `${video.title} (${claimCount} claim${claimCount !== 1 ? 's' : ''}) — YouTube Fact Checker`;
     const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) ogTitle.setAttribute('content', `${video.title} — YouTube Fact Checker`);
     const ogImage = document.querySelector('meta[property="og:image"]');

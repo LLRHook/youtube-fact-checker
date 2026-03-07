@@ -78,13 +78,14 @@ function renderGrid(videos) {
   }
   empty.style.display = 'none';
 
+  const query = document.getElementById('search-input').value.toLowerCase().trim();
   grid.innerHTML = videos.map(v => `
     <a class="video-card" href="/video/${v.id}">
       <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
-      <h3>${escapeHtml(v.title || v.id)}</h3>
+      <h3>${highlightMatch(v.title || v.id, query)}</h3>
       <div class="video-card-meta">
         <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">
-          ${escapeHtml(v.channel || 'Unknown')}
+          ${highlightMatch(v.channel || 'Unknown', query)}
         </span>
         <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
         <span>${v.claim_count} claims</span>
@@ -127,6 +128,17 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function highlightMatch(text, query) {
+  const escaped = escapeHtml(text);
+  if (!query) return escaped;
+  const idx = text.toLowerCase().indexOf(query);
+  if (idx === -1) return escaped;
+  const before = escapeHtml(text.slice(0, idx));
+  const match = escapeHtml(text.slice(idx, idx + query.length));
+  const after = escapeHtml(text.slice(idx + query.length));
+  return `${before}<mark style="background:rgba(108,99,255,0.3);color:var(--text);border-radius:2px;padding:0 1px;">${match}</mark>${after}`;
 }
 
 document.addEventListener('keydown', (e) => {
