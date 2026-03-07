@@ -19,6 +19,8 @@ async function loadVideo(videoId) {
     const video = await resp.json();
     renderVideo(video);
     document.title = `${video.title} — YouTube Fact Checker`;
+    const ogTitle = document.querySelector('meta[property="og:title"]');
+    if (ogTitle) ogTitle.setAttribute('content', `${video.title} — YouTube Fact Checker`);
   } catch (err) {
     container.innerHTML = '<div class="empty-state">Error loading video.</div>';
   }

@@ -165,9 +165,24 @@
     .skel-bar { height: 6px; width: 100%; margin-bottom: 1.5rem; border-radius: 3px; }
     .skel-claim { height: 5rem; width: 100%; margin-bottom: 0.75rem; border-radius: 10px; }
 
+    .back-to-top {
+      position: fixed; bottom: 2rem; right: 2rem;
+      width: 40px; height: 40px; border-radius: 50%;
+      background: var(--accent); color: white; border: none;
+      font-size: 1.2rem; cursor: pointer;
+      opacity: 0; visibility: hidden;
+      transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+      z-index: 100;
+    }
+    .back-to-top.visible { opacity: 1; visibility: visible; }
+    .back-to-top:hover { transform: scale(1.1); }
+
     @media (max-width: 600px) {
       .score-section { flex-direction: column; text-align: center; }
       .claim-header { flex-direction: column; }
+      .back-to-top { bottom: 1rem; right: 1rem; }
     }
   </style>
 </head>
@@ -204,6 +219,12 @@
     </footer>
   </div>
 
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">&#9650;</button>
   <script src="/video.js"></script>
+  <script>
+    window.addEventListener('scroll', () => {
+      document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
+    }, { passive: true });
+  </script>
 </body>
 </html>
