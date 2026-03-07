@@ -89,7 +89,7 @@ function renderGrid(videos) {
         </span>
         <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
         <span>${v.claim_count} claims</span>
-        <span>${formatDate(v.created_at)}</span>
+        <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
       </div>
     </a>
   `).join('');
@@ -105,6 +105,11 @@ function verdictLabel(score) {
   if (score >= 75) return 'True';
   if (score >= 50) return 'Mixed';
   return 'False';
+}
+
+function absoluteDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatDate(dateStr) {
