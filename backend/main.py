@@ -118,7 +118,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
     try:
         # Step 1: Extract transcript
         tasks[task_id].progress = "Extracting transcript..."
-        transcript = await asyncio.to_thread(extract_transcript, youtube_url)
+        transcript = await asyncio.to_thread(extract_transcript, youtube_url, settings.MAX_VIDEO_DURATION_SECONDS)
 
         # Step 2: Extract claims
         tasks[task_id].progress = f"Analyzing transcript ({len(transcript.full_text)} chars)..."
@@ -275,8 +275,10 @@ def _cleanup_task(task_id: str):
 
 async def _fail_task(task_id: str, video_id: str, error_msg: str):
     """Mark a task as failed in memory and DB, then clean up."""
-    tasks[task_id].status = TaskStatus.FAILED
-    tasks[task_id].error = error_msg
+    task = tasks.get(task_id)
+    if task:
+        task.status = TaskStatus.FAILED
+        task.error = error_msg
     await db.update_video_status(video_id, "failed", error_msg)
     _cleanup_task(task_id)
 
@@ -312,8 +314,8 @@ def _build_completed_result(video: dict, claims: list[Claim]) -> CheckResult:
     )
 
 
-def _build_video_summary(video: dict, claims: list[dict]) -> dict:
-    """Build a PublicVideoSummary dict from a video row and its claims."""
+def _build_video_summary(video: dict, claims: list[dict]) -> PublicVideoSummary:
+    """Build a PublicVideoSummary from a video row and its claims."""
     return PublicVideoSummary(
         id=video["id"],
         title=video["title"],
@@ -321,7 +323,7 @@ def _build_video_summary(video: dict, claims: list[dict]) -> dict:
         public_score=_calculate_public_score(claims),
         claim_count=len(claims),
         created_at=video["created_at"] or "",
-    ).model_dump()
+    )
 
 
 def _get_client_ip(request: Request) -> str:
@@ -487,7 +489,7 @@ async def public_list_videos(page: int = 1, limit: int = 50):
     videos = await db.list_videos(status="completed", limit=limit, offset=offset)
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
-    items = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
+    items = [_build_video_summary(v, all_claims.get(v["id"], [])).model_dump() for v in videos]
     return {
         "items": items,
         "total": total,
@@ -563,7 +565,7 @@ async def public_get_channel(channel_name: str):
 
     video_summaries = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
 
-    all_scores = [vs["public_score"] for vs in video_summaries if vs["public_score"] > 0]
+    all_scores = [vs.public_score for vs in video_summaries if vs.public_score > 0]
     avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
 
     return ChannelDetail(

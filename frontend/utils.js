@@ -315,7 +315,7 @@ function highlightMatch(text, query) {
 function buildVideoCardHtml(v, { query, showChannel } = {}) {
   const title = query ? highlightMatch(v.title || v.id, query) : escapeHtml(v.title || v.id);
   const channelHtml = showChannel
-    ? `<span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">${query ? highlightMatch(v.channel || 'Unknown', query) : escapeHtml(v.channel || 'Unknown')}</span>`
+    ? `<a href="/channel/${encodeURIComponent(v.channel)}" class="channel-link" onclick="event.stopPropagation()">${query ? highlightMatch(v.channel || 'Unknown', query) : escapeHtml(v.channel || 'Unknown')}</a>`
     : '';
   return `<a class="video-card" href="/video/${v.id}">
     <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
