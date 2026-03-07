@@ -243,23 +243,13 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
     except VideoTooLongError as e:
         logger.warning("Video %s too long: %s", video_id, e)
-        tasks[task_id].status = TaskStatus.FAILED
-        tasks[task_id].error = str(e)
-        await db.update_video_status(video_id, "failed", str(e))
-        _cleanup_task(task_id)
+        await _fail_task(task_id, video_id, str(e))
     except TranscriptError as e:
         logger.warning("Transcript error for video %s: %s", video_id, e)
-        tasks[task_id].status = TaskStatus.FAILED
-        tasks[task_id].error = str(e)
-        await db.update_video_status(video_id, "failed", str(e))
-        _cleanup_task(task_id)
+        await _fail_task(task_id, video_id, str(e))
     except Exception as e:
         logger.exception("Unexpected error processing video %s", video_id)
-        error_msg = f"Unexpected error: {str(e)[:200]}"
-        tasks[task_id].status = TaskStatus.FAILED
-        tasks[task_id].error = error_msg
-        await db.update_video_status(video_id, "failed", error_msg)
-        _cleanup_task(task_id)
+        await _fail_task(task_id, video_id, f"Unexpected error: {str(e)[:200]}")
 
 
 # --- Queue processor ---
@@ -292,6 +282,14 @@ async def queue_processor():
 def _cleanup_task(task_id: str):
     """Remove a completed/failed task from memory after persisting to DB."""
     tasks.pop(task_id, None)
+
+
+async def _fail_task(task_id: str, video_id: str, error_msg: str):
+    """Mark a task as failed in memory and DB, then clean up."""
+    tasks[task_id].status = TaskStatus.FAILED
+    tasks[task_id].error = error_msg
+    await db.update_video_status(video_id, "failed", error_msg)
+    _cleanup_task(task_id)
 
 
 def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:

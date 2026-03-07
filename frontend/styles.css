@@ -316,6 +316,12 @@ header {
   margin-bottom: 1.5rem;
 }
 
+.video-info h1 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
 .video-info h2 {
   font-size: 1.2rem;
   font-weight: 600;
@@ -329,6 +335,9 @@ header {
   font-size: 0.85rem;
   flex-wrap: wrap;
 }
+
+.video-meta a { color: var(--blue); text-decoration: none; }
+.video-meta a:hover { text-decoration: underline; }
 
 /* Score Ring */
 .overall-score {
@@ -436,6 +445,12 @@ header {
 .dot-yellow { background: var(--yellow); }
 .dot-red { background: var(--red); }
 .dot-gray { background: var(--text-muted); }
+
+.claims-heading {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+}
 
 /* Claim entrance animation */
 .claim-enter {
@@ -572,6 +587,9 @@ header {
   margin-bottom: 0.5rem;
   flex-wrap: wrap;
 }
+
+.claim-meta a { color: var(--blue); text-decoration: none; }
+.claim-meta a:hover { text-decoration: underline; }
 
 .claim-reasoning {
   font-size: 0.85rem;
@@ -745,6 +763,10 @@ footer {
 
 #theme-toggle:hover {
   border-color: var(--accent);
+}
+
+[data-theme="light"] .video-card:hover {
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 [data-theme="light"] .skel::after {

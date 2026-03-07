@@ -376,18 +376,17 @@ async def get_channel_videos(channel: str) -> list[dict]:
 async def get_stats() -> dict:
     """Get aggregate site statistics."""
     async with _db() as db:
-        async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE status = 'completed'"
-        ) as c:
-            video_count = (await c.fetchone())[0]
-        async with db.execute("SELECT COUNT(*) FROM claims") as c:
-            claim_count = (await c.fetchone())[0]
-        async with db.execute(
-            "SELECT COUNT(DISTINCT channel) FROM videos WHERE status = 'completed' AND channel != ''"
-        ) as c:
-            channel_count = (await c.fetchone())[0]
-        return {
-            "video_count": video_count,
-            "claim_count": claim_count,
-            "channel_count": channel_count,
-        }
+        async with db.execute("""
+            SELECT
+                (SELECT COUNT(*) FROM videos WHERE status = 'completed'),
+                (SELECT COUNT(*) FROM claims WHERE video_id IN
+                    (SELECT id FROM videos WHERE status = 'completed')),
+                (SELECT COUNT(DISTINCT channel) FROM videos
+                    WHERE status = 'completed' AND channel != '')
+        """) as c:
+            row = await c.fetchone()
+            return {
+                "video_count": row[0],
+                "claim_count": row[1],
+                "channel_count": row[2],
+            }
