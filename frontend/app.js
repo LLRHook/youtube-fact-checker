@@ -41,6 +41,12 @@ async function submitVideo() {
     const data = await resp.json();
     currentTaskId = data.task_id;
 
+    if (data.status === 'queued') {
+      showSection('queued');
+      resetButton();
+      return;
+    }
+
     // Show loading
     showSection('loading');
     startPolling();
@@ -48,6 +54,7 @@ async function submitVideo() {
   } catch (err) {
     errorEl.textContent = err.message;
     resetButton();
+    return;
   }
 }
 
@@ -71,6 +78,9 @@ function startPolling() {
       } else if (data.status === 'failed') {
         stopPolling();
         showError(data.error || 'An error occurred during analysis.');
+      } else if (data.status === 'queued') {
+        stopPolling();
+        showSection('queued');
       }
     } catch (err) {
       stopPolling();
@@ -240,7 +250,7 @@ function escapeHtml(str) {
 // --- UI State ---
 
 function showSection(name) {
-  ['loading', 'error', 'results'].forEach(s => {
+  ['loading', 'error', 'results', 'queued'].forEach(s => {
     document.getElementById(`${s}-section`).style.display = s === name ? 'block' : 'none';
   });
 }
@@ -261,7 +271,7 @@ function resetButton() {
 function resetUI() {
   stopPolling();
   showSection(null);
-  ['loading', 'error', 'results'].forEach(s => {
+  ['loading', 'error', 'results', 'queued'].forEach(s => {
     document.getElementById(`${s}-section`).style.display = 'none';
   });
   document.getElementById('url-input').value = '';

@@ -11,7 +11,7 @@ async function loadVideo(videoId) {
   try {
     const resp = await fetch(`/api/videos/${videoId}`);
     if (!resp.ok) {
-      container.innerHTML = '<div class="empty-state">Video not found or not yet approved.</div>';
+      container.innerHTML = '<div class="empty-state">Video not found.</div>';
       return;
     }
     const video = await resp.json();

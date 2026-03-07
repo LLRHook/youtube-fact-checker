@@ -28,6 +28,7 @@ function renderGrid(videos) {
 
   grid.innerHTML = videos.map(v => `
     <a class="video-card" href="/video/${v.id}">
+      <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
       <h3>${escapeHtml(v.title || v.id)}</h3>
       <div class="video-card-meta">
         <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">

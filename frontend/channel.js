@@ -36,7 +36,7 @@ function renderChannel(data) {
           </div>
         </a>
       `).join('')
-    : '<div class="empty-state">No approved videos for this channel.</div>';
+    : '<div class="empty-state">No videos for this channel.</div>';
 
   container.innerHTML = `
     <div class="channel-header">

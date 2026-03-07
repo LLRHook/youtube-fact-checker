@@ -62,6 +62,12 @@ async def init_db():
             );
         """)
 
+        # Migration: add ip_address column
+        try:
+            await db.execute("ALTER TABLE videos ADD COLUMN ip_address TEXT DEFAULT ''")
+        except Exception:
+            pass  # column already exists
+
 
 # --- Videos ---
 
@@ -79,16 +85,16 @@ async def get_video(video_id: str) -> dict | None:
         await db.close()
 
 
-async def create_video(video_id: str, youtube_url: str) -> dict:
-    """Insert a new video row in 'processing' state."""
+async def create_video(video_id: str, youtube_url: str, *, ip_address: str = "", status: str = "processing") -> dict:
+    """Insert a new video row."""
     db = await _get_db()
     try:
         await db.execute(
-            "INSERT INTO videos (id, youtube_url) VALUES (?, ?)",
-            (video_id, youtube_url),
+            "INSERT INTO videos (id, youtube_url, ip_address, status) VALUES (?, ?, ?, ?)",
+            (video_id, youtube_url, ip_address, status),
         )
         await db.commit()
-        return {"id": video_id, "youtube_url": youtube_url, "status": "processing"}
+        return {"id": video_id, "youtube_url": youtube_url, "status": status}
     finally:
         await db.close()
 
@@ -139,37 +145,59 @@ async def update_video_results(
         await db.close()
 
 
-async def set_video_approval(video_id: str, approval_status: str):
-    """Set approval_status to pending/approved/rejected."""
-    db = await _get_db()
-    try:
-        await db.execute(
-            "UPDATE videos SET approval_status = ?, updated_at = datetime('now') WHERE id = ?",
-            (approval_status, video_id),
-        )
-        await db.commit()
-    finally:
-        await db.close()
-
-
-async def list_videos(
-    status: str | None = None,
-    approval_status: str | None = None,
-) -> list[dict]:
-    """List videos with optional filters, newest first."""
+async def list_videos(status: str | None = None) -> list[dict]:
+    """List videos with optional status filter, newest first."""
     query = "SELECT * FROM videos WHERE 1=1"
     params: list = []
     if status:
         query += " AND status = ?"
         params.append(status)
-    if approval_status:
-        query += " AND approval_status = ?"
-        params.append(approval_status)
     query += " ORDER BY created_at DESC"
 
     db = await _get_db()
     try:
         async with db.execute(query, params) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+    finally:
+        await db.close()
+
+
+async def count_videos_today() -> int:
+    """Count non-queued videos created today."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) FROM videos WHERE status != 'queued' AND date(created_at) = date('now')"
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
+    finally:
+        await db.close()
+
+
+async def count_videos_today_by_ip(ip: str) -> int:
+    """Count videos submitted by a specific IP today."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND date(created_at) = date('now')",
+            (ip,),
+        ) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
+    finally:
+        await db.close()
+
+
+async def get_queued_videos(limit: int = 5) -> list[dict]:
+    """Return oldest queued videos."""
+    db = await _get_db()
+    try:
+        async with db.execute(
+            "SELECT * FROM videos WHERE status = 'queued' ORDER BY created_at ASC LIMIT ?",
+            (limit,),
+        ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
     finally:
@@ -239,57 +267,18 @@ async def get_claims_for_video(video_id: str) -> list[dict]:
         await db.close()
 
 
-async def update_claim_attribution(claim_id: int, attributed_to_creator: bool):
-    """Toggle whether a claim is attributed to the content creator."""
-    db = await _get_db()
-    try:
-        await db.execute(
-            "UPDATE claims SET attributed_to_creator = ? WHERE id = ?",
-            (1 if attributed_to_creator else 0, claim_id),
-        )
-        await db.commit()
-    finally:
-        await db.close()
-
-
 # --- Public queries ---
 
 
-async def get_public_claims_for_video(video_id: str) -> list[dict]:
-    """Return only creator-attributed claims with nested sources."""
-    db = await _get_db()
-    try:
-        async with db.execute(
-            "SELECT * FROM claims WHERE video_id = ? AND attributed_to_creator = 1 ORDER BY claim_index",
-            (video_id,),
-        ) as cursor:
-            claim_rows = await cursor.fetchall()
-
-        result = []
-        for cr in claim_rows:
-            claim = dict(cr)
-            async with db.execute(
-                "SELECT * FROM claim_sources WHERE claim_id = ?",
-                (claim["id"],),
-            ) as src_cursor:
-                sources = [dict(s) for s in await src_cursor.fetchall()]
-            claim["sources"] = sources
-            result.append(claim)
-
-        return result
-    finally:
-        await db.close()
-
-
 async def list_channels() -> list[dict]:
-    """List channels with aggregate stats from approved videos."""
+    """List channels with aggregate stats from completed videos."""
     db = await _get_db()
     try:
         async with db.execute(
             """SELECT channel, COUNT(*) as video_count,
                       AVG(overall_truth_percentage) as avg_score
                FROM videos
-               WHERE status = 'completed' AND approval_status = 'approved'
+               WHERE status = 'completed'
                GROUP BY channel
                ORDER BY video_count DESC"""
         ) as cursor:
@@ -300,12 +289,12 @@ async def list_channels() -> list[dict]:
 
 
 async def get_channel_videos(channel: str) -> list[dict]:
-    """List approved videos for a specific channel."""
+    """List completed videos for a specific channel."""
     db = await _get_db()
     try:
         async with db.execute(
             """SELECT * FROM videos
-               WHERE channel = ? AND status = 'completed' AND approval_status = 'approved'
+               WHERE channel = ? AND status = 'completed'
                ORDER BY created_at DESC""",
             (channel,),
         ) as cursor:

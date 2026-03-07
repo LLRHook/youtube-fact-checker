@@ -12,8 +12,9 @@ class Settings:
     CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"
     SEARCH_RESULTS_PER_CLAIM: int = 5
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "data/factchecker.db")
-    ADMIN_PASSWORD: str = os.getenv("ADMIN_PASSWORD", "")
-    SESSION_SECRET: str = os.getenv("SESSION_SECRET", "change-me-in-production")
+    DAILY_VIDEO_LIMIT: int = int(os.getenv("DAILY_VIDEO_LIMIT", "20"))
+    IP_DAILY_LIMIT: int = int(os.getenv("IP_DAILY_LIMIT", "3"))
+    QUEUE_INTERVAL_MINUTES: int = int(os.getenv("QUEUE_INTERVAL_MINUTES", "60"))
 
 
 settings = Settings()

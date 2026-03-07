@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from typing import Optional
 from enum import Enum
 
@@ -7,6 +7,7 @@ class TaskStatus(str, Enum):
     PROCESSING = "processing"
     COMPLETED = "completed"
     FAILED = "failed"
+    QUEUED = "queued"
 
 
 class ClaimCategory(str, Enum):
@@ -14,11 +15,6 @@ class ClaimCategory(str, Enum):
     OPINION = "opinion"
     UNCLEAR = "unclear"
 
-
-class ApprovalStatus(str, Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
 
 
 class CheckRequest(BaseModel):
@@ -59,56 +55,6 @@ class TaskResponse(BaseModel):
     progress: str = ""
     data: Optional[CheckResult] = None
     error: Optional[str] = None
-
-
-# --- Admin models ---
-
-
-class VideoSummary(BaseModel):
-    id: str
-    title: str = ""
-    channel: str = ""
-    overall_truth_percentage: int = 0
-    claim_count: int = 0
-    status: str = "processing"
-    approval_status: str = "pending"
-    created_at: str = ""
-
-
-class ClaimDetail(BaseModel):
-    id: int
-    claim_index: int = 0
-    text: str = ""
-    timestamp_seconds: float = 0
-    truth_percentage: int = 50
-    confidence: float = 0.5
-    reasoning: str = ""
-    category: str = "fact"
-    attributed_to_creator: bool = True
-    sources: list[Source] = []
-
-
-class VideoDetail(BaseModel):
-    id: str
-    youtube_url: str = ""
-    title: str = ""
-    channel: str = ""
-    duration_seconds: float = 0
-    overall_truth_percentage: int = 0
-    summary: str = ""
-    processing_time_seconds: float = 0
-    status: str = "processing"
-    approval_status: str = "pending"
-    created_at: str = ""
-    claims: list[ClaimDetail] = []
-
-
-class ClaimAttributionUpdate(BaseModel):
-    attributed_to_creator: bool
-
-
-class VideoApprovalUpdate(BaseModel):
-    approval_status: ApprovalStatus
 
 
 # --- Public models ---
@@ -159,5 +105,3 @@ class ChannelDetail(BaseModel):
     videos: list[PublicVideoSummary] = []
 
 
-class LoginRequest(BaseModel):
-    password: str
