@@ -22,9 +22,7 @@ async function submitVideo() {
 
   errorEl.textContent = '';
 
-  // Validate
-  const ytRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
-  if (!url || !ytRegex.test(url)) {
+  if (!url || !YT_URL_REGEX.test(url)) {
     errorEl.textContent = 'Please enter a valid YouTube URL.';
     return;
   }
@@ -291,18 +289,6 @@ function filterClaims(filter) {
   renderClaimsList(filtered);
 }
 
-function toggleAllClaims() {
-  const cards = document.querySelectorAll('#claims-list .claim-card');
-  const btn = document.getElementById('toggle-all-btn');
-  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
-  cards.forEach(c => {
-    c.classList.toggle('expanded', anyCollapsed);
-    const toggle = c.querySelector('.claim-toggle');
-    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
-  });
-  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
-}
-
 function cancelAnalysis() {
   stopPolling();
   currentTaskId = null;
@@ -310,10 +296,6 @@ function cancelAnalysis() {
   showSection(null);
   resetButton();
 }
-
-// --- Helpers ---
-
-// --- UI State ---
 
 function showSection(name) {
   ['loading', 'error', 'results', 'queued'].forEach(s => {
@@ -426,8 +408,7 @@ document.addEventListener('keydown', (e) => {
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();
   const preview = document.getElementById('url-preview');
-  const ytRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
-  const match = url.match(ytRegex);
+  const match = url.match(YT_URL_REGEX);
 
   if (match) {
     const videoId = match[1];

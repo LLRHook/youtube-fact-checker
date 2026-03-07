@@ -189,3 +189,21 @@ function initBackToTop() {
 }
 
 initBackToTop();
+
+/* --- Toggle All Claims (shared) --- */
+
+function toggleAllClaims(containerId) {
+  const cards = document.querySelectorAll(`#${containerId} .claim-card`);
+  const btn = document.getElementById('toggle-all-btn');
+  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+  cards.forEach(c => {
+    c.classList.toggle('expanded', anyCollapsed);
+    const toggle = c.querySelector('.claim-toggle');
+    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
+  });
+  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
+}
+
+/* --- YouTube URL Regex --- */
+
+const YT_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;

@@ -293,6 +293,7 @@ header {
   margin-bottom: 0.5rem;
 }
 
+.error-card--warning { border-color: var(--yellow); }
 .error-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
 
 .error-card button {

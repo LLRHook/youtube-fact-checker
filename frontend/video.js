@@ -151,7 +151,7 @@ function renderVideo(video) {
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
       <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
       <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
-      <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims()">Expand all</button>
+      <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims('claims-container')">Expand all</button>
     </div>
     <div id="claims-container">${claimsHtml}</div>
   `;
@@ -165,18 +165,6 @@ function renderVideo(video) {
     const ring = document.getElementById('score-ring-circle');
     if (ring) ring.setAttribute('stroke-dashoffset', offset);
   });
-}
-
-function toggleAllClaims() {
-  const cards = document.querySelectorAll('#claims-container .claim-card');
-  const btn = document.getElementById('toggle-all-btn');
-  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
-  cards.forEach(c => {
-    c.classList.toggle('expanded', anyCollapsed);
-    const toggle = c.querySelector('.claim-toggle');
-    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
-  });
-  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
 function filterVideoClaims(filter) {

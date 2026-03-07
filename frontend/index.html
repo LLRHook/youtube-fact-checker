@@ -98,7 +98,7 @@
 
     <!-- Queued Section -->
     <section id="queued-section" class="error-section" style="display:none;" aria-live="polite" role="alert">
-      <div class="error-card" style="border-color: var(--yellow);">
+      <div class="error-card error-card--warning">
         <span class="error-icon">&#128337;</span>
         <p>We've hit our daily processing limit. Your video has been queued and will be processed automatically.</p>
         <button onclick="resetUI()">Check Another Video</button>
@@ -162,7 +162,7 @@
         <button class="filter-btn active" data-filter="all" onclick="filterClaims('all')">All</button>
         <button class="filter-btn" data-filter="fact" onclick="filterClaims('fact')">Facts</button>
         <button class="filter-btn" data-filter="opinion" onclick="filterClaims('opinion')">Opinions</button>
-        <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims()">Expand all</button>
+        <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims('claims-list')">Expand all</button>
       </div>
 
       <!-- Claims List -->
