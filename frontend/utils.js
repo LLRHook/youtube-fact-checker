@@ -190,6 +190,16 @@ function initBackToTop() {
 
 initBackToTop();
 
+/* --- Badge Helpers --- */
+
+function badgeText(score, category) {
+  return category === 'opinion' ? 'Opinion' : `${verdictLabel(score)} · ${score}%`;
+}
+
+function badgeTitle(score, category) {
+  return category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${score}% — ${verdictLabel(score)}`;
+}
+
 /* --- Sources HTML --- */
 
 function buildSourcesHtml(sources, limit) {

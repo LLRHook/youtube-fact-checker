@@ -14,6 +14,7 @@ html { scroll-behavior: smooth; }
   --yellow: #ffa502;
   --green: #2ed573;
   --blue: #1e90ff;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
 [data-theme="light"] {
@@ -28,6 +29,7 @@ html { scroll-behavior: smooth; }
   --yellow: #ff9500;
   --green: #34c759;
   --blue: #007aff;
+  --card-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 body {
@@ -296,7 +298,7 @@ header {
 .error-card--warning { border-color: var(--yellow); }
 .error-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
 
-.error-card button {
+.error-card > button {
   margin-top: 1rem;
   background: var(--surface-2);
   color: var(--text);
@@ -550,7 +552,7 @@ header {
 .video-card:hover {
   border-color: var(--accent);
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: var(--card-shadow);
 }
 
 .video-card img.thumb {
@@ -709,16 +711,6 @@ header {
 .channel-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
 .channel-stats { display: flex; gap: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
 .channel-stats .stat-value { color: var(--text); font-weight: 600; }
-
-.distribution-bar { margin-bottom: 1.5rem; }
-.distribution-segments { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--border); margin-bottom: 0.5rem; }
-.dist-seg { min-width: 4px; transition: width 0.4s ease; }
-.dist-green { background: var(--green); }
-.dist-yellow { background: var(--yellow); }
-.dist-red { background: var(--red); }
-.dist-legend { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
-.dist-legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
-.dist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
 
 /* === Listing Skeletons === */
 .skel-grid {
@@ -1033,10 +1025,6 @@ footer {
 
 #theme-toggle:hover {
   border-color: var(--accent);
-}
-
-[data-theme="light"] .video-card:hover {
-  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
 }
 
 [data-theme="light"] #check-btn:hover { background: #4946b8; }

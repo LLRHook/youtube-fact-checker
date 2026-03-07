@@ -47,8 +47,8 @@ async function loadVideo(videoId) {
 
 function buildClaimCardHtml(c, i) {
   const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-  const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
-  const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
+  const bt = badgeText(c.truth_percentage, c.category);
+  const btTitle = badgeTitle(c.truth_percentage, c.category);
   const ts = formatTimestamp(c.timestamp_seconds);
   const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -59,7 +59,7 @@ function buildClaimCardHtml(c, i) {
     <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
       <div class="claim-header">
         <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
-        <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
+        <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
       </div>
       <div class="claim-meta">
         <span class="category-tag">${c.category}</span>
@@ -139,7 +139,7 @@ function renderVideo(video) {
 
     <div id="breakdown-bar" class="breakdown-bar-container"></div>
 
-    <h3 class="claims-heading">Claims (${video.claims.length})</h3>
+    <h3 class="claims-heading">Claims (${allVideoClaims.length})</h3>
     <div class="filter-bar" role="toolbar" aria-label="Filter claims by category">
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
       <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
