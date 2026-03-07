@@ -160,7 +160,7 @@ function highlightMatch(text, query) {
   const before = escapeHtml(text.slice(0, idx));
   const match = escapeHtml(text.slice(idx, idx + query.length));
   const after = escapeHtml(text.slice(idx + query.length));
-  return `${before}<mark style="background:rgba(108,99,255,0.3);color:var(--text);border-radius:2px;padding:0 1px;">${match}</mark>${after}`;
+  return `${before}<mark class="search-highlight">${match}</mark>${after}`;
 }
 
 function toggleClearBtn() {

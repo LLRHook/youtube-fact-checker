@@ -13,61 +13,6 @@
   <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');})()</script>
   <link rel="preconnect" href="https://img.youtube.com" crossorigin>
   <link rel="stylesheet" href="/styles.css">
-  <style>
-
-    .channel-header { margin-bottom: 1.5rem; }
-    .channel-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
-    .channel-stats { display: flex; gap: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
-    .channel-stats .stat-value { color: var(--text); font-weight: 600; }
-
-    .video-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
-    }
-
-    .video-card {
-      background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
-      padding: 1.2rem; cursor: pointer; transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
-      text-decoration: none; color: var(--text); display: block;
-    }
-    .video-card:hover { border-color: var(--accent); }
-    .video-card img.thumb { width: 100%; border-radius: 8px; margin-bottom: 0.75rem; aspect-ratio: 16/9; object-fit: cover; }
-    .video-card h3 {
-      font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; line-height: 1.3;
-      display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
-    }
-    .video-card-meta { display: flex; gap: 0.75rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
-
-    .score-badge {
-      display: inline-block; padding: 0.2rem 0.6rem; border-radius: 4px;
-      font-size: 0.8rem; font-weight: 700;
-    }
-    .score-green { background: rgba(46,213,115,0.15); color: var(--green); }
-    .score-yellow { background: rgba(255,165,2,0.15); color: var(--yellow); }
-    .score-red { background: rgba(255,71,87,0.15); color: var(--red); }
-
-    .distribution-bar { margin-bottom: 1.5rem; }
-    .distribution-segments { display: flex; height: 6px; border-radius: 3px; overflow: hidden; background: var(--border); margin-bottom: 0.5rem; }
-    .dist-seg { min-width: 4px; transition: width 0.4s ease; }
-    .dist-green { background: var(--green); }
-    .dist-yellow { background: var(--yellow); }
-    .dist-red { background: var(--red); }
-    .dist-legend { display: flex; gap: 1rem; font-size: 0.8rem; color: var(--text-muted); flex-wrap: wrap; }
-    .dist-legend-item { display: inline-flex; align-items: center; gap: 0.3rem; }
-    .dist-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
-
-    .skel-heading { height: 1.4rem; width: 40%; margin-bottom: 0.5rem; }
-    .skel-stats { height: 0.9rem; width: 25%; margin-bottom: 1.5rem; }
-    .skel-grid {
-      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 1rem;
-    }
-    .skel-card { height: 220px; border-radius: 12px; }
-    @media (max-width: 600px) {
-      .channel-header h1 { font-size: 1.2rem; }
-      .channel-stats { flex-direction: column; gap: 0.5rem; }
-    }
-  </style>
 </head>
 <body>
   <div class="page-container page-container--wide">
