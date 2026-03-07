@@ -204,10 +204,10 @@ function renderBreakdownBar(claims) {
 
   container.innerHTML = `
     <div class="breakdown-segments">
-      ${trueCount ? `<div class="breakdown-seg seg-green" style="width:${(trueCount/total)*100}%"></div>` : ''}
-      ${mixedCount ? `<div class="breakdown-seg seg-yellow" style="width:${(mixedCount/total)*100}%"></div>` : ''}
-      ${falseCount ? `<div class="breakdown-seg seg-red" style="width:${(falseCount/total)*100}%"></div>` : ''}
-      ${opinions.length ? `<div class="breakdown-seg seg-gray" style="width:${(opinions.length/total)*100}%"></div>` : ''}
+      ${trueCount ? `<div class="breakdown-seg seg-green" title="${trueCount} true" style="width:${(trueCount/total)*100}%"></div>` : ''}
+      ${mixedCount ? `<div class="breakdown-seg seg-yellow" title="${mixedCount} mixed" style="width:${(mixedCount/total)*100}%"></div>` : ''}
+      ${falseCount ? `<div class="breakdown-seg seg-red" title="${falseCount} false" style="width:${(falseCount/total)*100}%"></div>` : ''}
+      ${opinions.length ? `<div class="breakdown-seg seg-gray" title="${opinions.length} opinion" style="width:${(opinions.length/total)*100}%"></div>` : ''}
     </div>
     <div class="breakdown-legend">
       ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}

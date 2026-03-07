@@ -696,6 +696,13 @@ button:focus-visible,
   outline-offset: 2px;
 }
 
+/* === Active Nav Link === */
+.nav-links a[aria-current="page"] {
+  color: var(--text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 /* === Keyboard Hint === */
 .kbd-hint {
   color: var(--text-muted);
