@@ -134,7 +134,6 @@ function renderResults(data) {
 
   // Overall score
   const score = data.overall_truth_percentage;
-  document.getElementById('score-value').textContent = score;
   document.getElementById('summary-text').textContent = data.summary || '';
 
   // Animate score ring
@@ -143,6 +142,9 @@ function renderResults(data) {
   const offset = circumference - (score / 100) * circumference;
   circle.style.strokeDashoffset = offset;
   circle.style.stroke = getScoreColor(score);
+
+  // Animate score counter
+  animateCounter('score-value', 0, score, 800);
 
   // Render claims
   renderClaimsList(allClaims);
@@ -183,7 +185,8 @@ function renderClaimsList(claims) {
     if (claim.sources && claim.sources.length > 0) {
       sourcesHtml = '<div class="claim-sources">' +
         claim.sources.slice(0, 3).map(s =>
-          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${s.title}</a>`
+          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+          (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
         ).join('') +
         '</div>';
     }
@@ -227,6 +230,32 @@ function filterClaims(filter) {
     : allClaims.filter(c => c.category === filter);
 
   renderClaimsList(filtered);
+}
+
+function animateCounter(elementId, from, to, duration) {
+  const el = document.getElementById(elementId);
+  if (!el) return;
+  const start = performance.now();
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(from + (to - from) * eased);
+    if (progress < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
+
+function toggleAllClaims() {
+  const cards = document.querySelectorAll('#claims-list .claim-card');
+  const btn = document.getElementById('toggle-all-btn');
+  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+  cards.forEach(c => {
+    c.classList.toggle('expanded', anyCollapsed);
+    const toggle = c.querySelector('.claim-toggle');
+    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
+  });
+  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
 // --- Helpers ---

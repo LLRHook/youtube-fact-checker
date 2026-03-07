@@ -44,7 +44,8 @@ function renderVideo(video) {
       if (c.sources && c.sources.length > 0) {
         sourcesHtml = '<div class="claim-sources">' +
           c.sources.map(s =>
-            `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>`
+            `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+            (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
           ).join('') + '</div>';
       }
 
@@ -116,6 +117,7 @@ function renderVideo(video) {
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
       <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
       <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
+      <button id="toggle-all-btn" class="filter-btn" onclick="toggleAllClaims()" style="margin-left:auto;">Expand all</button>
     </div>
     <div id="claims-container">${claimsHtml}</div>
   `;
@@ -127,6 +129,18 @@ function toggleClaim(btn) {
   btn.innerHTML = card.classList.contains('expanded')
     ? 'Hide details &#9652;'
     : 'Show details &#9662;';
+}
+
+function toggleAllClaims() {
+  const cards = document.querySelectorAll('#claims-container .claim-card');
+  const btn = document.getElementById('toggle-all-btn');
+  const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
+  cards.forEach(c => {
+    c.classList.toggle('expanded', anyCollapsed);
+    const toggle = c.querySelector('.claim-toggle');
+    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
+  });
+  btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
 function filterVideoClaims(filter) {
@@ -155,7 +169,8 @@ function filterVideoClaims(filter) {
     if (c.sources && c.sources.length > 0) {
       sourcesHtml = '<div class="claim-sources">' +
         c.sources.map(s =>
-          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>`
+          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+          (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
         ).join('') + '</div>';
     }
 
