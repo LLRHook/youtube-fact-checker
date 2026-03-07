@@ -291,6 +291,17 @@ function toggleAllClaims() {
   btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
+function cancelAnalysis() {
+  stopPolling();
+  currentTaskId = null;
+  document.title = 'YouTube Fact Checker';
+  showSection(null);
+  ['loading', 'error', 'results', 'queued'].forEach(s => {
+    document.getElementById(`${s}-section`).style.display = 'none';
+  });
+  resetButton();
+}
+
 // --- Helpers ---
 
 function getScoreColor(score) {
