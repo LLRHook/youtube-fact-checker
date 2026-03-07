@@ -18,3 +18,17 @@ class Settings:
 
 
 settings = Settings()
+
+
+def validate_settings():
+    """Raise on missing required API keys. Call once at startup."""
+    missing = []
+    if not settings.ANTHROPIC_API_KEY:
+        missing.append("ANTHROPIC_API_KEY")
+    if not settings.BRAVE_API_KEY:
+        missing.append("BRAVE_API_KEY")
+    if missing:
+        raise RuntimeError(
+            f"Missing required environment variable(s): {', '.join(missing)}. "
+            "Add them to your .env file."
+        )

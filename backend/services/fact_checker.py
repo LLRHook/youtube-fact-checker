@@ -110,31 +110,30 @@ async def fact_check_claim(claim_text: str) -> dict:
 
 async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[dict]:
     """
-    Fact-check all claims. Runs sequentially to avoid rate limits.
+    Fact-check all claims with bounded concurrency.
 
     Args:
         claims: List of claim dicts from claim_extractor
         on_progress: Optional callback(completed, total) for progress updates
 
     Returns:
-        List of enriched claim dicts with truth scores
+        List of enriched claim dicts with truth scores (order preserved)
     """
-    results = []
     total = len(claims)
+    results = [None] * total
+    semaphore = asyncio.Semaphore(3)
+    completed_count = 0
+    lock = asyncio.Lock()
 
-    for i, claim in enumerate(claims):
-        result = await fact_check_claim(claim["text"])
-        enriched = {
-            **claim,
-            **result,
-        }
-        results.append(enriched)
+    async def check_one(index, claim):
+        nonlocal completed_count
+        async with semaphore:
+            result = await fact_check_claim(claim["text"])
+            results[index] = {**claim, **result}
+            async with lock:
+                completed_count += 1
+                if on_progress:
+                    on_progress(completed_count, total)
 
-        if on_progress:
-            on_progress(i + 1, total)
-
-        # Small delay between claims to be nice to APIs
-        if i < total - 1:
-            await asyncio.sleep(0.5)
-
+    await asyncio.gather(*(check_one(i, c) for i, c in enumerate(claims)))
     return results

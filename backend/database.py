@@ -60,6 +60,13 @@ async def init_db():
                 url TEXT DEFAULT '',
                 snippet TEXT DEFAULT ''
             );
+
+            CREATE INDEX IF NOT EXISTS idx_videos_channel ON videos(channel);
+            CREATE INDEX IF NOT EXISTS idx_videos_status ON videos(status);
+            CREATE INDEX IF NOT EXISTS idx_videos_created_at ON videos(created_at);
+            CREATE INDEX IF NOT EXISTS idx_videos_status_created ON videos(status, created_at);
+            CREATE INDEX IF NOT EXISTS idx_claims_video_id ON claims(video_id);
+            CREATE INDEX IF NOT EXISTS idx_claim_sources_claim_id ON claim_sources(claim_id);
         """)
 
         # Migration: add ip_address column
@@ -145,20 +152,40 @@ async def update_video_results(
         await db.close()
 
 
-async def list_videos(status: str | None = None) -> list[dict]:
-    """List videos with optional status filter, newest first."""
+async def list_videos(status: str | None = None, *, limit: int = 0, offset: int = 0) -> list[dict]:
+    """List videos with optional status filter, newest first. Supports pagination."""
     query = "SELECT * FROM videos WHERE 1=1"
     params: list = []
     if status:
         query += " AND status = ?"
         params.append(status)
     query += " ORDER BY created_at DESC"
+    if limit > 0:
+        query += " LIMIT ? OFFSET ?"
+        params.extend([limit, offset])
 
     db = await _get_db()
     try:
         async with db.execute(query, params) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
+    finally:
+        await db.close()
+
+
+async def count_videos(status: str | None = None) -> int:
+    """Count videos with optional status filter."""
+    query = "SELECT COUNT(*) FROM videos WHERE 1=1"
+    params: list = []
+    if status:
+        query += " AND status = ?"
+        params.append(status)
+
+    db = await _get_db()
+    try:
+        async with db.execute(query, params) as cursor:
+            row = await cursor.fetchone()
+            return row[0] if row else 0
     finally:
         await db.close()
 
@@ -261,6 +288,55 @@ async def get_claims_for_video(video_id: str) -> list[dict]:
                 sources = [dict(s) for s in await src_cursor.fetchall()]
             claim["sources"] = sources
             result.append(claim)
+
+        return result
+    finally:
+        await db.close()
+
+
+async def get_claims_for_videos(video_ids: list[str]) -> dict[str, list[dict]]:
+    """Return claims with nested sources for multiple videos in batch.
+
+    Returns a dict mapping video_id -> list of claim dicts.
+    """
+    if not video_ids:
+        return {}
+
+    db = await _get_db()
+    try:
+        placeholders = ",".join("?" for _ in video_ids)
+
+        # Fetch all claims for the given videos
+        async with db.execute(
+            f"SELECT * FROM claims WHERE video_id IN ({placeholders}) ORDER BY video_id, claim_index",
+            video_ids,
+        ) as cursor:
+            claim_rows = await cursor.fetchall()
+
+        if not claim_rows:
+            return {vid: [] for vid in video_ids}
+
+        # Collect claim IDs for source lookup
+        claims_by_id = {}
+        result: dict[str, list[dict]] = {vid: [] for vid in video_ids}
+        for cr in claim_rows:
+            claim = dict(cr)
+            claim["sources"] = []
+            claims_by_id[claim["id"]] = claim
+            result[claim["video_id"]].append(claim)
+
+        # Fetch all sources for these claims in one query
+        claim_ids = list(claims_by_id.keys())
+        src_placeholders = ",".join("?" for _ in claim_ids)
+        async with db.execute(
+            f"SELECT * FROM claim_sources WHERE claim_id IN ({src_placeholders})",
+            claim_ids,
+        ) as src_cursor:
+            for src_row in await src_cursor.fetchall():
+                src = dict(src_row)
+                cid = src["claim_id"]
+                if cid in claims_by_id:
+                    claims_by_id[cid]["sources"].append(src)
 
         return result
     finally:

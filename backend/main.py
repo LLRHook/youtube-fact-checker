@@ -1,14 +1,17 @@
 """YouTube Fact Checker — FastAPI application."""
 
+import os
 import time
 import asyncio
 import logging
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 
-from backend.config import settings
+from backend.config import settings, validate_settings
 from backend.models import (
     CheckRequest,
     TaskResponse,
@@ -48,6 +51,7 @@ _queue_task: asyncio.Task | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _queue_task
+    validate_settings()
     await db.init_db()
     _queue_task = asyncio.create_task(queue_processor())
     yield
@@ -59,6 +63,14 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="YouTube Fact Checker", version="1.0.0", lifespan=lifespan)
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
+    allow_credentials=True,
+    allow_methods=["GET", "POST"],
+    allow_headers=["*"],
+)
 
 
 async def process_video(task_id: str, video_id: str, youtube_url: str):
@@ -419,14 +431,21 @@ def _calculate_public_score(claims: list[dict]) -> int:
 
 
 @app.get("/api/videos")
-async def public_list_videos():
-    """List completed videos."""
-    videos = await db.list_videos(status="completed")
-    result = []
+async def public_list_videos(page: int = 1, limit: int = 50):
+    """List completed videos with pagination."""
+    limit = max(1, min(limit, 100))
+    page = max(1, page)
+    offset = (page - 1) * limit
+
+    total = await db.count_videos(status="completed")
+    videos = await db.list_videos(status="completed", limit=limit, offset=offset)
+    video_ids = [v["id"] for v in videos]
+    all_claims = await db.get_claims_for_videos(video_ids)
+    items = []
     for v in videos:
-        claims = await db.get_claims_for_video(v["id"])
+        claims = all_claims.get(v["id"], [])
         public_score = _calculate_public_score(claims)
-        result.append(
+        items.append(
             PublicVideoSummary(
                 id=v["id"],
                 title=v["title"],
@@ -436,7 +455,13 @@ async def public_list_videos():
                 created_at=v["created_at"] or "",
             ).model_dump()
         )
-    return result
+    return {
+        "items": items,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit if total > 0 else 1,
+    }
 
 
 @app.get("/api/videos/{video_id}")
@@ -501,9 +526,12 @@ async def public_get_channel(channel_name: str):
     if not videos:
         raise HTTPException(status_code=404, detail="Channel not found.")
 
+    video_ids = [v["id"] for v in videos]
+    all_claims = await db.get_claims_for_videos(video_ids)
+
     video_summaries = []
     for v in videos:
-        claims = await db.get_claims_for_video(v["id"])
+        claims = all_claims.get(v["id"], [])
         public_score = _calculate_public_score(claims)
         video_summaries.append(
             PublicVideoSummary(
@@ -535,24 +563,9 @@ async def serve_index():
     return FileResponse(FRONTEND_DIR / "index.html")
 
 
-@app.get("/styles.css")
-async def serve_css():
-    return FileResponse(FRONTEND_DIR / "styles.css", media_type="text/css")
-
-
-@app.get("/app.js")
-async def serve_js():
-    return FileResponse(FRONTEND_DIR / "app.js", media_type="application/javascript")
-
-
 @app.get("/videos")
 async def serve_videos_page():
     return FileResponse(FRONTEND_DIR / "videos.html")
-
-
-@app.get("/videos.js")
-async def serve_videos_js():
-    return FileResponse(FRONTEND_DIR / "videos.js", media_type="application/javascript")
 
 
 @app.get("/video/{video_id}")
@@ -560,19 +573,12 @@ async def serve_video_page(video_id: str):
     return FileResponse(FRONTEND_DIR / "video.html")
 
 
-@app.get("/video.js")
-async def serve_video_js():
-    return FileResponse(FRONTEND_DIR / "video.js", media_type="application/javascript")
-
-
 @app.get("/channel/{channel_name}")
 async def serve_channel_page(channel_name: str):
     return FileResponse(FRONTEND_DIR / "channel.html")
 
 
-@app.get("/channel.js")
-async def serve_channel_js():
-    return FileResponse(FRONTEND_DIR / "channel.js", media_type="application/javascript")
+app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="static")
 
 
 if __name__ == "__main__":

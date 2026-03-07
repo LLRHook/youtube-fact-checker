@@ -163,10 +163,10 @@ function renderResults(data) {
   const circumference = 339.3;
   const offset = circumference - (score / 100) * circumference;
   circle.style.strokeDashoffset = offset;
-  circle.style.stroke = getScoreColor(score);
+  circle.style.stroke = scoreColor(score);
 
   // Color & animate score counter
-  document.getElementById('score-value').style.color = getScoreColor(score);
+  document.getElementById('score-value').style.color = scoreColor(score);
   animateCounter('score-value', 0, score, 800);
 
   // Render breakdown stats
@@ -237,8 +237,8 @@ function renderClaimsList(claims) {
     card.dataset.category = claim.category;
 
     const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
-    const badgeText = claim.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(claim.truth_percentage)} · ${claim.truth_percentage}%`;
-    const badgeTitle = claim.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${claim.truth_percentage}% — ${getVerdictLabel(claim.truth_percentage)}`;
+    const badgeText = claim.category === 'opinion' ? 'Opinion' : `${verdictLabel(claim.truth_percentage)} · ${claim.truth_percentage}%`;
+    const badgeTitle = claim.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${claim.truth_percentage}% — ${verdictLabel(claim.truth_percentage)}`;
 
     const timestamp = formatTimestamp(claim.timestamp_seconds);
     const ytLink = `https://youtube.com/watch?v=${document.getElementById('video-title').dataset.videoId || ''}&t=${Math.floor(claim.timestamp_seconds)}`;
@@ -300,20 +300,6 @@ function filterClaims(filter) {
   renderClaimsList(filtered);
 }
 
-function animateCounter(elementId, from, to, duration) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  const start = performance.now();
-  function tick(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(from + (to - from) * eased);
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
-}
-
 function toggleAllClaims() {
   const cards = document.querySelectorAll('#claims-list .claim-card');
   const btn = document.getElementById('toggle-all-btn');
@@ -349,45 +335,6 @@ function cancelAnalysis() {
 }
 
 // --- Helpers ---
-
-function getScoreColor(score) {
-  if (score >= 75) return '#2ed573';
-  if (score >= 50) return '#ffa502';
-  return '#ff4757';
-}
-
-function getBadgeClass(score, category) {
-  if (category === 'opinion') return 'badge-gray';
-  if (score >= 75) return 'badge-green';
-  if (score >= 50) return 'badge-yellow';
-  return 'badge-red';
-}
-
-function getVerdictLabel(score) {
-  if (score >= 75) return 'True';
-  if (score >= 50) return 'Mixed';
-  return 'False';
-}
-
-function getBorderClass(score, category) {
-  if (category === 'opinion') return 'border-gray';
-  if (score >= 75) return 'border-green';
-  if (score >= 50) return 'border-yellow';
-  return 'border-red';
-}
-
-function formatTimestamp(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
-}
 
 // --- UI State ---
 

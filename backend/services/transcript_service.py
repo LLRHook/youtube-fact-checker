@@ -33,12 +33,14 @@ class TranscriptResult:
         self,
         video_id: str,
         title: str,
+        channel: str,
         duration_seconds: float,
         segments: list[TranscriptSegment],
         full_text: str,
     ):
         self.video_id = video_id
         self.title = title
+        self.channel = channel
         self.duration_seconds = duration_seconds
         self.segments = segments
         self.full_text = full_text
@@ -131,6 +133,7 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     return TranscriptResult(
         video_id=video_id,
         title=info["title"],
+        channel=info["channel"],
         duration_seconds=duration,
         segments=segments,
         full_text=full_text,

@@ -45,8 +45,8 @@ function renderVideo(video) {
   if (video.claims && video.claims.length > 0) {
     claimsHtml = video.claims.map((c, i) => {
       const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-      const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
-      const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${getVerdictLabel(c.truth_percentage)}`;
+      const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
+      const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
       const ts = formatTimestamp(c.timestamp_seconds);
       const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -106,7 +106,7 @@ function renderVideo(video) {
     <div class="score-section">
       <div class="score-ring">
         <svg viewBox="0 0 120 120" role="img" aria-label="Accuracy score: ${video.public_score}%">
-          <circle cx="60" cy="60" r="54" stroke="#2a2a4a" stroke-width="8" fill="none"/>
+          <circle cx="60" cy="60" r="54" stroke="var(--border)" stroke-width="8" fill="none"/>
           <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
                   id="score-ring-circle"
                   stroke-dasharray="${circumference}"
@@ -151,20 +151,6 @@ function renderVideo(video) {
     const ring = document.getElementById('score-ring-circle');
     if (ring) ring.setAttribute('stroke-dashoffset', offset);
   });
-}
-
-function animateCounter(elementId, from, to, duration) {
-  const el = document.getElementById(elementId);
-  if (!el) return;
-  const start = performance.now();
-  function tick(now) {
-    const elapsed = now - start;
-    const progress = Math.min(elapsed / duration, 1);
-    const eased = 1 - Math.pow(1 - progress, 3);
-    el.textContent = Math.round(from + (to - from) * eased);
-    if (progress < 1) requestAnimationFrame(tick);
-  }
-  requestAnimationFrame(tick);
 }
 
 function renderBreakdownBar(claims) {
@@ -242,8 +228,8 @@ function filterVideoClaims(filter) {
 
   container.innerHTML = filtered.map((c, i) => {
     const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-    const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
-    const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${getVerdictLabel(c.truth_percentage)}`;
+    const badgeText = c.category === 'opinion' ? 'Opinion' : `${verdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
+    const badgeTitle = c.category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${c.truth_percentage}% — ${verdictLabel(c.truth_percentage)}`;
     const ts = formatTimestamp(c.timestamp_seconds);
     const seekSeconds = Math.floor(c.timestamp_seconds);
 
@@ -292,60 +278,6 @@ function copyShareLink() {
     btn.textContent = 'Copy failed';
     setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
   }
-}
-
-function getBadgeClass(score, category) {
-  if (category === 'opinion') return 'badge-gray';
-  if (score >= 75) return 'badge-green';
-  if (score >= 50) return 'badge-yellow';
-  return 'badge-red';
-}
-
-function getVerdictLabel(score) {
-  if (score >= 75) return 'True';
-  if (score >= 50) return 'Mixed';
-  return 'False';
-}
-
-function getBorderClass(score, category) {
-  if (category === 'opinion') return 'border-gray';
-  if (score >= 75) return 'border-green';
-  if (score >= 50) return 'border-yellow';
-  return 'border-red';
-}
-
-function formatTimestamp(seconds) {
-  const m = Math.floor(seconds / 60);
-  const s = Math.round(seconds % 60);
-  return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function absoluteDate(dateStr) {
-  if (!dateStr) return '';
-  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'Z');
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
 }
 
 function addCardClickListeners(containerId) {

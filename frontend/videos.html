@@ -10,6 +10,7 @@
   <meta property="og:type" content="website">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='8' fill='%23FF0000'/><polygon points='16,12 16,28 28,20' fill='white'/></svg>">
   <meta name="theme-color" content="#0f0f0f">
+  <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');})()</script>
   <link rel="stylesheet" href="/styles.css">
   <style>
     .page-container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
@@ -101,6 +102,20 @@
     }
     .skel-card { height: 240px; border-radius: 12px; }
 
+    .pagination {
+      display: flex; justify-content: center; align-items: center; gap: 0.4rem;
+      margin-top: 1.5rem; flex-wrap: wrap;
+    }
+    .page-btn {
+      background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
+      border-radius: 8px; padding: 0.45rem 0.85rem; font-size: 0.85rem; cursor: pointer;
+      transition: border-color 0.2s, background 0.2s, color 0.2s;
+    }
+    .page-btn:hover:not(.active):not(:disabled) { border-color: var(--accent); color: var(--text); }
+    .page-btn.active { background: var(--accent); color: white; border-color: var(--accent); }
+    .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .page-ellipsis { color: var(--text-muted); padding: 0 0.3rem; }
+
     .back-to-top {
       position: fixed; bottom: 2rem; right: 2rem;
       width: 40px; height: 40px; border-radius: 50%;
@@ -133,6 +148,7 @@
       <div class="nav-links">
         <a href="/">Home</a>
         <a href="/videos" aria-current="page">Videos</a>
+        <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
       </div>
     </div>
 
@@ -162,6 +178,7 @@
     </div>
     <div id="video-grid" class="video-grid"></div>
     <div id="empty" class="empty-state" style="display:none;">No videos checked yet. <a href="/">Check one now!</a></div>
+    <div id="pagination" class="pagination"></div>
 
     <footer class="page-footer">
       <p>Results are AI-generated estimates, not definitive verdicts. Always verify important claims yourself.</p>
@@ -169,6 +186,7 @@
   </div>
 
   <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">&#9650;</button>
+  <script src="/utils.js"></script>
   <script src="/videos.js"></script>
   <script>
     window.addEventListener('scroll', () => {

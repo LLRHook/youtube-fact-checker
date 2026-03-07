@@ -1,6 +1,10 @@
 /* YouTube Fact Checker — Public Video Listing */
 
 let allVideos = [];
+let totalVideos = 0;
+let currentPage = 1;
+let totalPages = 1;
+let pageLimit = 50;
 let searchTimer = null;
 
 function debouncedApplyFilters() {
@@ -9,18 +13,23 @@ function debouncedApplyFilters() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadVideos();
+  loadVideos(1);
 });
 
-async function loadVideos() {
+async function loadVideos(page) {
   try {
-    const resp = await fetch('/api/videos');
+    const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`);
     if (!resp.ok) throw new Error('Failed to load videos');
-    allVideos = await resp.json();
+    const data = await resp.json();
+    allVideos = data.items;
+    totalVideos = data.total;
+    currentPage = data.page;
+    totalPages = data.pages;
     const skel = document.getElementById('videos-skeleton');
     if (skel) skel.style.display = 'none';
-    document.title = `${allVideos.length} Videos — YouTube Fact Checker`;
+    document.title = `${totalVideos} Videos — YouTube Fact Checker`;
     applyFilters();
+    renderPagination();
   } catch (err) {
     const skel = document.getElementById('videos-skeleton');
     if (skel) skel.style.display = 'none';
@@ -55,9 +64,9 @@ function applyFilters() {
 
   const countEl = document.getElementById('results-count');
   if (query) {
-    countEl.textContent = `${filtered.length} of ${allVideos.length} videos`;
+    countEl.textContent = `${filtered.length} of ${allVideos.length} on this page (${totalVideos} total)`;
   } else {
-    countEl.textContent = `${allVideos.length} videos`;
+    countEl.textContent = `${totalVideos} videos`;
   }
 
   renderGrid(filtered);
@@ -69,7 +78,7 @@ function renderGrid(videos) {
 
   if (videos.length === 0) {
     grid.innerHTML = '';
-    if (allVideos.length === 0) {
+    if (allVideos.length === 0 && totalVideos === 0) {
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
@@ -96,44 +105,51 @@ function renderGrid(videos) {
   `).join('');
 }
 
-function scoreClass(score) {
-  if (score >= 75) return 'score-green';
-  if (score >= 50) return 'score-yellow';
-  return 'score-red';
+function renderPagination() {
+  const container = document.getElementById('pagination');
+  if (!container) return;
+
+  if (totalPages <= 1) {
+    container.innerHTML = '';
+    return;
+  }
+
+  let html = '';
+  html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">&laquo; Prev</button>`;
+
+  const maxButtons = 5;
+  let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
+  let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+  if (endPage - startPage < maxButtons - 1) {
+    startPage = Math.max(1, endPage - maxButtons + 1);
+  }
+
+  if (startPage > 1) {
+    html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+    if (startPage > 2) html += `<span class="page-ellipsis">&hellip;</span>`;
+  }
+
+  for (let i = startPage; i <= endPage; i++) {
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+  }
+
+  if (endPage < totalPages) {
+    if (endPage < totalPages - 1) html += `<span class="page-ellipsis">&hellip;</span>`;
+    html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+  }
+
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next &raquo;</button>`;
+
+  container.innerHTML = html;
 }
 
-function verdictLabel(score) {
-  if (score >= 75) return 'True';
-  if (score >= 50) return 'Mixed';
-  return 'False';
-}
-
-function absoluteDate(dateStr) {
-  if (!dateStr) return '';
-  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-}
-
-function formatDate(dateStr) {
-  if (!dateStr) return '';
-  const d = new Date(dateStr + 'Z');
-  const now = new Date();
-  const diffMs = now - d;
-  const diffMin = Math.floor(diffMs / 60000);
-  const diffHr = Math.floor(diffMs / 3600000);
-  const diffDay = Math.floor(diffMs / 86400000);
-
-  if (diffMin < 1) return 'just now';
-  if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHr < 24) return `${diffHr}h ago`;
-  if (diffDay < 7) return `${diffDay}d ago`;
-  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function escapeHtml(str) {
-  if (!str) return '';
-  const div = document.createElement('div');
-  div.textContent = str;
-  return div.innerHTML;
+function goToPage(page) {
+  if (page < 1 || page > totalPages || page === currentPage) return;
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+  const skel = document.getElementById('videos-skeleton');
+  if (skel) skel.style.display = '';
+  document.getElementById('video-grid').innerHTML = '';
+  loadVideos(page);
 }
 
 function highlightMatch(text, query) {
