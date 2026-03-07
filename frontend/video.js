@@ -26,6 +26,8 @@ async function loadVideo(videoId) {
     if (ogImage) ogImage.setAttribute('content', `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
     const ogDesc = document.querySelector('meta[property="og:description"]');
     if (ogDesc && video.summary) ogDesc.setAttribute('content', video.summary);
+    const metaDesc = document.querySelector('meta[name="description"]');
+    if (metaDesc && video.summary) metaDesc.setAttribute('content', video.summary);
   } catch (err) {
     container.innerHTML = '<div class="empty-state">Error loading video.</div>';
   }

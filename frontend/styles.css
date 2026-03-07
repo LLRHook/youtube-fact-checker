@@ -552,6 +552,7 @@ header {
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 0.5rem;
+  flex-wrap: wrap;
 }
 
 .claim-reasoning {
