@@ -104,8 +104,9 @@ function renderVideo(video) {
         <svg viewBox="0 0 120 120">
           <circle cx="60" cy="60" r="54" stroke="#2a2a4a" stroke-width="8" fill="none"/>
           <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
+                  id="score-ring-circle"
                   stroke-dasharray="${circumference}"
-                  stroke-dashoffset="${offset}"
+                  stroke-dashoffset="${circumference}"
                   stroke-linecap="round"
                   transform="rotate(-90 60 60)"/>
         </svg>
@@ -137,6 +138,11 @@ function renderVideo(video) {
   renderBreakdownBar(allVideoClaims);
   updateVideoFilterCounts(allVideoClaims);
   animateCounter('score-value', 0, video.public_score, 800);
+
+  requestAnimationFrame(() => {
+    const ring = document.getElementById('score-ring-circle');
+    if (ring) ring.setAttribute('stroke-dashoffset', offset);
+  });
 }
 
 function animateCounter(elementId, from, to, duration) {

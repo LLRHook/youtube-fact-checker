@@ -72,7 +72,7 @@ function renderGrid(videos) {
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      grid.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem; grid-column: 1/-1;">No matching videos found.</p>';
+      grid.innerHTML = '<div style="text-align: center; padding: 2rem; grid-column: 1/-1;"><p style="color: var(--text-muted); margin-bottom: 0.75rem;">No matching videos found.</p><button onclick="document.getElementById(\'search-input\').value=\'\';applyFilters();" style="background:var(--surface);color:var(--accent);border:1px solid var(--border);border-radius:8px;padding:0.5rem 1rem;cursor:pointer;font-size:0.85rem;">Clear search</button></div>';
     }
     return;
   }
