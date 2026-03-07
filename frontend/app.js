@@ -172,8 +172,9 @@ function renderResults(data) {
   allClaims = (data.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
   // Video info
-  document.getElementById('video-title').textContent = data.video_title || 'Untitled Video';
-  document.getElementById('video-title').dataset.videoId = data.video_id || '';
+  const titleEl = document.getElementById('video-title');
+  titleEl.textContent = data.video_title || 'Untitled Video';
+  titleEl.dataset.videoId = data.video_id || '';
 
   document.getElementById('video-duration').textContent = `${formatTimestamp(data.video_duration_seconds)} duration`;
   document.getElementById('processing-time').textContent = `Analyzed in ${data.processing_time_seconds}s`;

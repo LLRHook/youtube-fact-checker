@@ -99,7 +99,7 @@ Return ONLY a JSON array of claims. No other text."""
 
     # Validate and normalize
     valid_claims = []
-    for i, claim in enumerate(claims):
+    for claim in claims:
         if isinstance(claim, dict) and "text" in claim:
             valid_claims.append({
                 "text": claim["text"],

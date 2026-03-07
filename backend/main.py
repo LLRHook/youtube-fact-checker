@@ -198,6 +198,9 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             summary_parts.append(f"{opinion_count} opinions identified.")
 
         elapsed = time.time() - start_time
+        summary = " ".join(summary_parts)
+        processing_time = round(elapsed, 1)
+
         tasks[task_id].status = TaskStatus.COMPLETED
         tasks[task_id].progress = "Done!"
         tasks[task_id].data = CheckResult(
@@ -207,8 +210,8 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             transcript_text=transcript.full_text[:2000],
             claims=claims,
             overall_truth_percentage=overall,
-            summary=" ".join(summary_parts),
-            processing_time_seconds=round(elapsed, 1),
+            summary=summary,
+            processing_time_seconds=processing_time,
         )
 
         # Write claims before marking video as completed to avoid a window
@@ -222,8 +225,8 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             duration_seconds=transcript.duration_seconds,
             transcript_text=transcript.full_text,
             overall_truth_percentage=overall,
-            summary=" ".join(summary_parts),
-            processing_time_seconds=round(elapsed, 1),
+            summary=summary,
+            processing_time_seconds=processing_time,
         )
         _cleanup_task(task_id)
 

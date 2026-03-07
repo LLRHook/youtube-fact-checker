@@ -112,7 +112,7 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     for entry in transcript_list:
         text = entry.text.strip()
         # Skip empty or music/sound effect markers
-        if not text or text.startswith("[") and text.endswith("]"):
+        if not text or (text.startswith("[") and text.endswith("]")):
             continue
         segments.append(
             TranscriptSegment(
