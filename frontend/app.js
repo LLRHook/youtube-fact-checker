@@ -419,6 +419,21 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     document.getElementById('url-input').focus();
   }
+  if (e.key === 'Escape') {
+    if (pollInterval) {
+      cancelAnalysis();
+    } else {
+      const input = document.getElementById('url-input');
+      if (input.value) {
+        input.value = '';
+        document.getElementById('url-preview').style.display = 'none';
+        document.getElementById('input-error').textContent = '';
+        input.focus();
+      } else {
+        input.blur();
+      }
+    }
+  }
 });
 
 function showUrlPreview() {

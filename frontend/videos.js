@@ -136,4 +136,14 @@ document.addEventListener('keydown', (e) => {
     e.preventDefault();
     document.getElementById('search-input').focus();
   }
+  if (e.key === 'Escape') {
+    const input = document.getElementById('search-input');
+    if (input.value) {
+      input.value = '';
+      applyFilters();
+      input.focus();
+    } else {
+      input.blur();
+    }
+  }
 });

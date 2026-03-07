@@ -449,6 +449,11 @@ header {
   transition: all 0.2s;
 }
 
+.filter-btn:hover:not(.active) {
+  border-color: var(--text-muted);
+  color: var(--text);
+}
+
 .filter-btn.active {
   background: var(--accent);
   color: white;
