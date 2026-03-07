@@ -1,5 +1,6 @@
 /* === Reset & Base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
 
 :root {
   --bg: #0f0f0f;
@@ -672,6 +673,19 @@ footer {
   text-align: center;
   color: var(--text-muted);
   font-size: 0.8rem;
+}
+
+/* === Focus Visible (keyboard accessibility) === */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.filter-btn:focus-visible,
+.video-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
 }
 
 /* === Responsive === */

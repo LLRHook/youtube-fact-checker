@@ -104,7 +104,7 @@ function renderVideo(video) {
                   transform="rotate(-90 60 60)"/>
         </svg>
         <div class="score-text">
-          <span class="score-value">${video.public_score}</span>
+          <span class="score-value" style="color:${scoreColor}">${video.public_score}</span>
           <span class="score-pct">%</span>
         </div>
       </div>

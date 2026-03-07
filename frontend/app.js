@@ -145,7 +145,8 @@ function renderResults(data) {
   circle.style.strokeDashoffset = offset;
   circle.style.stroke = getScoreColor(score);
 
-  // Animate score counter
+  // Color & animate score counter
+  document.getElementById('score-value').style.color = getScoreColor(score);
   animateCounter('score-value', 0, score, 800);
 
   // Render breakdown stats
