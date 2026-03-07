@@ -239,6 +239,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 "category": c.get("category", "fact"),
                 "sources": c.get("sources", []),
             })
+        await db.delete_claims_for_video(video_id)
         await db.create_claims(video_id, claims_for_db)
         _cleanup_task(task_id)
 
@@ -453,6 +454,12 @@ async def get_task_status(task_id: str):
 @app.get("/api/health")
 async def health():
     return {"status": "ok"}
+
+
+@app.get("/api/stats")
+async def public_stats():
+    """Aggregate site statistics."""
+    return await db.get_stats()
 
 
 # --- Public API ---

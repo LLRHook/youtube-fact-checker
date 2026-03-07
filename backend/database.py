@@ -218,6 +218,17 @@ async def get_queued_videos(limit: int = 5) -> list[dict]:
 # --- Claims ---
 
 
+async def delete_claims_for_video(video_id: str):
+    """Delete all claims and their sources for a video (used before re-inserting on retry)."""
+    async with _db() as db:
+        await db.execute(
+            "DELETE FROM claim_sources WHERE claim_id IN (SELECT id FROM claims WHERE video_id = ?)",
+            (video_id,),
+        )
+        await db.execute("DELETE FROM claims WHERE video_id = ?", (video_id,))
+        await db.commit()
+
+
 async def create_claims(video_id: str, claims_list: list[dict]):
     """Bulk-insert claims and their sources for a video."""
     async with _db() as db:
@@ -258,16 +269,28 @@ async def get_claims_for_video(video_id: str) -> list[dict]:
         ) as cursor:
             claim_rows = await cursor.fetchall()
 
+        if not claim_rows:
+            return []
+
+        claims_by_id = {}
         result = []
         for cr in claim_rows:
             claim = dict(cr)
-            async with db.execute(
-                "SELECT * FROM claim_sources WHERE claim_id = ?",
-                (claim["id"],),
-            ) as src_cursor:
-                sources = [dict(s) for s in await src_cursor.fetchall()]
-            claim["sources"] = sources
+            claim["sources"] = []
+            claims_by_id[claim["id"]] = claim
             result.append(claim)
+
+        claim_ids = list(claims_by_id.keys())
+        placeholders = ",".join("?" for _ in claim_ids)
+        async with db.execute(
+            f"SELECT * FROM claim_sources WHERE claim_id IN ({placeholders})",
+            claim_ids,
+        ) as src_cursor:
+            for src_row in await src_cursor.fetchall():
+                src = dict(src_row)
+                cid = src["claim_id"]
+                if cid in claims_by_id:
+                    claims_by_id[cid]["sources"].append(src)
 
         return result
 
@@ -347,3 +370,23 @@ async def get_channel_videos(channel: str) -> list[dict]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
+
+
+async def get_stats() -> dict:
+    """Get aggregate site statistics."""
+    async with _db() as db:
+        async with db.execute(
+            "SELECT COUNT(*) FROM videos WHERE status = 'completed'"
+        ) as c:
+            video_count = (await c.fetchone())[0]
+        async with db.execute("SELECT COUNT(*) FROM claims") as c:
+            claim_count = (await c.fetchone())[0]
+        async with db.execute(
+            "SELECT COUNT(DISTINCT channel) FROM videos WHERE status = 'completed' AND channel != ''"
+        ) as c:
+            channel_count = (await c.fetchone())[0]
+        return {
+            "video_count": video_count,
+            "claim_count": claim_count,
+            "channel_count": channel_count,
+        }

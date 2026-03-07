@@ -13,13 +13,6 @@
   <script>(function(){var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);else if(window.matchMedia('(prefers-color-scheme: light)').matches)document.documentElement.setAttribute('data-theme','light');})()</script>
   <link rel="stylesheet" href="/styles.css">
   <style>
-    .page-container { max-width: 960px; margin: 0 auto; padding: 2rem 1.5rem; }
-
-    .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; }
-    .page-header h1 { font-size: 1.4rem; font-weight: 700; }
-    .nav-links { display: flex; gap: 1rem; }
-    .nav-links a { color: var(--accent); text-decoration: none; font-size: 0.9rem; }
-    .nav-links a:hover { text-decoration: underline; }
 
     .video-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
@@ -52,8 +45,6 @@
     .score-yellow { background: rgba(255,165,2,0.15); color: var(--yellow); }
     .score-red { background: rgba(255,71,87,0.15); color: var(--red); }
 
-    .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
-
     .toolbar {
       display: flex; gap: 0.75rem; margin-bottom: 1.5rem; flex-wrap: wrap; align-items: center;
     }
@@ -78,24 +69,6 @@
     .sort-select:focus { border-color: var(--accent); }
     .results-count { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 0.75rem; }
 
-    .skeleton-loader { animation: fadeIn 0.3s ease; }
-    .skel {
-      background: var(--surface);
-      border-radius: 8px;
-      position: relative;
-      overflow: hidden;
-    }
-    .skel::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
-      animation: shimmer 1.5s infinite;
-    }
-    @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
-    }
     .skel-grid {
       display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
       gap: 1rem;
@@ -116,33 +89,16 @@
     .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
     .page-ellipsis { color: var(--text-muted); padding: 0 0.3rem; }
 
-    .back-to-top {
-      position: fixed; bottom: 2rem; right: 2rem;
-      width: 40px; height: 40px; border-radius: 50%;
-      background: var(--accent); color: white; border: none;
-      font-size: 1.2rem; cursor: pointer;
-      opacity: 0; visibility: hidden;
-      transition: opacity 0.3s, visibility 0.3s, transform 0.2s;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-      z-index: 100;
-    }
-    .back-to-top.visible { opacity: 1; visibility: visible; }
-    .back-to-top:hover { transform: scale(1.1); }
-
     @media (max-width: 600px) {
-      .page-container { padding: 1.5rem 1rem; }
-      .page-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
       .toolbar { flex-direction: column; }
       .search-wrapper { min-width: 0; width: 100%; }
       .search-input { min-width: 0; width: 100%; }
       .sort-select { width: 100%; }
-      .back-to-top { bottom: 1rem; right: 1rem; }
     }
   </style>
 </head>
 <body>
-  <div class="page-container">
+  <div class="page-container page-container--wide">
     <div class="page-header">
       <h1>Recent Fact Checks</h1>
       <div class="nav-links">
