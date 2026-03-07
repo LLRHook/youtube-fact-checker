@@ -157,12 +157,10 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             return
 
         # Step 3: Fact-check each claim
-        total_claims = len(raw_claims)
-
         def on_progress(completed, total):
             tasks[task_id].progress = f"Fact-checking claim {completed}/{total}..."
 
-        tasks[task_id].progress = f"Fact-checking {total_claims} claims..."
+        tasks[task_id].progress = f"Fact-checking {len(raw_claims)} claims..."
         checked_claims = await fact_check_all_claims(raw_claims, on_progress=on_progress)
 
         # Step 4: Build results

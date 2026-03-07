@@ -4,7 +4,7 @@ let allVideos = [];
 let totalVideos = 0;
 let currentPage = 1;
 let totalPages = 1;
-let pageLimit = 50;
+const pageLimit = 50;
 let searchTimer = null;
 
 function debouncedApplyFilters() {

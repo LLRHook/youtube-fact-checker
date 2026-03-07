@@ -243,15 +243,7 @@ function renderClaimsList(claims) {
     const timestamp = formatTimestamp(claim.timestamp_seconds);
     const ytLink = `https://youtube.com/watch?v=${document.getElementById('video-title').dataset.videoId || ''}&t=${Math.floor(claim.timestamp_seconds)}`;
 
-    let sourcesHtml = '';
-    if (claim.sources && claim.sources.length > 0) {
-      sourcesHtml = '<div class="claim-sources">' +
-        claim.sources.slice(0, 3).map(s =>
-          `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
-          (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
-        ).join('') +
-        '</div>';
-    }
+    const sourcesHtml = buildSourcesHtml(claim.sources, 3);
 
     card.innerHTML = `
       <div class="claim-header">
@@ -278,9 +270,7 @@ function renderClaimsList(claims) {
 }
 
 function filterClaims(filter) {
-  // Update active button
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+  setActiveFilter(filter);
 
   const filtered = filter === 'all'
     ? allClaims

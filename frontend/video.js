@@ -52,14 +52,7 @@ function buildClaimCardHtml(c, i) {
   const ts = formatTimestamp(c.timestamp_seconds);
   const seekSeconds = Math.floor(c.timestamp_seconds);
 
-  let sourcesHtml = '';
-  if (c.sources && c.sources.length > 0) {
-    sourcesHtml = '<div class="claim-sources">' +
-      c.sources.map(s =>
-        `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
-        (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
-      ).join('') + '</div>';
-  }
+  const sourcesHtml = buildSourcesHtml(c.sources);
 
   const borderClass = getBorderClass(c.truth_percentage, c.category);
   return `
@@ -168,8 +161,7 @@ function renderVideo(video) {
 }
 
 function filterVideoClaims(filter) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+  setActiveFilter(filter);
 
   const container = document.getElementById('claims-container');
   if (!container) return;
@@ -187,20 +179,15 @@ function filterVideoClaims(filter) {
   addCardClickListeners('claims-container');
 }
 
-function copyShareLink() {
+async function copyShareLink() {
   const btn = document.querySelector('.share-btn');
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      btn.textContent = 'Link copied!';
-      setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
-    }).catch(() => {
-      btn.textContent = 'Copy failed';
-      setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
-    });
-  } else {
+  try {
+    await navigator.clipboard.writeText(window.location.href);
+    btn.textContent = 'Link copied!';
+  } catch {
     btn.textContent = 'Copy failed';
-    setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
   }
+  setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
 }
 
 document.addEventListener('keydown', (e) => {

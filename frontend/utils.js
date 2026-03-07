@@ -190,6 +190,25 @@ function initBackToTop() {
 
 initBackToTop();
 
+/* --- Sources HTML --- */
+
+function buildSourcesHtml(sources, limit) {
+  if (!sources || sources.length === 0) return '';
+  const items = limit ? sources.slice(0, limit) : sources;
+  return '<div class="claim-sources">' +
+    items.map(s =>
+      `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+      (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
+    ).join('') + '</div>';
+}
+
+/* --- Active Filter --- */
+
+function setActiveFilter(filter) {
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  document.querySelector(`.filter-btn[data-filter="${filter}"]`).classList.add('active');
+}
+
 /* --- Collapse All Cards (shared) --- */
 
 function collapseAllCards(containerId) {
