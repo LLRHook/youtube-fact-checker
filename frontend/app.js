@@ -411,6 +411,15 @@ document.getElementById('url-input').addEventListener('paste', () => {
 
 document.getElementById('url-input').focus();
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
+    const active = document.activeElement;
+    if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.isContentEditable)) return;
+    e.preventDefault();
+    document.getElementById('url-input').focus();
+  }
+});
+
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();
   const preview = document.getElementById('url-preview');

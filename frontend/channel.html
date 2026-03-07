@@ -49,6 +49,32 @@
     .score-red { background: rgba(255,71,87,0.15); color: var(--red); }
 
     .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
+
+    .skeleton-loader { animation: fadeIn 0.3s ease; }
+    .skel {
+      background: var(--surface);
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .skel::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.04), transparent);
+      animation: shimmer 1.5s infinite;
+    }
+    @keyframes shimmer {
+      0% { transform: translateX(-100%); }
+      100% { transform: translateX(100%); }
+    }
+    .skel-heading { height: 1.4rem; width: 40%; margin-bottom: 0.5rem; }
+    .skel-stats { height: 0.9rem; width: 25%; margin-bottom: 1.5rem; }
+    .skel-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 1rem;
+    }
+    .skel-card { height: 220px; border-radius: 12px; }
   </style>
 </head>
 <body>
@@ -61,7 +87,15 @@
     </div>
 
     <div id="content">
-      <div class="empty-state">Loading...</div>
+      <div class="skeleton-loader">
+        <div class="skel skel-heading"></div>
+        <div class="skel skel-stats"></div>
+        <div class="skel-grid">
+          <div class="skel skel-card"></div>
+          <div class="skel skel-card"></div>
+          <div class="skel skel-card"></div>
+        </div>
+      </div>
     </div>
 
     <footer class="page-footer">

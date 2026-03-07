@@ -34,7 +34,7 @@ function renderVideo(video) {
 
   let claimsHtml = '';
   if (video.claims && video.claims.length > 0) {
-    claimsHtml = video.claims.map(c => {
+    claimsHtml = video.claims.map((c, i) => {
       const badgeClass = getBadgeClass(c.truth_percentage, c.category);
       const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
       const ts = formatTimestamp(c.timestamp_seconds);
@@ -51,7 +51,7 @@ function renderVideo(video) {
 
       const borderClass = getBorderClass(c.truth_percentage, c.category);
       return `
-        <div class="claim-card ${borderClass}">
+        <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
           <div class="claim-header">
             <span class="claim-text">${escapeHtml(c.text)}</span>
             <span class="claim-badge ${badgeClass}">${badgeText}</span>
@@ -202,7 +202,7 @@ function filterVideoClaims(filter) {
     return;
   }
 
-  container.innerHTML = filtered.map(c => {
+  container.innerHTML = filtered.map((c, i) => {
     const badgeClass = getBadgeClass(c.truth_percentage, c.category);
     const badgeText = c.category === 'opinion' ? 'Opinion' : `${getVerdictLabel(c.truth_percentage)} · ${c.truth_percentage}%`;
     const ts = formatTimestamp(c.timestamp_seconds);
@@ -219,7 +219,7 @@ function filterVideoClaims(filter) {
 
     const borderClass = getBorderClass(c.truth_percentage, c.category);
     return `
-      <div class="claim-card ${borderClass}">
+      <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
         <div class="claim-header">
           <span class="claim-text">${escapeHtml(c.text)}</span>
           <span class="claim-badge ${badgeClass}">${badgeText}</span>
