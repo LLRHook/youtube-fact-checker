@@ -278,11 +278,19 @@ function filterVideoClaims(filter) {
 }
 
 function copyShareLink() {
-  navigator.clipboard.writeText(window.location.href).then(() => {
-    const btn = document.querySelector('.share-btn');
-    btn.textContent = 'Link copied!';
+  const btn = document.querySelector('.share-btn');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      btn.textContent = 'Link copied!';
+      setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
+    }).catch(() => {
+      btn.textContent = 'Copy failed';
+      setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
+    });
+  } else {
+    btn.textContent = 'Copy failed';
     setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
-  });
+  }
 }
 
 function getBadgeClass(score, category) {
