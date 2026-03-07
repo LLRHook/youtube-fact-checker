@@ -83,7 +83,7 @@ app.add_middleware(
 )
 
 
-_STATIC_EXTENSIONS = {".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2"}
+_STATIC_EXTENSIONS = (".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2")
 
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
@@ -103,7 +103,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "font-src 'self'"
         )
         path = request.url.path
-        if any(path.endswith(ext) for ext in _STATIC_EXTENSIONS):
+        if path.endswith(_STATIC_EXTENSIONS):
             response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
         return response
 

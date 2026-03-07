@@ -365,7 +365,8 @@ header {
   height: 100%;
 }
 
-#score-circle {
+#score-circle,
+#score-ring-circle {
   transition: stroke-dashoffset 0.8s ease;
 }
 
@@ -750,10 +751,6 @@ header {
   border: 0;
 }
 
-#score-ring-circle {
-  transition: stroke-dashoffset 0.8s ease;
-}
-
 .action-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
 
 .share-btn {
@@ -1050,13 +1047,6 @@ footer {
 
 /* === Focus Visible (keyboard accessibility) === */
 :focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 2px;
-}
-
-button:focus-visible,
-.filter-btn:focus-visible,
-.video-card:focus-visible {
   outline: 2px solid var(--accent);
   outline-offset: 2px;
 }

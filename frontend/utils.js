@@ -190,6 +190,20 @@ function initBackToTop() {
 
 initBackToTop();
 
+/* --- Collapse All Cards (shared) --- */
+
+function collapseAllCards(containerId) {
+  const cards = document.querySelectorAll(`#${containerId} .claim-card.expanded`);
+  cards.forEach(c => {
+    c.classList.remove('expanded');
+    const toggle = c.querySelector('.claim-toggle');
+    if (toggle) toggle.innerHTML = 'Show details &#9662;';
+  });
+  const btn = document.getElementById('toggle-all-btn');
+  if (btn) btn.textContent = 'Expand all';
+  return cards.length > 0;
+}
+
 /* --- Toggle All Claims (shared) --- */
 
 function toggleAllClaims(containerId) {

@@ -366,16 +366,7 @@ document.addEventListener('keydown', (e) => {
     if (pollInterval) {
       cancelAnalysis();
     } else {
-      const expanded = document.querySelectorAll('#claims-list .claim-card.expanded');
-      if (expanded.length > 0) {
-        expanded.forEach(c => {
-          c.classList.remove('expanded');
-          const toggle = c.querySelector('.claim-toggle');
-          if (toggle) toggle.innerHTML = 'Show details &#9662;';
-        });
-        const btn = document.getElementById('toggle-all-btn');
-        if (btn) btn.textContent = 'Expand all';
-      } else {
+      if (!collapseAllCards('claims-list')) {
         const input = document.getElementById('url-input');
         if (input.value) {
           input.value = '';
