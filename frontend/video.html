@@ -7,6 +7,7 @@
   <meta name="description" content="AI-powered fact-check with accuracy scores and sourced evidence for every claim.">
   <meta property="og:title" content="Video Fact Check — YouTube Fact Checker">
   <meta property="og:description" content="AI-powered fact-check with accuracy scores and sourced evidence for every claim.">
+  <meta property="og:image" content="">
   <meta property="og:type" content="article">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='8' fill='%23FF0000'/><polygon points='16,12 16,28 28,20' fill='white'/></svg>">
   <meta name="theme-color" content="#0f0f0f">
@@ -72,7 +73,11 @@
 
     .claims-heading { font-size: 1rem; font-weight: 600; margin-bottom: 0.75rem; }
 
-    .filter-bar { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+    .filter-bar {
+      display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap;
+      position: sticky; top: 0; z-index: 10;
+      background: var(--bg); padding: 0.75rem 0;
+    }
     .filter-btn {
       background: var(--surface); color: var(--text-muted); border: 1px solid var(--border);
       border-radius: 20px; padding: 0.4rem 1rem; font-size: 0.85rem; cursor: pointer; transition: all 0.2s;

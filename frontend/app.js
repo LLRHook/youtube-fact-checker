@@ -240,6 +240,7 @@ function renderClaimsList(claims) {
         <span class="category-tag">${claim.category}</span>
         <span>${timestamp}</span>
         ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
+        ${claim.sources && claim.sources.length > 0 ? `<span>${claim.sources.length} source${claim.sources.length > 1 ? 's' : ''}</span>` : ''}
       </div>
       <button class="claim-toggle" onclick="toggleClaim(this)">
         Show details &#9662;

@@ -21,6 +21,8 @@ async function loadVideo(videoId) {
     document.title = `${video.title} — YouTube Fact Checker`;
     const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) ogTitle.setAttribute('content', `${video.title} — YouTube Fact Checker`);
+    const ogImage = document.querySelector('meta[property="og:image"]');
+    if (ogImage) ogImage.setAttribute('content', `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
   } catch (err) {
     container.innerHTML = '<div class="empty-state">Error loading video.</div>';
   }
@@ -62,6 +64,7 @@ function renderVideo(video) {
           <div class="claim-meta">
             <span class="category-tag">${c.category}</span>
             <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
+            ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
           </div>
           <button class="claim-toggle" onclick="toggleClaim(this)">Show details &#9662;</button>
           <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
@@ -231,6 +234,7 @@ function filterVideoClaims(filter) {
         <div class="claim-meta">
           <span class="category-tag">${c.category}</span>
           <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
+          ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
         </div>
         <button class="claim-toggle" onclick="toggleClaim(this)">Show details &#9662;</button>
         <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
