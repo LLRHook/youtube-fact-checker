@@ -13,6 +13,8 @@ const POLL_TIMEOUT_MS = 5 * 60 * 1000;
 // --- Submit ---
 
 async function submitVideo() {
+  stopPolling();
+
   const input = document.getElementById('url-input');
   const url = input.value.trim();
   const errorEl = document.getElementById('input-error');
@@ -120,12 +122,20 @@ function stopPolling() {
   resetButton();
 }
 
+function formatElapsed(ms) {
+  const totalSec = Math.round(ms / 1000);
+  if (totalSec < 60) return `${totalSec}s`;
+  const m = Math.floor(totalSec / 60);
+  const s = totalSec % 60;
+  return `${m}m ${s}s`;
+}
+
 function startElapsedTimer() {
   elapsedStart = Date.now();
   const el = document.getElementById('loading-elapsed');
   if (el) el.textContent = 'Elapsed: 0s';
   elapsedInterval = setInterval(() => {
-    if (el) el.textContent = `Elapsed: ${Math.round((Date.now() - elapsedStart) / 1000)}s`;
+    if (el) el.textContent = `Elapsed: ${formatElapsed(Date.now() - elapsedStart)}`;
   }, 1000);
 }
 
@@ -161,7 +171,7 @@ function updateProgress(text, pct) {
 // --- Render Results ---
 
 function renderResults(data) {
-  allClaims = data.claims || [];
+  allClaims = (data.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
   // Video info
   document.getElementById('video-title').textContent = data.video_title || 'Untitled Video';
@@ -247,7 +257,7 @@ function renderClaimsList(claims) {
 
     card.innerHTML = `
       <div class="claim-header">
-        <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(claim.text)}</span>
+        <span class="claim-text"><span class="claim-num">#${claim._num || i + 1}</span> ${escapeHtml(claim.text)}</span>
         <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
       </div>
       <div class="claim-meta">

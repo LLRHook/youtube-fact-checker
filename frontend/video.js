@@ -51,7 +51,7 @@ function renderVideo(video) {
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (video.public_score / 100) * circumference;
 
-  allVideoClaims = video.claims || [];
+  allVideoClaims = (video.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
   let claimsHtml = '';
   if (video.claims && video.claims.length > 0) {
@@ -75,7 +75,7 @@ function renderVideo(video) {
       return `
         <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
           <div class="claim-header">
-            <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(c.text)}</span>
+            <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
             <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
           </div>
           <div class="claim-meta">
@@ -145,7 +145,7 @@ function renderVideo(video) {
     <div id="breakdown-bar" class="breakdown-bar-container"></div>
 
     <h3 class="claims-heading">Claims (${video.claims.length})</h3>
-    <div class="filter-bar">
+    <div class="filter-bar" role="toolbar" aria-label="Filter claims by category">
       <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
       <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
       <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
@@ -232,7 +232,7 @@ function filterVideoClaims(filter) {
     return `
       <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
         <div class="claim-header">
-          <span class="claim-text"><span class="claim-num">#${i + 1}</span> ${escapeHtml(c.text)}</span>
+          <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
           <span class="claim-badge ${badgeClass}" title="${badgeTitle}">${badgeText}</span>
         </div>
         <div class="claim-meta">

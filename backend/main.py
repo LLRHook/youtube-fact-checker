@@ -181,22 +181,18 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 )
             )
 
-        if claims:
-            total_weight = sum(c.confidence for c in claims if c.category == ClaimCategory.FACT)
-            if total_weight > 0:
-                weighted_sum = sum(
-                    c.truth_percentage * c.confidence
-                    for c in claims
-                    if c.category == ClaimCategory.FACT
-                )
-                overall = round(weighted_sum / total_weight)
-            else:
-                overall = 50
-        else:
-            overall = 0
-
-        fact_count = sum(1 for c in claims if c.category == ClaimCategory.FACT)
-        opinion_count = sum(1 for c in claims if c.category == ClaimCategory.OPINION)
+        total_weight = 0
+        weighted_sum = 0
+        fact_count = 0
+        opinion_count = 0
+        for c in claims:
+            if c.category == ClaimCategory.FACT:
+                fact_count += 1
+                total_weight += c.confidence
+                weighted_sum += c.truth_percentage * c.confidence
+            elif c.category == ClaimCategory.OPINION:
+                opinion_count += 1
+        overall = round(weighted_sum / total_weight) if total_weight > 0 else (50 if claims else 0)
 
         summary_parts = [f"Analyzed {len(claims)} statements."]
         if fact_count:
@@ -469,16 +465,15 @@ async def public_stats():
 
 def _calculate_public_score(claims: list[dict]) -> int:
     """Calculate score from fact claims."""
-    fact_claims = [c for c in claims if c.get("category") == "fact"]
-    if not fact_claims:
-        return 0
-    total_weight = sum(c.get("confidence", 0.5) for c in fact_claims)
-    if total_weight == 0:
-        return 0
-    weighted_sum = sum(
-        c.get("truth_percentage", 50) * c.get("confidence", 0.5) for c in fact_claims
-    )
-    return round(weighted_sum / total_weight)
+    total_weight = 0
+    weighted_sum = 0
+    for c in claims:
+        if c.get("category") != "fact":
+            continue
+        conf = c.get("confidence", 0.5)
+        total_weight += conf
+        weighted_sum += c.get("truth_percentage", 50) * conf
+    return round(weighted_sum / total_weight) if total_weight > 0 else 0
 
 
 @app.get("/api/videos")
