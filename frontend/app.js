@@ -5,6 +5,8 @@ let pollInterval = null;
 let elapsedInterval = null;
 let elapsedStart = null;
 let allClaims = [];
+let pollFailures = 0;
+const MAX_POLL_FAILURES = 5;
 
 // --- Submit ---
 
@@ -66,6 +68,7 @@ async function submitVideo() {
 function startPolling() {
   updateProgress('Starting analysis...', 10);
   startElapsedTimer();
+  pollFailures = 0;
 
   pollInterval = setInterval(async () => {
     try {
@@ -73,6 +76,7 @@ function startPolling() {
       if (!resp.ok) throw new Error('Polling failed');
 
       const data = await resp.json();
+      pollFailures = 0;
 
       if (data.status === 'processing') {
         updateProgress(data.progress || 'Processing...', estimateProgress(data.progress));
@@ -87,8 +91,11 @@ function startPolling() {
         showSection('queued');
       }
     } catch (err) {
-      stopPolling();
-      showError('Connection lost. Please try again.');
+      pollFailures++;
+      if (pollFailures >= MAX_POLL_FAILURES) {
+        stopPolling();
+        showError('Connection lost. Please try again.');
+      }
     }
   }, 2000);
 }

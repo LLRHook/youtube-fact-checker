@@ -1,19 +1,24 @@
 """SQLite database layer for persistent video/claim storage."""
 
 import aiosqlite
+from contextlib import asynccontextmanager
 from pathlib import Path
 from backend.config import settings
 
 _DB_PATH = settings.DATABASE_PATH
 
 
-async def _get_db() -> aiosqlite.Connection:
-    """Open a connection with row_factory enabled."""
+@asynccontextmanager
+async def _db():
+    """Async context manager for DB connections with WAL and FK enabled."""
     db = await aiosqlite.connect(_DB_PATH)
     db.row_factory = aiosqlite.Row
     await db.execute("PRAGMA journal_mode=WAL")
     await db.execute("PRAGMA foreign_keys=ON")
-    return db
+    try:
+        yield db
+    finally:
+        await db.close()
 
 
 async def init_db():
@@ -81,42 +86,33 @@ async def init_db():
 
 async def get_video(video_id: str) -> dict | None:
     """Return a video row as dict, or None."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             "SELECT * FROM videos WHERE id = ?", (video_id,)
         ) as cursor:
             row = await cursor.fetchone()
             return dict(row) if row else None
-    finally:
-        await db.close()
 
 
 async def create_video(video_id: str, youtube_url: str, *, ip_address: str = "", status: str = "processing") -> dict:
     """Insert a new video row."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         await db.execute(
             "INSERT INTO videos (id, youtube_url, ip_address, status) VALUES (?, ?, ?, ?)",
             (video_id, youtube_url, ip_address, status),
         )
         await db.commit()
         return {"id": video_id, "youtube_url": youtube_url, "status": status}
-    finally:
-        await db.close()
 
 
 async def update_video_status(video_id: str, status: str, error: str | None = None):
     """Set video status (processing/completed/failed) and optional error."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         await db.execute(
             "UPDATE videos SET status = ?, error = ?, updated_at = datetime('now') WHERE id = ?",
             (status, error, video_id),
         )
         await db.commit()
-    finally:
-        await db.close()
 
 
 async def update_video_results(
@@ -131,8 +127,7 @@ async def update_video_results(
     processing_time_seconds: float,
 ):
     """Write final results to a completed video row."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         await db.execute(
             """UPDATE videos SET
                 title = ?, channel = ?, duration_seconds = ?,
@@ -148,8 +143,6 @@ async def update_video_results(
             ),
         )
         await db.commit()
-    finally:
-        await db.close()
 
 
 async def list_videos(status: str | None = None, *, limit: int = 0, offset: int = 0) -> list[dict]:
@@ -164,13 +157,10 @@ async def list_videos(status: str | None = None, *, limit: int = 0, offset: int 
         query += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
 
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(query, params) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
-    finally:
-        await db.close()
 
 
 async def count_videos(status: str | None = None) -> int:
@@ -181,54 +171,42 @@ async def count_videos(status: str | None = None) -> int:
         query += " AND status = ?"
         params.append(status)
 
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(query, params) as cursor:
             row = await cursor.fetchone()
             return row[0] if row else 0
-    finally:
-        await db.close()
 
 
 async def count_videos_today() -> int:
     """Count non-queued videos created today."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             "SELECT COUNT(*) FROM videos WHERE status != 'queued' AND date(created_at) = date('now')"
         ) as cursor:
             row = await cursor.fetchone()
             return row[0] if row else 0
-    finally:
-        await db.close()
 
 
 async def count_videos_today_by_ip(ip: str) -> int:
     """Count videos submitted by a specific IP today."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND date(created_at) = date('now')",
             (ip,),
         ) as cursor:
             row = await cursor.fetchone()
             return row[0] if row else 0
-    finally:
-        await db.close()
 
 
 async def get_queued_videos(limit: int = 5) -> list[dict]:
     """Return oldest queued videos."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             "SELECT * FROM videos WHERE status = 'queued' ORDER BY created_at ASC LIMIT ?",
             (limit,),
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
-    finally:
-        await db.close()
 
 
 # --- Claims ---
@@ -236,8 +214,7 @@ async def get_queued_videos(limit: int = 5) -> list[dict]:
 
 async def create_claims(video_id: str, claims_list: list[dict]):
     """Bulk-insert claims and their sources for a video."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         for i, c in enumerate(claims_list):
             cursor = await db.execute(
                 """INSERT INTO claims
@@ -264,14 +241,11 @@ async def create_claims(video_id: str, claims_list: list[dict]):
                 )
 
         await db.commit()
-    finally:
-        await db.close()
 
 
 async def get_claims_for_video(video_id: str) -> list[dict]:
     """Return claims with nested sources for a video."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             "SELECT * FROM claims WHERE video_id = ? ORDER BY claim_index",
             (video_id,),
@@ -290,8 +264,6 @@ async def get_claims_for_video(video_id: str) -> list[dict]:
             result.append(claim)
 
         return result
-    finally:
-        await db.close()
 
 
 async def get_claims_for_videos(video_ids: list[str]) -> dict[str, list[dict]]:
@@ -302,8 +274,7 @@ async def get_claims_for_videos(video_ids: list[str]) -> dict[str, list[dict]]:
     if not video_ids:
         return {}
 
-    db = await _get_db()
-    try:
+    async with _db() as db:
         placeholders = ",".join("?" for _ in video_ids)
 
         # Fetch all claims for the given videos
@@ -339,8 +310,6 @@ async def get_claims_for_videos(video_ids: list[str]) -> dict[str, list[dict]]:
                     claims_by_id[cid]["sources"].append(src)
 
         return result
-    finally:
-        await db.close()
 
 
 # --- Public queries ---
@@ -348,8 +317,7 @@ async def get_claims_for_videos(video_ids: list[str]) -> dict[str, list[dict]]:
 
 async def list_channels() -> list[dict]:
     """List channels with aggregate stats from completed videos."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             """SELECT channel, COUNT(*) as video_count,
                       AVG(overall_truth_percentage) as avg_score
@@ -360,14 +328,11 @@ async def list_channels() -> list[dict]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
-    finally:
-        await db.close()
 
 
 async def get_channel_videos(channel: str) -> list[dict]:
     """List completed videos for a specific channel."""
-    db = await _get_db()
-    try:
+    async with _db() as db:
         async with db.execute(
             """SELECT * FROM videos
                WHERE channel = ? AND status = 'completed'
@@ -376,5 +341,3 @@ async def get_channel_videos(channel: str) -> list[dict]:
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
-    finally:
-        await db.close()

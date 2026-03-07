@@ -10,6 +10,8 @@ from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response
 
 from backend.config import settings, validate_settings
 from backend.models import (
@@ -36,6 +38,10 @@ from backend.services.claim_extractor import extract_claims
 from backend.services.fact_checker import fact_check_all_claims
 from backend import database as db
 
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s %(levelname)s %(name)s: %(message)s",
+)
 logger = logging.getLogger(__name__)
 
 # In-memory task store (for in-flight progress tracking only)
@@ -71,6 +77,19 @@ app.add_middleware(
     allow_methods=["GET", "POST"],
     allow_headers=["*"],
 )
+
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response: Response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        return response
+
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 
 async def process_video(task_id: str, video_id: str, youtube_url: str):
@@ -203,14 +222,17 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         await db.create_claims(video_id, claims_for_db)
 
     except VideoTooLongError as e:
+        logger.warning("Video %s too long: %s", video_id, e)
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = str(e)
         await db.update_video_status(video_id, "failed", str(e))
     except TranscriptError as e:
+        logger.warning("Transcript error for video %s: %s", video_id, e)
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = str(e)
         await db.update_video_status(video_id, "failed", str(e))
     except Exception as e:
+        logger.exception("Unexpected error processing video %s", video_id)
         error_msg = f"Unexpected error: {str(e)[:200]}"
         tasks[task_id].status = TaskStatus.FAILED
         tasks[task_id].error = error_msg
