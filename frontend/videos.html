@@ -62,6 +62,14 @@
     }
     .search-input::placeholder { color: var(--text-muted); }
     .search-input:focus { border-color: var(--accent); }
+    .search-wrapper { position: relative; flex: 1; min-width: 200px; }
+    .search-wrapper .search-input { width: 100%; min-width: 0; padding-right: 2rem; }
+    .search-clear {
+      position: absolute; right: 0.5rem; top: 50%; transform: translateY(-50%);
+      background: none; border: none; color: var(--text-muted); font-size: 1.1rem;
+      cursor: pointer; padding: 0.2rem 0.4rem; line-height: 1; display: none;
+    }
+    .search-clear:hover { color: var(--text); }
     .sort-select {
       background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
       padding: 0.6rem 1rem; color: var(--text); font-size: 0.85rem; cursor: pointer; outline: none;
@@ -111,6 +119,7 @@
       .page-container { padding: 1.5rem 1rem; }
       .page-header { flex-direction: column; align-items: flex-start; gap: 0.5rem; }
       .toolbar { flex-direction: column; }
+      .search-wrapper { min-width: 0; width: 100%; }
       .search-input { min-width: 0; width: 100%; }
       .sort-select { width: 100%; }
       .back-to-top { bottom: 1rem; right: 1rem; }
@@ -128,7 +137,10 @@
     </div>
 
     <div class="toolbar">
-      <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters()">
+      <div class="search-wrapper">
+        <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()">
+        <button class="search-clear" id="search-clear" onclick="document.getElementById('search-input').value='';applyFilters();toggleClearBtn();" title="Clear search">&times;</button>
+      </div>
       <select class="sort-select" id="sort-select" onchange="applyFilters()">
         <option value="date-desc">Newest first</option>
         <option value="date-asc">Oldest first</option>

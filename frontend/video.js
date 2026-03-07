@@ -348,6 +348,23 @@ function addCardClickListeners(containerId) {
   });
 }
 
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    const expanded = document.querySelectorAll('#claims-container .claim-card.expanded');
+    if (expanded.length > 0) {
+      expanded.forEach(c => {
+        c.classList.remove('expanded');
+        const toggle = c.querySelector('.claim-toggle');
+        if (toggle) toggle.innerHTML = 'Show details &#9662;';
+      });
+      const btn = document.getElementById('toggle-all-btn');
+      if (btn) btn.textContent = 'Expand all';
+    } else {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  }
+});
+
 function seekTo(seconds) {
   const iframe = document.getElementById('yt-player');
   if (iframe) {

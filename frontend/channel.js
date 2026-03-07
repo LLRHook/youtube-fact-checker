@@ -45,6 +45,26 @@ function renderChannel(data) {
       `).join('')
     : '<div class="empty-state">No videos for this channel.</div>';
 
+  const trueCount = data.videos.filter(v => v.public_score >= 75).length;
+  const mixedCount = data.videos.filter(v => v.public_score >= 50 && v.public_score < 75).length;
+  const falseCount = data.videos.filter(v => v.public_score < 50).length;
+  const total = data.videos.length || 1;
+
+  const distBarHtml = data.videos.length > 0 ? `
+    <div class="distribution-bar">
+      <div class="distribution-segments">
+        ${trueCount ? `<div class="dist-seg dist-green" title="${trueCount} true" style="width:${(trueCount/total)*100}%"></div>` : ''}
+        ${mixedCount ? `<div class="dist-seg dist-yellow" title="${mixedCount} mixed" style="width:${(mixedCount/total)*100}%"></div>` : ''}
+        ${falseCount ? `<div class="dist-seg dist-red" title="${falseCount} false" style="width:${(falseCount/total)*100}%"></div>` : ''}
+      </div>
+      <div class="dist-legend">
+        ${trueCount ? `<span class="dist-legend-item"><span class="dist-dot dist-green"></span>${trueCount} true</span>` : ''}
+        ${mixedCount ? `<span class="dist-legend-item"><span class="dist-dot dist-yellow"></span>${mixedCount} mixed</span>` : ''}
+        ${falseCount ? `<span class="dist-legend-item"><span class="dist-dot dist-red"></span>${falseCount} false</span>` : ''}
+      </div>
+    </div>
+  ` : '';
+
   container.innerHTML = `
     <div class="channel-header">
       <h1>${escapeHtml(data.channel)}</h1>
@@ -53,6 +73,7 @@ function renderChannel(data) {
         <span>Avg accuracy: <span class="stat-value" style="color:${scoreColor(data.avg_score)}">${Math.round(data.avg_score)}%</span></span>
       </div>
     </div>
+    ${distBarHtml}
     <div class="video-grid">${videosHtml}</div>
   `;
 }

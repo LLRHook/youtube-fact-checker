@@ -147,6 +147,11 @@ function highlightMatch(text, query) {
   return `${before}<mark style="background:rgba(108,99,255,0.3);color:var(--text);border-radius:2px;padding:0 1px;">${match}</mark>${after}`;
 }
 
+function toggleClearBtn() {
+  const btn = document.getElementById('search-clear');
+  if (btn) btn.style.display = document.getElementById('search-input').value ? 'block' : 'none';
+}
+
 document.addEventListener('keydown', (e) => {
   if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
     const active = document.activeElement;
@@ -159,6 +164,7 @@ document.addEventListener('keydown', (e) => {
     if (input.value) {
       input.value = '';
       applyFilters();
+      toggleClearBtn();
       input.focus();
     } else {
       input.blur();
