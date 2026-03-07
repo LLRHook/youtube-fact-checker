@@ -518,22 +518,21 @@ async def public_get_video(video_id: str):
     claims = await db.get_claims_for_video(video_id)
     public_score = _calculate_public_score(claims)
 
-    public_claims = []
-    for c in claims:
-        public_claims.append(
-            PublicClaimDetail(
-                text=c["text"],
-                timestamp_seconds=c["timestamp_seconds"],
-                truth_percentage=c["truth_percentage"],
-                confidence=c["confidence"],
-                reasoning=c["reasoning"],
-                category=c["category"],
-                sources=[
-                    Source(title=s["title"], url=s["url"], snippet=s["snippet"])
-                    for s in c.get("sources", [])
-                ],
-            ).model_dump()
-        )
+    public_claims = [
+        PublicClaimDetail(
+            text=c["text"],
+            timestamp_seconds=c["timestamp_seconds"],
+            truth_percentage=c["truth_percentage"],
+            confidence=c["confidence"],
+            reasoning=c["reasoning"],
+            category=c["category"],
+            sources=[
+                Source(title=s["title"], url=s["url"], snippet=s["snippet"])
+                for s in c.get("sources", [])
+            ],
+        ).model_dump()
+        for c in claims
+    ]
 
     return PublicVideoDetail(
         id=video["id"],

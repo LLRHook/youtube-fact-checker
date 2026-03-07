@@ -14,11 +14,11 @@ async function loadVideo(videoId) {
     const resp = await fetch(`/api/videos/${videoId}`);
     if (!resp.ok) {
       container.innerHTML = `<div class="empty-state">
-        <p style="font-size:1.1rem;margin-bottom:0.75rem;">Video not found</p>
-        <p style="margin-bottom:1rem;">This video hasn't been fact-checked yet, or the URL is invalid.</p>
-        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
-          <a href="/" style="color:var(--accent);text-decoration:none;font-weight:600;">Check a video</a>
-          <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+        <p class="empty-heading">Video not found</p>
+        <p class="empty-text">This video hasn't been fact-checked yet, or the URL is invalid.</p>
+        <div class="empty-links">
+          <a href="/" class="empty-link">Check a video</a>
+          <a href="/videos" class="empty-link">Browse videos</a>
         </div>
       </div>`;
       document.title = 'Not Found — YouTube Fact Checker';
@@ -38,9 +38,9 @@ async function loadVideo(videoId) {
     if (metaDesc && video.summary) metaDesc.setAttribute('content', video.summary);
   } catch (err) {
     container.innerHTML = `<div class="empty-state">
-      <p style="font-size:1.1rem;margin-bottom:0.75rem;">Error loading video</p>
-      <p style="margin-bottom:1rem;">Something went wrong. Please try again later.</p>
-      <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+      <p class="empty-heading">Error loading video</p>
+      <p class="empty-text">Something went wrong. Please try again later.</p>
+      <a href="/videos" class="empty-link">Browse videos</a>
     </div>`;
   }
 }
@@ -139,9 +139,9 @@ function renderVideo(video) {
       </div>
     </div>
 
-    <div style="display:flex;gap:0.5rem;margin-bottom:1.5rem;">
-      <button class="share-btn" onclick="copyShareLink()" style="margin-bottom:0;">Share this page</button>
-      <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener" class="share-btn" style="margin-bottom:0;text-decoration:none;display:inline-flex;align-items:center;">Open on YouTube</a>
+    <div class="action-row">
+      <button class="share-btn" onclick="copyShareLink()">Share this page</button>
+      <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener" class="share-btn share-btn--link">Open on YouTube</a>
     </div>
 
     <div id="breakdown-bar" class="breakdown-bar-container"></div>
@@ -158,24 +158,13 @@ function renderVideo(video) {
 
   addCardClickListeners('claims-container');
   renderBreakdownBar(allVideoClaims);
-  updateVideoFilterCounts(allVideoClaims);
+  updateFilterCounts(allVideoClaims);
   animateCounter('score-value', 0, video.public_score, 800);
 
   requestAnimationFrame(() => {
     const ring = document.getElementById('score-ring-circle');
     if (ring) ring.setAttribute('stroke-dashoffset', offset);
   });
-}
-
-function updateVideoFilterCounts(claims) {
-  const factCount = claims.filter(c => c.category === 'fact').length;
-  const opinionCount = claims.filter(c => c.category === 'opinion').length;
-  const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-  const factBtn = document.querySelector('.filter-btn[data-filter="fact"]');
-  const opinionBtn = document.querySelector('.filter-btn[data-filter="opinion"]');
-  if (allBtn) allBtn.textContent = `All (${claims.length})`;
-  if (factBtn) factBtn.textContent = `Facts (${factCount})`;
-  if (opinionBtn) opinionBtn.textContent = `Opinions (${opinionCount})`;
 }
 
 function toggleClaim(btn) {

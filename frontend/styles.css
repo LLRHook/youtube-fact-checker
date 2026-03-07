@@ -293,6 +293,8 @@ header {
   margin-bottom: 0.5rem;
 }
 
+.error-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+
 .error-card button {
   margin-top: 1rem;
   background: var(--surface-2);
@@ -731,6 +733,8 @@ header {
   transition: stroke-dashoffset 0.8s ease;
 }
 
+.action-row { display: flex; gap: 0.5rem; margin-bottom: 1.5rem; }
+
 .share-btn {
   background: var(--surface);
   color: var(--text-muted);
@@ -739,10 +743,10 @@ header {
   padding: 0.5rem 1rem;
   font-size: 0.85rem;
   cursor: pointer;
-  margin-bottom: 1.5rem;
 }
 
 .share-btn:hover { border-color: var(--accent); color: var(--text); }
+.share-btn--link { text-decoration: none; display: inline-flex; align-items: center; }
 
 #claims-container {
   display: flex;
@@ -1073,6 +1077,11 @@ button:focus-visible,
 .nav-links a:hover { text-decoration: underline; }
 
 .empty-state { text-align: center; color: var(--text-muted); padding: 3rem; }
+.empty-heading { font-size: 1.1rem; margin-bottom: 0.75rem; }
+.empty-text { margin-bottom: 1rem; }
+.empty-links { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
+.empty-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+.empty-link:hover { text-decoration: underline; }
 
 /* === Skeleton Loading === */
 .skeleton-loader { animation: fadeIn 0.3s ease; }
@@ -1119,7 +1128,7 @@ button:focus-visible,
   #loading-section, #error-section, #queued-section { display: none !important; }
   .claim-card { break-inside: avoid; border: 1px solid #ccc; }
   .claim-card .claim-reasoning, .claim-card .claim-sources { display: block !important; }
-  .overall-score, .score-section { border: 1px solid #ccc; }
+  .overall-score { border: 1px solid #ccc; }
 }
 
 /* === Reduced Motion === */

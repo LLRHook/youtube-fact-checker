@@ -227,7 +227,7 @@ function renderClaimsList(claims) {
   container.innerHTML = '';
 
   if (claims.length === 0) {
-    container.innerHTML = '<p style="color: var(--text-muted); text-align: center; padding: 2rem;">No claims found.</p>';
+    container.innerHTML = '<div class="empty-state">No claims found.</div>';
     return;
   }
 
@@ -312,17 +312,6 @@ function toggleAllClaims() {
     if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
   });
   btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
-}
-
-function updateFilterCounts(claims) {
-  const factCount = claims.filter(c => c.category === 'fact').length;
-  const opinionCount = claims.filter(c => c.category === 'opinion').length;
-  const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
-  const factBtn = document.querySelector('.filter-btn[data-filter="fact"]');
-  const opinionBtn = document.querySelector('.filter-btn[data-filter="opinion"]');
-  if (allBtn) allBtn.textContent = `All (${claims.length})`;
-  if (factBtn) factBtn.textContent = `Facts (${factCount})`;
-  if (opinionBtn) opinionBtn.textContent = `Opinions (${opinionCount})`;
 }
 
 function cancelAnalysis() {

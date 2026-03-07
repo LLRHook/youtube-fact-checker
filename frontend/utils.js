@@ -146,6 +146,19 @@ function updateThemeMeta() {
 
 initTheme();
 
+/* --- Filter Counts --- */
+
+function updateFilterCounts(claims) {
+  const factCount = claims.filter(c => c.category === 'fact').length;
+  const opinionCount = claims.filter(c => c.category === 'opinion').length;
+  const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+  const factBtn = document.querySelector('.filter-btn[data-filter="fact"]');
+  const opinionBtn = document.querySelector('.filter-btn[data-filter="opinion"]');
+  if (allBtn) allBtn.textContent = `All (${claims.length})`;
+  if (factBtn) factBtn.textContent = `Facts (${factCount})`;
+  if (opinionBtn) opinionBtn.textContent = `Opinions (${opinionCount})`;
+}
+
 /* --- Back to Top --- */
 
 function initBackToTop() {
