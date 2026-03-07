@@ -28,14 +28,12 @@ async function loadVideo(videoId) {
     renderVideo(video);
     const claimCount = (video.claims || []).length;
     document.title = `${video.title} (${claimCount} claim${claimCount !== 1 ? 's' : ''}) — YouTube Fact Checker`;
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', `${video.title} — YouTube Fact Checker`);
-    const ogImage = document.querySelector('meta[property="og:image"]');
-    if (ogImage) ogImage.setAttribute('content', `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc && video.summary) ogDesc.setAttribute('content', video.summary);
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc && video.summary) metaDesc.setAttribute('content', video.summary);
+    setMeta('meta[property="og:title"]', `${video.title} — YouTube Fact Checker`);
+    setMeta('meta[property="og:image"]', `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`);
+    if (video.summary) {
+      setMeta('meta[property="og:description"]', video.summary);
+      setMeta('meta[name="description"]', video.summary);
+    }
   } catch (err) {
     container.innerHTML = `<div class="empty-state">
       <p class="empty-heading">Error loading video</p>
@@ -82,12 +80,9 @@ function renderVideo(video) {
 
   allVideoClaims = (video.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
-  let claimsHtml = '';
-  if (allVideoClaims.length > 0) {
-    claimsHtml = allVideoClaims.map((c, i) => buildClaimCardHtml(c, i)).join('');
-  } else {
-    claimsHtml = '<div class="empty-state">No claims for this video.</div>';
-  }
+  const claimsHtml = allVideoClaims.length > 0
+    ? allVideoClaims.map((c, i) => buildClaimCardHtml(c, i)).join('')
+    : '<div class="empty-state">No claims for this video.</div>';
 
   const channelLink = video.channel
     ? `<a href="/channel/${encodeURIComponent(video.channel)}">${escapeHtml(video.channel)}</a>`

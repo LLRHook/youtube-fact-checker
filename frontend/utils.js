@@ -200,6 +200,17 @@ function badgeTitle(score, category) {
   return category === 'opinion' ? 'This is an opinion, not a factual claim' : `Accuracy score: ${score}% — ${verdictLabel(score)}`;
 }
 
+function scoreBadgeHtml(score) {
+  return `<span class="score-badge ${scoreClass(score)}" title="Accuracy score: ${score}% — ${verdictLabel(score)}">${verdictLabel(score)} · ${score}%</span>`;
+}
+
+/* --- Meta Tag Helper --- */
+
+function setMeta(selector, content) {
+  const el = document.querySelector(selector);
+  if (el) el.setAttribute('content', content);
+}
+
 /* --- Sources HTML --- */
 
 function buildSourcesHtml(sources, limit) {

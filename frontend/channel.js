@@ -25,12 +25,10 @@ async function loadChannel(channelName) {
     const data = await resp.json();
     renderChannel(data);
     document.title = `${data.channel} (${data.video_count} video${data.video_count !== 1 ? 's' : ''}, ${Math.round(data.avg_score)}% avg) — YouTube Fact Checker`;
-    const ogTitle = document.querySelector('meta[property="og:title"]');
-    if (ogTitle) ogTitle.setAttribute('content', `${data.channel} — YouTube Fact Checker`);
-    const ogDesc = document.querySelector('meta[property="og:description"]');
-    if (ogDesc) ogDesc.setAttribute('content', `${data.video_count} fact-checked video${data.video_count !== 1 ? 's' : ''} with ${Math.round(data.avg_score)}% average accuracy.`);
-    const metaDesc = document.querySelector('meta[name="description"]');
-    if (metaDesc) metaDesc.setAttribute('content', `${data.video_count} fact-checked video${data.video_count !== 1 ? 's' : ''} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
+    setMeta('meta[property="og:title"]', `${data.channel} — YouTube Fact Checker`);
+    const plural = data.video_count !== 1 ? 's' : '';
+    setMeta('meta[property="og:description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy.`);
+    setMeta('meta[name="description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
   } catch (err) {
     container.innerHTML = `<div class="empty-state">
       <p class="empty-heading">Error loading channel</p>
@@ -49,7 +47,7 @@ function renderChannel(data) {
           <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
           <h3>${escapeHtml(v.title || v.id)}</h3>
           <div class="video-card-meta">
-            <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
+            ${scoreBadgeHtml(v.public_score)}
             <span>${v.claim_count} claims</span>
             <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
           </div>

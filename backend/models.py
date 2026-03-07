@@ -16,7 +16,6 @@ class ClaimCategory(str, Enum):
     UNCLEAR = "unclear"
 
 
-
 class CheckRequest(BaseModel):
     youtube_url: str
 

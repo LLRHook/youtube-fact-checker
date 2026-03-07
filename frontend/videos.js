@@ -97,7 +97,7 @@ function renderGrid(videos) {
         <span class="channel-link" onclick="event.preventDefault();event.stopPropagation();location.href='/channel/${encodeURIComponent(v.channel)}'">
           ${highlightMatch(v.channel || 'Unknown', query)}
         </span>
-        <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
+        ${scoreBadgeHtml(v.public_score)}
         <span>${v.claim_count} claims</span>
         <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
       </div>

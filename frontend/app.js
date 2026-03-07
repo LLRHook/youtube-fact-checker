@@ -185,14 +185,15 @@ function renderResults(data) {
   document.getElementById('summary-text').textContent = data.summary || '';
 
   // Animate score ring
+  const sc = scoreColor(score);
   const circle = document.getElementById('score-circle');
   const circumference = 339.3;
   const offset = circumference - (score / 100) * circumference;
   circle.style.strokeDashoffset = offset;
-  circle.style.stroke = scoreColor(score);
+  circle.style.stroke = sc;
 
   // Color & animate score counter
-  document.getElementById('score-value').style.color = scoreColor(score);
+  document.getElementById('score-value').style.color = sc;
   animateCounter('score-value', 0, score, 800);
 
   // Render breakdown stats
