@@ -61,7 +61,7 @@ function renderChannel(data) {
     <div class="channel-header">
       <h1>${escapeHtml(data.channel)}</h1>
       <div class="channel-stats">
-        <span><span class="stat-value">${data.video_count}</span> videos</span>
+        <span><span class="stat-value">${data.video_count}</span> video${data.video_count !== 1 ? 's' : ''}</span>
         <span>Avg accuracy: <span class="stat-value" style="color:${scoreColor(data.avg_score)}">${Math.round(data.avg_score)}%</span></span>
       </div>
     </div>

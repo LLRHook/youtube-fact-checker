@@ -234,6 +234,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             summary=summary,
             processing_time_seconds=processing_time,
         )
+        logger.info("Video %s completed: %d claims, %d%% accuracy, %.1fs", video_id, len(claims), overall, processing_time)
         _cleanup_task(task_id)
 
     except VideoTooLongError as e:

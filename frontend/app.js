@@ -156,13 +156,17 @@ function stopElapsedTimer() {
 
 function estimateProgress(progressText) {
   if (!progressText) return 15;
+  if (progressText.includes('Starting')) return 5;
   if (progressText.includes('transcript')) return 20;
   if (progressText.includes('Analyzing')) return 35;
   if (progressText.includes('Fact-checking')) {
     const match = progressText.match(/(\d+)\/(\d+)/);
     if (match) {
-      const pct = 40 + (parseInt(match[1]) / parseInt(match[2])) * 55;
-      return Math.min(95, Math.round(pct));
+      const total = parseInt(match[2]);
+      if (total > 0) {
+        const pct = 40 + (parseInt(match[1]) / total) * 55;
+        return Math.min(95, Math.round(pct));
+      }
     }
     return 50;
   }

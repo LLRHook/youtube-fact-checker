@@ -102,7 +102,7 @@ function renderVideo(video) {
 
     <div class="action-row">
       <button class="share-btn" onclick="copyShareLink()">Share this page</button>
-      <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener" class="share-btn share-btn--link">Open on YouTube</a>
+      <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--link">Open on YouTube</a>
     </div>
 
     <div id="breakdown-bar" class="breakdown-bar-container"></div>

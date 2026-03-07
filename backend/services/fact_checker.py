@@ -4,10 +4,10 @@ import asyncio
 import logging
 import anthropic
 from backend.config import settings
-
-logger = logging.getLogger(__name__)
 from backend.services.search_service import search_brave, format_search_results
 from backend.utils.json_parser import parse_llm_json
+
+logger = logging.getLogger(__name__)
 
 _anthropic_client: anthropic.AsyncAnthropic | None = None
 

@@ -226,7 +226,7 @@ function buildSourcesHtml(sources, limit) {
   const items = limit ? sources.slice(0, limit) : sources;
   return '<div class="claim-sources">' +
     items.map(s =>
-      `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
+      `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="source-link">${escapeHtml(s.title)}</a>` +
       (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
     ).join('') + '</div>';
 }
@@ -244,7 +244,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
 
   const timestampLink = seekable
     ? `<a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>`
-    : `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener">${ts}</a>`;
+    : `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`;
 
   return `
     <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
