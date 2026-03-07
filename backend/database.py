@@ -216,6 +216,17 @@ async def get_queued_videos(limit: int = 5) -> list[dict]:
             return [dict(r) for r in rows]
 
 
+async def get_stale_processing_videos(stale_minutes: int = 10, limit: int = 5) -> list[dict]:
+    """Return videos stuck in 'processing' for longer than stale_minutes."""
+    async with _db() as db:
+        async with db.execute(
+            "SELECT * FROM videos WHERE status = 'processing' AND updated_at <= datetime('now', ? || ' minutes') ORDER BY updated_at ASC LIMIT ?",
+            (f"-{stale_minutes}", limit),
+        ) as cursor:
+            rows = await cursor.fetchall()
+            return [dict(r) for r in rows]
+
+
 # --- Claims ---
 
 

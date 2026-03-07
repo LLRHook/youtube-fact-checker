@@ -10,6 +10,7 @@ function formatDate(dateStr) {
   const d = new Date(dateStr + 'Z');
   const now = new Date();
   const diffMs = now - d;
+  if (diffMs < 0) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   const diffMin = Math.floor(diffMs / 60000);
   const diffHr = Math.floor(diffMs / 3600000);
   const diffDay = Math.floor(diffMs / 86400000);
@@ -159,7 +160,8 @@ function addCardClickListeners(containerId) {
   document.querySelectorAll(`#${containerId} .claim-card`).forEach(card => {
     card.addEventListener('click', (e) => {
       if (e.target.closest('a')) return;
-      toggleClaim(card.querySelector('.claim-toggle'));
+      const toggle = card.querySelector('.claim-toggle');
+      if (toggle) toggleClaim(toggle);
     });
   });
 }
@@ -325,7 +327,7 @@ function buildVideoCardHtml(v, { query, showChannel } = {}) {
     <div class="video-card-meta">
       ${channelHtml}
       ${scoreBadgeHtml(v.public_score)}
-      <span>${v.claim_count} claims</span>
+      <span>${v.claim_count} claim${v.claim_count !== 1 ? 's' : ''}</span>
       <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
     </div>
   </a>`;

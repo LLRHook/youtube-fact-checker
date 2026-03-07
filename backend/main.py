@@ -251,7 +251,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
 
 async def queue_processor():
-    """Background loop that processes queued videos."""
+    """Background loop that processes queued videos and recovers stale ones."""
     first_run = True
     while True:
         try:
@@ -260,6 +260,15 @@ async def queue_processor():
                 await asyncio.sleep(5)
             else:
                 await asyncio.sleep(settings.QUEUE_INTERVAL_MINUTES * 60)
+
+            # Recover videos stuck in "processing" (e.g., from a server crash)
+            stale = await db.get_stale_processing_videos(stale_minutes=10, limit=3)
+            for video in stale:
+                vid = video["id"]
+                if vid not in tasks:
+                    logger.info("Recovering stale video %s", vid)
+                    await db.update_video_status(vid, "queued")
+
             queued = await db.get_queued_videos(limit=5)
             for video in queued:
                 video_id = video["id"]
@@ -399,7 +408,7 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     task_id = video_id
     if not existing:
         await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
-    elif existing["status"] == "failed":
+    elif existing["status"] in ("failed", "processing"):
         await db.update_video_status(video_id, "processing")
 
     tasks[task_id] = TaskResponse(
