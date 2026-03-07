@@ -486,9 +486,13 @@ async def public_list_videos(page: int = 1, limit: int = 50):
     """List completed videos with pagination."""
     limit = max(1, min(limit, 100))
     page = max(1, page)
-    offset = (page - 1) * limit
 
     total = await db.count_videos(status="completed")
+    total_pages = (total + limit - 1) // limit if total > 0 else 1
+    if page > total_pages:
+        page = total_pages
+    offset = (page - 1) * limit
+
     videos = await db.list_videos(status="completed", limit=limit, offset=offset)
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
@@ -511,7 +515,7 @@ async def public_list_videos(page: int = 1, limit: int = 50):
         "total": total,
         "page": page,
         "limit": limit,
-        "pages": (total + limit - 1) // limit if total > 0 else 1,
+        "pages": total_pages,
     }
 
 

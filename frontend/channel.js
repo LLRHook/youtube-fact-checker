@@ -11,7 +11,15 @@ async function loadChannel(channelName) {
   try {
     const resp = await fetch(`/api/channels/${encodeURIComponent(channelName)}`);
     if (!resp.ok) {
-      container.innerHTML = '<div class="empty-state">Channel not found.</div>';
+      container.innerHTML = `<div class="empty-state">
+        <p style="font-size:1.1rem;margin-bottom:0.75rem;">Channel not found</p>
+        <p style="margin-bottom:1rem;">No fact-checked videos for this channel yet.</p>
+        <div style="display:flex;gap:0.75rem;justify-content:center;flex-wrap:wrap;">
+          <a href="/" style="color:var(--accent);text-decoration:none;font-weight:600;">Check a video</a>
+          <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+        </div>
+      </div>`;
+      document.title = 'Not Found — YouTube Fact Checker';
       return;
     }
     const data = await resp.json();
@@ -24,7 +32,11 @@ async function loadChannel(channelName) {
     const metaDesc = document.querySelector('meta[name="description"]');
     if (metaDesc) metaDesc.setAttribute('content', `${data.video_count} fact-checked video${data.video_count !== 1 ? 's' : ''} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
   } catch (err) {
-    container.innerHTML = '<div class="empty-state">Error loading channel.</div>';
+    container.innerHTML = `<div class="empty-state">
+      <p style="font-size:1.1rem;margin-bottom:0.75rem;">Error loading channel</p>
+      <p style="margin-bottom:1rem;">Something went wrong. Please try again later.</p>
+      <a href="/videos" style="color:var(--accent);text-decoration:none;font-weight:600;">Browse videos</a>
+    </div>`;
   }
 }
 

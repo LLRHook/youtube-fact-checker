@@ -185,20 +185,20 @@ async def count_videos(status: str | None = None) -> int:
 
 
 async def count_videos_today() -> int:
-    """Count non-queued videos created today."""
+    """Count processing or completed videos created today (excludes queued and failed)."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE status != 'queued' AND created_at >= date('now')"
+            "SELECT COUNT(*) FROM videos WHERE status IN ('processing', 'completed') AND created_at >= date('now')"
         ) as cursor:
             row = await cursor.fetchone()
             return row[0] if row else 0
 
 
 async def count_videos_today_by_ip(ip: str) -> int:
-    """Count videos submitted by a specific IP today."""
+    """Count non-failed videos submitted by a specific IP today."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND created_at >= date('now')",
+            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND status != 'failed' AND created_at >= date('now')",
             (ip,),
         ) as cursor:
             row = await cursor.fetchone()
@@ -352,7 +352,7 @@ async def list_channels() -> list[dict]:
             """SELECT channel, COUNT(*) as video_count,
                       AVG(overall_truth_percentage) as avg_score
                FROM videos
-               WHERE status = 'completed'
+               WHERE status = 'completed' AND channel != ''
                GROUP BY channel
                ORDER BY video_count DESC"""
         ) as cursor:
