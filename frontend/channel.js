@@ -16,7 +16,7 @@ async function loadChannel(channelName) {
     }
     const data = await resp.json();
     renderChannel(data);
-    document.title = `${data.channel} — YouTube Fact Checker`;
+    document.title = `${data.channel} (${data.video_count} video${data.video_count !== 1 ? 's' : ''}, ${Math.round(data.avg_score)}% avg) — YouTube Fact Checker`;
     const ogTitle = document.querySelector('meta[property="og:title"]');
     if (ogTitle) ogTitle.setAttribute('content', `${data.channel} — YouTube Fact Checker`);
   } catch (err) {

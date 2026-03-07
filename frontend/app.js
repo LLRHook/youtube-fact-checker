@@ -175,7 +175,9 @@ function renderResults(data) {
   // Render claims
   renderClaimsList(allClaims);
 
-  // Update filter button counts
+  // Update claims heading and filter button counts
+  const claimsHeading = document.getElementById('claims-heading');
+  if (claimsHeading) claimsHeading.textContent = `Claims (${allClaims.length})`;
   updateFilterCounts(allClaims);
 
   // Show "View full report" link

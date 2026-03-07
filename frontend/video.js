@@ -96,7 +96,7 @@ function renderVideo(video) {
       <h1>${escapeHtml(video.title)}</h1>
       <div class="video-meta">
         ${channelLink}
-        <span>${formatDate(video.created_at)}</span>
+        <span title="${absoluteDate(video.created_at)}">${formatDate(video.created_at)}</span>
       </div>
     </div>
 
@@ -302,6 +302,11 @@ function formatTimestamp(seconds) {
   const m = Math.floor(seconds / 60);
   const s = Math.round(seconds % 60);
   return `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function absoluteDate(dateStr) {
+  if (!dateStr) return '';
+  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatDate(dateStr) {
