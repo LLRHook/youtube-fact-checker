@@ -49,6 +49,7 @@ async function submitVideo() {
 
     // Show loading
     showSection('loading');
+    document.getElementById('loading-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
     startPolling();
 
   } catch (err) {
@@ -153,6 +154,9 @@ function renderResults(data) {
   // Render claims
   renderClaimsList(allClaims);
 
+  // Update filter button counts
+  updateFilterCounts(allClaims);
+
   // Show "View full report" link
   const reportLink = document.getElementById('view-report-link');
   if (data.video_id) {
@@ -164,6 +168,7 @@ function renderResults(data) {
 
   document.title = `${data.video_title || 'Results'} — YouTube Fact Checker`;
   showSection('results');
+  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
 }
 
 function renderBreakdownBar(claims) {
@@ -291,6 +296,17 @@ function toggleAllClaims() {
   btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
 
+function updateFilterCounts(claims) {
+  const factCount = claims.filter(c => c.category === 'fact').length;
+  const opinionCount = claims.filter(c => c.category === 'opinion').length;
+  const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
+  const factBtn = document.querySelector('.filter-btn[data-filter="fact"]');
+  const opinionBtn = document.querySelector('.filter-btn[data-filter="opinion"]');
+  if (allBtn) allBtn.textContent = `All (${claims.length})`;
+  if (factBtn) factBtn.textContent = `Facts (${factCount})`;
+  if (opinionBtn) opinionBtn.textContent = `Opinions (${opinionCount})`;
+}
+
 function cancelAnalysis() {
   stopPolling();
   currentTaskId = null;
@@ -350,6 +366,7 @@ function showError(message) {
   document.getElementById('error-message').textContent = message;
   document.title = 'YouTube Fact Checker';
   showSection('error');
+  document.getElementById('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
   resetButton();
 }
 

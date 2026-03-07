@@ -473,6 +473,16 @@ header {
   border-color: var(--accent);
 }
 
+/* Video card hover lift (listings) */
+.video-card {
+  transition: border-color 0.2s, transform 0.2s, box-shadow 0.2s;
+}
+
+.video-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
 .claim-header {
   display: flex;
   justify-content: space-between;
