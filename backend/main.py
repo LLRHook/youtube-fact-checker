@@ -216,9 +216,8 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
         # Write claims before marking video as completed to avoid a window
         # where the video appears completed with zero claims.
-        claims_for_db = []
-        for c in checked_claims:
-            claims_for_db.append({
+        claims_for_db = [
+            {
                 "text": c["text"],
                 "timestamp_seconds": c.get("timestamp_seconds", 0),
                 "truth_percentage": c.get("truth_percentage", 50),
@@ -226,7 +225,9 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 "reasoning": c.get("reasoning", ""),
                 "category": c.get("category", "fact"),
                 "sources": c.get("sources", []),
-            })
+            }
+            for c in checked_claims
+        ]
         await db.delete_claims_for_video(video_id)
         await db.create_claims(video_id, claims_for_db)
         await db.update_video_results(
@@ -309,6 +310,32 @@ def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:
     ]
 
 
+def _build_completed_result(video: dict, claims: list[Claim]) -> CheckResult:
+    """Build a CheckResult from a completed video row and its claims."""
+    return CheckResult(
+        video_title=video["title"],
+        video_id=video["id"],
+        video_duration_seconds=video["duration_seconds"],
+        transcript_text=video.get("transcript_text", "")[:2000],
+        claims=claims,
+        overall_truth_percentage=video["overall_truth_percentage"],
+        summary=video["summary"],
+        processing_time_seconds=video["processing_time_seconds"],
+    )
+
+
+def _build_video_summary(video: dict, claims: list[dict]) -> dict:
+    """Build a PublicVideoSummary dict from a video row and its claims."""
+    return PublicVideoSummary(
+        id=video["id"],
+        title=video["title"],
+        channel=video["channel"],
+        public_score=_calculate_public_score(claims),
+        claim_count=len(claims),
+        created_at=video["created_at"] or "",
+    ).model_dump()
+
+
 def _get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
@@ -332,16 +359,7 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     existing = await db.get_video(video_id)
     if existing and existing["status"] == "completed":
         claims = _build_claims_from_rows(await db.get_claims_for_video(video_id))
-        result = CheckResult(
-            video_title=existing["title"],
-            video_id=video_id,
-            video_duration_seconds=existing["duration_seconds"],
-            transcript_text=existing.get("transcript_text", "")[:2000],
-            claims=claims,
-            overall_truth_percentage=existing["overall_truth_percentage"],
-            summary=existing["summary"],
-            processing_time_seconds=existing["processing_time_seconds"],
-        )
+        result = _build_completed_result(existing, claims)
         return {
             "task_id": video_id,
             "status": "completed",
@@ -408,16 +426,7 @@ async def get_task_status(task_id: str):
 
     if video["status"] == "completed":
         claims = _build_claims_from_rows(await db.get_claims_for_video(task_id))
-        result = CheckResult(
-            video_title=video["title"],
-            video_id=task_id,
-            video_duration_seconds=video["duration_seconds"],
-            transcript_text=video.get("transcript_text", "")[:2000],
-            claims=claims,
-            overall_truth_percentage=video["overall_truth_percentage"],
-            summary=video["summary"],
-            processing_time_seconds=video["processing_time_seconds"],
-        )
+        result = _build_completed_result(video, claims)
         return TaskResponse(
             task_id=task_id,
             status=TaskStatus.COMPLETED,
@@ -489,20 +498,7 @@ async def public_list_videos(page: int = 1, limit: int = 50):
     videos = await db.list_videos(status="completed", limit=limit, offset=offset)
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
-    items = []
-    for v in videos:
-        claims = all_claims.get(v["id"], [])
-        public_score = _calculate_public_score(claims)
-        items.append(
-            PublicVideoSummary(
-                id=v["id"],
-                title=v["title"],
-                channel=v["channel"],
-                public_score=public_score,
-                claim_count=len(claims),
-                created_at=v["created_at"] or "",
-            ).model_dump()
-        )
+    items = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
     return {
         "items": items,
         "total": total,
@@ -577,20 +573,7 @@ async def public_get_channel(channel_name: str):
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
 
-    video_summaries = []
-    for v in videos:
-        claims = all_claims.get(v["id"], [])
-        public_score = _calculate_public_score(claims)
-        video_summaries.append(
-            PublicVideoSummary(
-                id=v["id"],
-                title=v["title"],
-                channel=v["channel"],
-                public_score=public_score,
-                claim_count=len(claims),
-                created_at=v["created_at"] or "",
-            ).model_dump()
-        )
+    video_summaries = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
 
     all_scores = [vs["public_score"] for vs in video_summaries if vs["public_score"] > 0]
     avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0

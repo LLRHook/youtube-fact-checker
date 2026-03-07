@@ -44,10 +44,5 @@
   <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
   <script src="/utils.js"></script>
   <script src="/channel.js"></script>
-  <script>
-    window.addEventListener('scroll', () => {
-      document.getElementById('back-to-top').classList.toggle('visible', window.scrollY > 400);
-    }, { passive: true });
-  </script>
 </body>
 </html>

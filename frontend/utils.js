@@ -145,3 +145,15 @@ function updateThemeMeta() {
 }
 
 initTheme();
+
+/* --- Back to Top --- */
+
+function initBackToTop() {
+  const btn = document.getElementById('back-to-top');
+  if (!btn) return;
+  window.addEventListener('scroll', () => {
+    btn.classList.toggle('visible', window.scrollY > 400);
+  }, { passive: true });
+}
+
+initBackToTop();

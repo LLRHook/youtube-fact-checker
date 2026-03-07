@@ -117,7 +117,7 @@ function renderVideo(video) {
       </div>
     </div>
 
-    <div class="score-section">
+    <div class="overall-score">
       <div class="score-ring">
         <svg viewBox="0 0 120 120" role="img" aria-label="Accuracy score: ${video.public_score}%">
           <circle cx="60" cy="60" r="54" stroke="var(--border)" stroke-width="8" fill="none"/>
@@ -130,7 +130,7 @@ function renderVideo(video) {
         </svg>
         <div class="score-text">
           <span class="score-value" id="score-value" style="color:${sc}">0</span>
-          <span class="score-pct">%</span>
+          <span class="score-percent">%</span>
         </div>
       </div>
       <div class="score-label">
