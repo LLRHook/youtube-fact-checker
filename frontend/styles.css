@@ -401,6 +401,7 @@ header {
   gap: 1rem;
   font-size: 0.8rem;
   color: var(--text-muted);
+  flex-wrap: wrap;
 }
 
 .legend-item {

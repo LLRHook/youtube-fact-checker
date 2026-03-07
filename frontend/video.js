@@ -78,7 +78,6 @@ function renderVideo(video) {
         </div>
       `;
     }).join('');
-    addCardClickListeners('claims-container');
   } else {
     claimsHtml = '<div class="empty-state">No claims for this video.</div>';
   }
@@ -142,6 +141,7 @@ function renderVideo(video) {
     <div id="claims-container">${claimsHtml}</div>
   `;
 
+  addCardClickListeners('claims-container');
   renderBreakdownBar(allVideoClaims);
   updateVideoFilterCounts(allVideoClaims);
   animateCounter('score-value', 0, video.public_score, 800);
