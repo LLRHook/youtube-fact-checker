@@ -35,7 +35,7 @@ async function loadVideo(videoId) {
 
 function renderVideo(video) {
   const container = document.getElementById('content');
-  const scoreColor = video.public_score >= 75 ? '#2ed573' : video.public_score >= 50 ? '#ffa502' : '#ff4757';
+  const sc = scoreColor(video.public_score);
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (video.public_score / 100) * circumference;
 
@@ -107,7 +107,7 @@ function renderVideo(video) {
       <div class="score-ring">
         <svg viewBox="0 0 120 120" role="img" aria-label="Accuracy score: ${video.public_score}%">
           <circle cx="60" cy="60" r="54" stroke="var(--border)" stroke-width="8" fill="none"/>
-          <circle cx="60" cy="60" r="54" stroke="${scoreColor}" stroke-width="8" fill="none"
+          <circle cx="60" cy="60" r="54" stroke="${sc}" stroke-width="8" fill="none"
                   id="score-ring-circle"
                   stroke-dasharray="${circumference}"
                   stroke-dashoffset="${circumference}"
@@ -115,7 +115,7 @@ function renderVideo(video) {
                   transform="rotate(-90 60 60)"/>
         </svg>
         <div class="score-text">
-          <span class="score-value" id="score-value" style="color:${scoreColor}">0</span>
+          <span class="score-value" id="score-value" style="color:${sc}">0</span>
           <span class="score-pct">%</span>
         </div>
       </div>
@@ -151,32 +151,6 @@ function renderVideo(video) {
     const ring = document.getElementById('score-ring-circle');
     if (ring) ring.setAttribute('stroke-dashoffset', offset);
   });
-}
-
-function renderBreakdownBar(claims) {
-  const container = document.getElementById('breakdown-bar');
-  if (!container) return;
-  const facts = claims.filter(c => c.category === 'fact');
-  const opinions = claims.filter(c => c.category === 'opinion');
-  const trueCount = facts.filter(c => c.truth_percentage >= 75).length;
-  const mixedCount = facts.filter(c => c.truth_percentage >= 50 && c.truth_percentage < 75).length;
-  const falseCount = facts.filter(c => c.truth_percentage < 50).length;
-  const total = claims.length || 1;
-
-  container.innerHTML = `
-    <div class="breakdown-segments">
-      ${trueCount ? `<div class="breakdown-seg seg-green" title="${trueCount} true" style="width:${(trueCount/total)*100}%"></div>` : ''}
-      ${mixedCount ? `<div class="breakdown-seg seg-yellow" title="${mixedCount} mixed" style="width:${(mixedCount/total)*100}%"></div>` : ''}
-      ${falseCount ? `<div class="breakdown-seg seg-red" title="${falseCount} false" style="width:${(falseCount/total)*100}%"></div>` : ''}
-      ${opinions.length ? `<div class="breakdown-seg seg-gray" title="${opinions.length} opinion" style="width:${(opinions.length/total)*100}%"></div>` : ''}
-    </div>
-    <div class="breakdown-legend">
-      ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}
-      ${mixedCount ? `<span class="legend-item"><span class="legend-dot dot-yellow"></span>${mixedCount} mixed</span>` : ''}
-      ${falseCount ? `<span class="legend-item"><span class="legend-dot dot-red"></span>${falseCount} false</span>` : ''}
-      ${opinions.length ? `<span class="legend-item"><span class="legend-dot dot-gray"></span>${opinions.length} opinion</span>` : ''}
-    </div>
-  `;
 }
 
 function updateVideoFilterCounts(claims) {
