@@ -145,9 +145,15 @@ async def update_video_results(
         await db.commit()
 
 
+_LIST_COLUMNS = "id, title, channel, youtube_url, duration_seconds, overall_truth_percentage, summary, status, created_at"
+
+
 async def list_videos(status: str | None = None, *, limit: int = 0, offset: int = 0) -> list[dict]:
-    """List videos with optional status filter, newest first. Supports pagination."""
-    query = "SELECT * FROM videos WHERE 1=1"
+    """List videos with optional status filter, newest first. Supports pagination.
+
+    Excludes large columns (transcript_text) for efficiency.
+    """
+    query = f"SELECT {_LIST_COLUMNS} FROM videos WHERE 1=1"
     params: list = []
     if status:
         query += " AND status = ?"
@@ -334,7 +340,7 @@ async def get_channel_videos(channel: str) -> list[dict]:
     """List completed videos for a specific channel."""
     async with _db() as db:
         async with db.execute(
-            """SELECT * FROM videos
+            f"""SELECT {_LIST_COLUMNS} FROM videos
                WHERE channel = ? AND status = 'completed'
                ORDER BY created_at DESC""",
             (channel,),

@@ -13,6 +13,15 @@ def _get_anthropic_client() -> anthropic.Anthropic:
         _anthropic_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
     return _anthropic_client
 
+
+def close_anthropic_client():
+    """Close the shared sync Anthropic client. Call on app shutdown."""
+    global _anthropic_client
+    if _anthropic_client is not None:
+        _anthropic_client.close()
+        _anthropic_client = None
+
+
 CLAIM_EXTRACTION_SYSTEM = """You are a fact-checking assistant analyzing a YouTube video transcript.
 
 Your task: Extract ONLY explicit factual claims the content creator makes.

@@ -34,8 +34,9 @@ from backend.services.transcript_service import (
     TranscriptError,
     VideoTooLongError,
 )
-from backend.services.claim_extractor import extract_claims
-from backend.services.fact_checker import fact_check_all_claims
+from backend.services.claim_extractor import extract_claims, close_anthropic_client as close_sync_anthropic
+from backend.services.fact_checker import fact_check_all_claims, close_anthropic_client as close_async_anthropic
+from backend.services.search_service import close_http_client
 from backend import database as db
 
 logging.basicConfig(
@@ -66,6 +67,9 @@ async def lifespan(app: FastAPI):
         await _queue_task
     except asyncio.CancelledError:
         pass
+    await close_http_client()
+    await close_async_anthropic()
+    close_sync_anthropic()
 
 
 app = FastAPI(title="YouTube Fact Checker", version="1.0.0", lifespan=lifespan)
@@ -89,6 +93,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' 'unsafe-inline'; "
+            "style-src 'self' 'unsafe-inline'; "
+            "img-src 'self' https://img.youtube.com https://i.ytimg.com data:; "
+            "frame-src https://www.youtube-nocookie.com; "
+            "connect-src 'self'; "
+            "font-src 'self'"
+        )
         path = request.url.path
         if any(path.endswith(ext) for ext in _STATIC_EXTENSIONS):
             response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
@@ -369,6 +382,8 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     task_id = video_id
     if not existing:
         await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
+    elif existing["status"] == "failed":
+        await db.update_video_status(video_id, "processing")
 
     tasks[task_id] = TaskResponse(
         task_id=task_id,

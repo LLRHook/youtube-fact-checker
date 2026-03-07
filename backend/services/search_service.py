@@ -13,6 +13,14 @@ def _get_http_client() -> httpx.AsyncClient:
     return _http_client
 
 
+async def close_http_client():
+    """Close the shared HTTP client. Call on app shutdown."""
+    global _http_client
+    if _http_client is not None and not _http_client.is_closed:
+        await _http_client.aclose()
+        _http_client = None
+
+
 class SearchResult:
     def __init__(self, title: str, url: str, snippet: str):
         self.title = title

@@ -16,6 +16,14 @@ def _get_anthropic_client() -> anthropic.AsyncAnthropic:
     return _anthropic_client
 
 
+async def close_anthropic_client():
+    """Close the shared async Anthropic client. Call on app shutdown."""
+    global _anthropic_client
+    if _anthropic_client is not None:
+        await _anthropic_client.close()
+        _anthropic_client = None
+
+
 TRUTH_SCORING_SYSTEM = """You are a fact-checker. Evaluate the claim below against the provided search results.
 
 Scoring guide:
