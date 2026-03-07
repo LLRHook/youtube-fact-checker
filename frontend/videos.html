@@ -154,10 +154,10 @@
 
     <div class="toolbar">
       <div class="search-wrapper">
-        <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()">
+        <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()" aria-label="Search videos">
         <button class="search-clear" id="search-clear" onclick="document.getElementById('search-input').value='';applyFilters();toggleClearBtn();" title="Clear search">&times;</button>
       </div>
-      <select class="sort-select" id="sort-select" onchange="applyFilters()">
+      <select class="sort-select" id="sort-select" onchange="applyFilters()" aria-label="Sort videos">
         <option value="date-desc">Newest first</option>
         <option value="date-asc">Oldest first</option>
         <option value="score-desc">Highest score</option>
@@ -185,7 +185,7 @@
     </footer>
   </div>
 
-  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top">&#9650;</button>
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
   <script src="/utils.js"></script>
   <script src="/videos.js"></script>
   <script>

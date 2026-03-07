@@ -41,6 +41,7 @@
           id="url-input"
           placeholder="Paste a YouTube URL (videos under 10 minutes)..."
           autocomplete="off"
+          aria-label="YouTube video URL"
         />
         <button id="check-btn" onclick="submitVideo()">
           <span class="btn-text">Check Facts</span>
@@ -83,7 +84,7 @@
     </section>
 
     <!-- Loading Section -->
-    <section id="loading-section" class="loading-section" style="display:none;">
+    <section id="loading-section" class="loading-section" style="display:none;" aria-live="polite" role="status">
       <div class="loading-card">
         <div class="spinner"></div>
         <p id="loading-status">Starting analysis...</p>
@@ -96,7 +97,7 @@
     </section>
 
     <!-- Queued Section -->
-    <section id="queued-section" class="error-section" style="display:none;">
+    <section id="queued-section" class="error-section" style="display:none;" aria-live="polite" role="alert">
       <div class="error-card" style="border-color: var(--yellow);">
         <span class="error-icon">&#128337;</span>
         <p>We've hit our daily processing limit. Your video has been queued and will be processed automatically.</p>
@@ -105,7 +106,7 @@
     </section>
 
     <!-- Error Section -->
-    <section id="error-section" class="error-section" style="display:none;">
+    <section id="error-section" class="error-section" style="display:none;" aria-live="assertive" role="alert">
       <div class="error-card">
         <span class="error-icon">&#9888;</span>
         <p id="error-message"></p>
@@ -117,7 +118,7 @@
     </section>
 
     <!-- Results Section -->
-    <section id="results-section" class="results-section" style="display:none;">
+    <section id="results-section" class="results-section" style="display:none;" aria-live="polite">
       <!-- Video Info -->
       <div class="video-info">
         <h2 id="video-title"></h2>

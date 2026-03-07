@@ -1,8 +1,17 @@
 """LLM-based claim extraction from transcript text."""
 
-import json
 import anthropic
 from backend.config import settings
+from backend.utils.json_parser import parse_llm_json
+
+_anthropic_client: anthropic.Anthropic | None = None
+
+
+def _get_anthropic_client() -> anthropic.Anthropic:
+    global _anthropic_client
+    if _anthropic_client is None:
+        _anthropic_client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    return _anthropic_client
 
 CLAIM_EXTRACTION_SYSTEM = """You are a fact-checking assistant analyzing a YouTube video transcript.
 
@@ -47,7 +56,7 @@ def extract_claims(transcript_text: str, segments: list = None) -> list[dict]:
     if not settings.ANTHROPIC_API_KEY:
         raise ValueError("ANTHROPIC_API_KEY not set. Add it to your .env file.")
 
-    client = anthropic.Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+    client = _get_anthropic_client()
 
     # Build transcript with timestamps if segments available
     if segments:
@@ -75,27 +84,9 @@ Return ONLY a JSON array of claims. No other text."""
     )
 
     response_text = response.content[0].text.strip()
-
-    # Parse JSON from response (handle markdown code blocks)
-    if response_text.startswith("```"):
-        response_text = response_text.split("\n", 1)[1]
-        if response_text.endswith("```"):
-            response_text = response_text[:-3]
-        response_text = response_text.strip()
-
-    try:
-        claims = json.loads(response_text)
-    except json.JSONDecodeError:
-        # Try to find JSON array in the response
-        start = response_text.find("[")
-        end = response_text.rfind("]") + 1
-        if start != -1 and end > start:
-            try:
-                claims = json.loads(response_text[start:end])
-            except json.JSONDecodeError:
-                return []
-        else:
-            return []
+    claims = parse_llm_json(response_text)
+    if not isinstance(claims, list):
+        return []
 
     # Validate and normalize
     valid_claims = []

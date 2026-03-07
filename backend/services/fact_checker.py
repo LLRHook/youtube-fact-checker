@@ -1,10 +1,19 @@
 """Fact-checking service: combines web search + LLM truth scoring."""
 
-import json
 import asyncio
 import anthropic
 from backend.config import settings
 from backend.services.search_service import search_brave, format_search_results
+from backend.utils.json_parser import parse_llm_json
+
+_anthropic_client: anthropic.AsyncAnthropic | None = None
+
+
+def _get_anthropic_client() -> anthropic.AsyncAnthropic:
+    global _anthropic_client
+    if _anthropic_client is None:
+        _anthropic_client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+    return _anthropic_client
 
 
 TRUTH_SCORING_SYSTEM = """You are a fact-checker. Evaluate the claim below against the provided search results.
@@ -61,7 +70,7 @@ async def fact_check_claim(claim_text: str) -> dict:
 
     # Step 2: LLM evaluation
     try:
-        client = anthropic.AsyncAnthropic(api_key=settings.ANTHROPIC_API_KEY)
+        client = _get_anthropic_client()
         response = await client.messages.create(
             model=settings.CLAUDE_MODEL,
             max_tokens=1024,
@@ -75,14 +84,9 @@ async def fact_check_claim(claim_text: str) -> dict:
         )
 
         response_text = response.content[0].text.strip()
-        # Parse JSON
-        if response_text.startswith("```"):
-            response_text = response_text.split("\n", 1)[1]
-            if response_text.endswith("```"):
-                response_text = response_text[:-3]
-            response_text = response_text.strip()
-
-        result = json.loads(response_text)
+        result = parse_llm_json(response_text)
+        if result is None:
+            raise ValueError("Failed to parse LLM JSON response")
 
     except Exception as e:
         return {

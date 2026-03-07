@@ -3,6 +3,15 @@
 import httpx
 from backend.config import settings
 
+_http_client: httpx.AsyncClient | None = None
+
+
+def _get_http_client() -> httpx.AsyncClient:
+    global _http_client
+    if _http_client is None or _http_client.is_closed:
+        _http_client = httpx.AsyncClient(timeout=15.0)
+    return _http_client
+
 
 class SearchResult:
     def __init__(self, title: str, url: str, snippet: str):
@@ -38,14 +47,14 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
         "search_lang": "en",
     }
 
-    async with httpx.AsyncClient(timeout=15.0) as client:
-        response = await client.get(
-            "https://api.search.brave.com/res/v1/web/search",
-            headers=headers,
-            params=params,
-        )
-        response.raise_for_status()
-        data = response.json()
+    client = _get_http_client()
+    response = await client.get(
+        "https://api.search.brave.com/res/v1/web/search",
+        headers=headers,
+        params=params,
+    )
+    response.raise_for_status()
+    data = response.json()
 
     results = []
     web_results = data.get("web", {}).get("results", [])
