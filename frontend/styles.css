@@ -475,6 +475,7 @@ header {
   padding: 1rem 1.2rem;
   transition: border-color 0.2s;
   border-left: 3px solid var(--border);
+  cursor: pointer;
 }
 
 .claim-card.border-green { border-left-color: var(--green); }

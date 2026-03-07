@@ -66,12 +66,13 @@ function renderVideo(video) {
             <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
             ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
           </div>
-          <button class="claim-toggle" onclick="toggleClaim(this)">Show details &#9662;</button>
+          <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
           <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
           ${sourcesHtml}
         </div>
       `;
     }).join('');
+    addCardClickListeners('claims-container');
   } else {
     claimsHtml = '<div class="empty-state">No claims for this video.</div>';
   }
@@ -236,12 +237,13 @@ function filterVideoClaims(filter) {
           <a href="#" onclick="seekTo(${seekSeconds});return false;" style="color:var(--blue);text-decoration:none;cursor:pointer;">${ts}</a>
           ${c.sources && c.sources.length > 0 ? `<span>${c.sources.length} source${c.sources.length > 1 ? 's' : ''}</span>` : ''}
         </div>
-        <button class="claim-toggle" onclick="toggleClaim(this)">Show details &#9662;</button>
+        <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
         <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
         ${sourcesHtml}
       </div>
     `;
   }).join('');
+  addCardClickListeners('claims-container');
 }
 
 function copyShareLink() {
@@ -299,6 +301,15 @@ function escapeHtml(str) {
   const div = document.createElement('div');
   div.textContent = str;
   return div.innerHTML;
+}
+
+function addCardClickListeners(containerId) {
+  document.querySelectorAll(`#${containerId} .claim-card`).forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      toggleClaim(card.querySelector('.claim-toggle'));
+    });
+  });
 }
 
 function seekTo(seconds) {

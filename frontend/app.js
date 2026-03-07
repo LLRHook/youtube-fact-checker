@@ -242,12 +242,17 @@ function renderClaimsList(claims) {
         ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
         ${claim.sources && claim.sources.length > 0 ? `<span>${claim.sources.length} source${claim.sources.length > 1 ? 's' : ''}</span>` : ''}
       </div>
-      <button class="claim-toggle" onclick="toggleClaim(this)">
+      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">
         Show details &#9662;
       </button>
       <div class="claim-reasoning">${escapeHtml(claim.reasoning)}</div>
       ${sourcesHtml}
     `;
+
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      toggleClaim(card.querySelector('.claim-toggle'));
+    });
 
     container.appendChild(card);
   });

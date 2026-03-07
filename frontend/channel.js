@@ -30,7 +30,7 @@ function renderChannel(data) {
   const videosHtml = data.videos.length > 0
     ? data.videos.map(v => `
         <a class="video-card" href="/video/${v.id}">
-          <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="" loading="lazy">
+          <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
           <h3>${escapeHtml(v.title || v.id)}</h3>
           <div class="video-card-meta">
             <span class="score-badge ${scoreClass(v.public_score)}" title="Accuracy score: ${v.public_score}% — ${verdictLabel(v.public_score)}">${verdictLabel(v.public_score)} · ${v.public_score}%</span>
@@ -46,11 +46,17 @@ function renderChannel(data) {
       <h1>${escapeHtml(data.channel)}</h1>
       <div class="channel-stats">
         <span><span class="stat-value">${data.video_count}</span> videos</span>
-        <span>Avg accuracy: <span class="stat-value">${Math.round(data.avg_score)}%</span></span>
+        <span>Avg accuracy: <span class="stat-value" style="color:${scoreColor(data.avg_score)}">${Math.round(data.avg_score)}%</span></span>
       </div>
     </div>
     <div class="video-grid">${videosHtml}</div>
   `;
+}
+
+function scoreColor(score) {
+  if (score >= 75) return '#2ed573';
+  if (score >= 50) return '#ffa502';
+  return '#ff4757';
 }
 
 function scoreClass(score) {
