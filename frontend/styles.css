@@ -310,7 +310,7 @@ header {
   transition: border-color 0.2s, background 0.2s;
 }
 
-.error-card button:hover {
+.error-card > button:hover {
   border-color: var(--accent);
   background: var(--surface);
 }

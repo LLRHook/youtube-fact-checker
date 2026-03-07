@@ -81,30 +81,30 @@ function scoreColor(score) {
   return style.getPropertyValue('--red').trim() || '#ff4757';
 }
 
+function buildBreakdownHtml(segments) {
+  const total = segments.reduce((sum, s) => sum + s.count, 0) || 1;
+  const active = segments.filter(s => s.count > 0);
+  return `
+    <div class="breakdown-segments">
+      ${active.map(s => `<div class="breakdown-seg seg-${s.color}" title="${s.count} ${s.label}" style="width:${(s.count/total)*100}%"></div>`).join('')}
+    </div>
+    <div class="breakdown-legend">
+      ${active.map(s => `<span class="legend-item"><span class="legend-dot dot-${s.color}"></span>${s.count} ${s.label}</span>`).join('')}
+    </div>
+  `;
+}
+
 function renderBreakdownBar(claims) {
   const container = document.getElementById('breakdown-bar');
   if (!container) return;
   const facts = claims.filter(c => c.category === 'fact');
   const opinions = claims.filter(c => c.category === 'opinion');
-  const trueCount = facts.filter(c => c.truth_percentage >= 75).length;
-  const mixedCount = facts.filter(c => c.truth_percentage >= 50 && c.truth_percentage < 75).length;
-  const falseCount = facts.filter(c => c.truth_percentage < 50).length;
-  const total = claims.length || 1;
-
-  container.innerHTML = `
-    <div class="breakdown-segments">
-      ${trueCount ? `<div class="breakdown-seg seg-green" title="${trueCount} true" style="width:${(trueCount/total)*100}%"></div>` : ''}
-      ${mixedCount ? `<div class="breakdown-seg seg-yellow" title="${mixedCount} mixed" style="width:${(mixedCount/total)*100}%"></div>` : ''}
-      ${falseCount ? `<div class="breakdown-seg seg-red" title="${falseCount} false" style="width:${(falseCount/total)*100}%"></div>` : ''}
-      ${opinions.length ? `<div class="breakdown-seg seg-gray" title="${opinions.length} opinion" style="width:${(opinions.length/total)*100}%"></div>` : ''}
-    </div>
-    <div class="breakdown-legend">
-      ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}
-      ${mixedCount ? `<span class="legend-item"><span class="legend-dot dot-yellow"></span>${mixedCount} mixed</span>` : ''}
-      ${falseCount ? `<span class="legend-item"><span class="legend-dot dot-red"></span>${falseCount} false</span>` : ''}
-      ${opinions.length ? `<span class="legend-item"><span class="legend-dot dot-gray"></span>${opinions.length} opinion</span>` : ''}
-    </div>
-  `;
+  container.innerHTML = buildBreakdownHtml([
+    { count: facts.filter(c => c.truth_percentage >= 75).length, label: 'true', color: 'green' },
+    { count: facts.filter(c => c.truth_percentage >= 50 && c.truth_percentage < 75).length, label: 'mixed', color: 'yellow' },
+    { count: facts.filter(c => c.truth_percentage < 50).length, label: 'false', color: 'red' },
+    { count: opinions.length, label: 'opinion', color: 'gray' },
+  ]);
 }
 
 /* --- Theme --- */
@@ -226,6 +226,40 @@ function buildSourcesHtml(sources, limit) {
       `<a href="${s.url}" target="_blank" rel="noopener" class="source-link">${escapeHtml(s.title)}</a>` +
       (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
     ).join('') + '</div>';
+}
+
+/* --- Claim Card HTML --- */
+
+function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
+  const borderClass = getBorderClass(c.truth_percentage, c.category);
+  const badgeClass = getBadgeClass(c.truth_percentage, c.category);
+  const bt = badgeText(c.truth_percentage, c.category);
+  const btTitle = badgeTitle(c.truth_percentage, c.category);
+  const ts = formatTimestamp(c.timestamp_seconds);
+  const seekSeconds = Math.floor(c.timestamp_seconds);
+  const sourcesHtml = buildSourcesHtml(c.sources, sourcesLimit);
+
+  const timestampLink = seekable
+    ? `<a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>`
+    : `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener">${ts}</a>`;
+
+  return `
+    <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
+      <div class="claim-header">
+        <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
+        <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
+      </div>
+      <div class="claim-meta">
+        <span class="category-tag">${c.category}</span>
+        ${timestampLink}
+        ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
+        ${sourceCountHtml(c.sources)}
+      </div>
+      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
+      <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
+      ${sourcesHtml}
+    </div>
+  `;
 }
 
 /* --- Active Filter --- */

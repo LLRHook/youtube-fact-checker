@@ -221,48 +221,16 @@ function renderResults(data) {
 
 function renderClaimsList(claims) {
   const container = document.getElementById('claims-list');
-  container.innerHTML = '';
 
   if (claims.length === 0) {
     container.innerHTML = '<div class="empty-state">No claims found.</div>';
     return;
   }
 
-  claims.forEach((claim, i) => {
-    const card = document.createElement('div');
-    const borderClass = getBorderClass(claim.truth_percentage, claim.category);
-    card.className = `claim-card claim-enter ${borderClass}`;
-    card.style.animationDelay = `${i * 60}ms`;
-
-    const badgeClass = getBadgeClass(claim.truth_percentage, claim.category);
-    const bt = badgeText(claim.truth_percentage, claim.category);
-    const btTitle = badgeTitle(claim.truth_percentage, claim.category);
-
-    const timestamp = formatTimestamp(claim.timestamp_seconds);
-    const ytLink = `https://youtube.com/watch?v=${document.getElementById('video-title').dataset.videoId || ''}&t=${Math.floor(claim.timestamp_seconds)}`;
-
-    const sourcesHtml = buildSourcesHtml(claim.sources, 3);
-
-    card.innerHTML = `
-      <div class="claim-header">
-        <span class="claim-text"><span class="claim-num">#${claim._num || i + 1}</span> ${escapeHtml(claim.text)}</span>
-        <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
-      </div>
-      <div class="claim-meta">
-        <span class="category-tag">${claim.category}</span>
-        <a href="${ytLink}" target="_blank" rel="noopener">${timestamp}</a>
-        ${claim.confidence ? `<span>Confidence: ${Math.round(claim.confidence * 100)}%</span>` : ''}
-        ${sourceCountHtml(claim.sources)}
-      </div>
-      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">
-        Show details &#9662;
-      </button>
-      <div class="claim-reasoning">${escapeHtml(claim.reasoning)}</div>
-      ${sourcesHtml}
-    `;
-
-    container.appendChild(card);
-  });
+  const videoId = document.getElementById('video-title').dataset.videoId || '';
+  container.innerHTML = claims.map((c, i) =>
+    buildClaimCardHtml(c, i, { videoId, sourcesLimit: 3 })
+  ).join('');
 
   addCardClickListeners('claims-list');
 }

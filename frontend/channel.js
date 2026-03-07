@@ -60,20 +60,13 @@ function renderChannel(data) {
   const falseCount = data.videos.filter(v => v.public_score < 50).length;
   const total = data.videos.length || 1;
 
-  const distBarHtml = data.videos.length > 0 ? `
-    <div class="breakdown-bar-container">
-      <div class="breakdown-segments">
-        ${trueCount ? `<div class="breakdown-seg seg-green" title="${trueCount} true" style="width:${(trueCount/total)*100}%"></div>` : ''}
-        ${mixedCount ? `<div class="breakdown-seg seg-yellow" title="${mixedCount} mixed" style="width:${(mixedCount/total)*100}%"></div>` : ''}
-        ${falseCount ? `<div class="breakdown-seg seg-red" title="${falseCount} false" style="width:${(falseCount/total)*100}%"></div>` : ''}
-      </div>
-      <div class="breakdown-legend">
-        ${trueCount ? `<span class="legend-item"><span class="legend-dot dot-green"></span>${trueCount} true</span>` : ''}
-        ${mixedCount ? `<span class="legend-item"><span class="legend-dot dot-yellow"></span>${mixedCount} mixed</span>` : ''}
-        ${falseCount ? `<span class="legend-item"><span class="legend-dot dot-red"></span>${falseCount} false</span>` : ''}
-      </div>
-    </div>
-  ` : '';
+  const distBarHtml = data.videos.length > 0
+    ? `<div class="breakdown-bar-container">${buildBreakdownHtml([
+        { count: trueCount, label: 'true', color: 'green' },
+        { count: mixedCount, label: 'mixed', color: 'yellow' },
+        { count: falseCount, label: 'false', color: 'red' },
+      ])}</div>`
+    : '';
 
   container.innerHTML = `
     <div class="channel-header">

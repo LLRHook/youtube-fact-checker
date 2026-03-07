@@ -43,35 +43,6 @@ async function loadVideo(videoId) {
   }
 }
 
-function buildClaimCardHtml(c, i) {
-  const badgeClass = getBadgeClass(c.truth_percentage, c.category);
-  const bt = badgeText(c.truth_percentage, c.category);
-  const btTitle = badgeTitle(c.truth_percentage, c.category);
-  const ts = formatTimestamp(c.timestamp_seconds);
-  const seekSeconds = Math.floor(c.timestamp_seconds);
-
-  const sourcesHtml = buildSourcesHtml(c.sources);
-
-  const borderClass = getBorderClass(c.truth_percentage, c.category);
-  return `
-    <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
-      <div class="claim-header">
-        <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
-        <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
-      </div>
-      <div class="claim-meta">
-        <span class="category-tag">${c.category}</span>
-        <a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>
-        ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
-        ${sourceCountHtml(c.sources)}
-      </div>
-      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
-      <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
-      ${sourcesHtml}
-    </div>
-  `;
-}
-
 function renderVideo(video) {
   const container = document.getElementById('content');
   const sc = scoreColor(video.public_score);
@@ -81,7 +52,7 @@ function renderVideo(video) {
   allVideoClaims = (video.claims || []).map((c, i) => ({...c, _num: i + 1}));
 
   const claimsHtml = allVideoClaims.length > 0
-    ? allVideoClaims.map((c, i) => buildClaimCardHtml(c, i)).join('')
+    ? allVideoClaims.map((c, i) => buildClaimCardHtml(c, i, { seekable: true })).join('')
     : '<div class="empty-state">No claims for this video.</div>';
 
   const channelLink = video.channel
@@ -170,7 +141,7 @@ function filterVideoClaims(filter) {
     return;
   }
 
-  container.innerHTML = filtered.map((c, i) => buildClaimCardHtml(c, i)).join('');
+  container.innerHTML = filtered.map((c, i) => buildClaimCardHtml(c, i, { seekable: true })).join('');
   addCardClickListeners('claims-container');
 }
 

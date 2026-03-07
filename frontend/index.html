@@ -30,7 +30,7 @@
       </div>
       <nav class="header-nav">
         <a href="/videos">Browse Videos</a>
-        <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme">&#9728;</button>
+        <button id="theme-toggle" onclick="toggleTheme()" title="Toggle theme" aria-label="Toggle theme">&#9728;</button>
       </nav>
     </header>
 
@@ -134,7 +134,7 @@
         <div class="score-ring" id="score-ring">
           <svg viewBox="0 0 120 120" role="img" aria-label="Accuracy score ring">
             <circle cx="60" cy="60" r="54" stroke="var(--border)" stroke-width="8" fill="none"/>
-            <circle cx="60" cy="60" r="54" stroke="#4CAF50" stroke-width="8" fill="none"
+            <circle cx="60" cy="60" r="54" stroke="var(--border)" stroke-width="8" fill="none"
                     id="score-circle"
                     stroke-dasharray="339.3"
                     stroke-dashoffset="339.3"
