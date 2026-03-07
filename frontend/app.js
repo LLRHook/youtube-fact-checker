@@ -276,6 +276,7 @@ function resetUI() {
   });
   document.getElementById('url-input').value = '';
   document.getElementById('input-error').textContent = '';
+  document.getElementById('url-preview').style.display = 'none';
   resetButton();
   allClaims = [];
 }
@@ -284,3 +285,25 @@ function resetUI() {
 document.getElementById('url-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitVideo();
 });
+
+// URL preview on input
+document.getElementById('url-input').addEventListener('input', showUrlPreview);
+document.getElementById('url-input').addEventListener('paste', () => {
+  setTimeout(showUrlPreview, 0);
+});
+
+function showUrlPreview() {
+  const url = document.getElementById('url-input').value.trim();
+  const preview = document.getElementById('url-preview');
+  const ytRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([a-zA-Z0-9_-]{11})/;
+  const match = url.match(ytRegex);
+
+  if (match) {
+    const videoId = match[1];
+    document.getElementById('preview-thumb').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    document.getElementById('preview-id').textContent = `Video ID: ${videoId}`;
+    preview.style.display = 'flex';
+  } else {
+    preview.style.display = 'none';
+  }
+}
