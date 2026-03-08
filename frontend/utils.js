@@ -28,6 +28,7 @@ function absoluteDate(dateStr) {
 }
 
 function formatTimestamp(seconds) {
+  if (!seconds && seconds !== 0) return '0:00';
   const total = Math.round(seconds);
   const m = Math.floor(total / 60);
   const s = total % 60;

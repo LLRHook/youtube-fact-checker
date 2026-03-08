@@ -149,6 +149,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 task.status = TaskStatus.COMPLETED
                 task.data = result
 
+            await db.delete_claims_for_video(video_id)
             await db.update_video_results(
                 video_id,
                 title=transcript.title,

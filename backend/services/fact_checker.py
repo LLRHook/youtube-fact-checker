@@ -117,12 +117,16 @@ async def fact_check_claim(claim_text: str) -> dict:
             seen_urls.add(r.url)
             sources.append({"title": r.title, "url": r.url, "snippet": r.snippet})
 
+    category = result.get("category", "fact")
+    if category not in ("fact", "opinion", "unclear"):
+        category = "fact"
+
     return {
         "truth_percentage": max(0, min(100, result.get("truth_percentage", 50))),
         "confidence": max(0.0, min(1.0, result.get("confidence", 0.5))),
         "reasoning": result.get("reasoning", "No reasoning provided."),
         "sources": sources,
-        "category": result.get("category", "fact"),
+        "category": category,
     }
 
 

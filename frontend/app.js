@@ -206,6 +206,9 @@ function renderResults(data) {
   circle.style.strokeDashoffset = offset;
   circle.style.stroke = sc;
 
+  const ringSvg = circle.closest('svg');
+  if (ringSvg) ringSvg.setAttribute('aria-label', `Accuracy score: ${score}%`);
+
   // Color & animate score counter
   document.getElementById('score-value').style.color = sc;
   animateCounter('score-value', 0, score, 800);

@@ -98,11 +98,11 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
         ytt_api = YouTubeTranscriptApi()
         transcript_list = ytt_api.fetch(video_id)
     except TranscriptsDisabled:
-        raise TranscriptError("Transcripts are disabled for this video.")
+        raise TranscriptError("Transcripts are disabled for this video.") from None
     except NoTranscriptFound:
-        raise TranscriptError("No transcript found for this video.")
+        raise TranscriptError("No transcript found for this video.") from None
     except VideoUnavailable:
-        raise TranscriptError("Video is unavailable.")
+        raise TranscriptError("Video is unavailable.") from None
     except Exception as e:
         raise TranscriptError(f"Could not extract transcript: {str(e)}") from e
 
