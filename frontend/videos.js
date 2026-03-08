@@ -20,6 +20,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
 window.addEventListener('popstate', (e) => {
   const page = (e.state && e.state.page) || 1;
+  const skel = document.getElementById('videos-skeleton');
+  if (skel) skel.style.display = '';
+  document.getElementById('video-grid').innerHTML = '';
+  const searchInput = document.getElementById('search-input');
+  if (searchInput) { searchInput.value = ''; toggleClearBtn(); }
   loadVideos(page);
 });
 

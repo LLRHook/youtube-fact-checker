@@ -101,9 +101,13 @@ Return ONLY a JSON array of claims. No other text."""
 
     response_text = response.content[0].text.strip()
     claims = parse_llm_json(response_text)
+    if claims is None:
+        logger.warning("LLM returned unparseable JSON for claim extraction (len=%d)", len(response_text))
+        return []
     if isinstance(claims, dict):
         claims = claims.get("claims", [])
     if not isinstance(claims, list):
+        logger.warning("LLM returned unexpected type for claims: %s", type(claims).__name__)
         return []
 
     # Validate and normalize
