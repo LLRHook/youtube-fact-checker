@@ -5,7 +5,18 @@ let allVideoClaims = [];
 document.addEventListener('DOMContentLoaded', () => {
   const parts = window.location.pathname.split('/');
   const videoId = parts[parts.length - 1];
-  if (videoId) loadVideo(videoId);
+  if (videoId) {
+    loadVideo(videoId);
+  } else {
+    document.getElementById('content').innerHTML = `<div class="empty-state">
+      <p class="empty-heading">Video not found</p>
+      <p class="empty-text">No video ID was provided.</p>
+      <div class="empty-links">
+        <a href="/" class="empty-link">Check a video</a>
+        <a href="/videos" class="empty-link">Browse videos</a>
+      </div>
+    </div>`;
+  }
 });
 
 async function loadVideo(videoId) {
@@ -175,7 +186,7 @@ document.addEventListener('keydown', (e) => {
 function seekTo(seconds) {
   seconds = Math.max(0, Math.floor(seconds)) || 0;
   const iframe = document.getElementById('yt-player');
-  if (iframe) {
+  if (iframe && iframe.contentWindow) {
     iframe.contentWindow.postMessage(JSON.stringify({
       event: 'command',
       func: 'seekTo',

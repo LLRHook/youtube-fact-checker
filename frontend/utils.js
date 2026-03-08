@@ -230,7 +230,11 @@ function sourceCountHtml(sources) {
 function buildSourcesHtml(sources, limit) {
   if (!sources || sources.length === 0) return '';
   const items = limit ? sources.slice(0, limit) : sources;
-  const safe = items.filter(s => s.url && (s.url.startsWith('https://') || s.url.startsWith('http://')));
+  const safe = items.filter(s => {
+    if (!s.url) return false;
+    try { new URL(s.url); } catch { return false; }
+    return s.url.startsWith('https://') || s.url.startsWith('http://');
+  });
   if (safe.length === 0) return '';
   return '<div class="claim-sources">' +
     safe.map(s =>

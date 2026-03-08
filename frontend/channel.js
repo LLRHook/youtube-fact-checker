@@ -4,7 +4,18 @@ document.addEventListener('DOMContentLoaded', () => {
   const parts = window.location.pathname.split('/');
   let channelName;
   try { channelName = decodeURIComponent(parts[parts.length - 1]); } catch (_) { channelName = parts[parts.length - 1]; }
-  if (channelName) loadChannel(channelName);
+  if (channelName) {
+    loadChannel(channelName);
+  } else {
+    document.getElementById('content').innerHTML = `<div class="empty-state">
+      <p class="empty-heading">Channel not found</p>
+      <p class="empty-text">No channel name was provided.</p>
+      <div class="empty-links">
+        <a href="/" class="empty-link">Check a video</a>
+        <a href="/videos" class="empty-link">Browse videos</a>
+      </div>
+    </div>`;
+  }
 });
 
 async function loadChannel(channelName) {
