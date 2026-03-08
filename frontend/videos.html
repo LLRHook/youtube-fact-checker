@@ -27,7 +27,7 @@
 
     <div class="toolbar">
       <div class="search-wrapper">
-        <input type="text" class="search-input" id="search-input" placeholder="Search by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()" aria-label="Search videos">
+        <input type="text" class="search-input" id="search-input" placeholder="Filter this page by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()" aria-label="Filter videos on this page">
         <button class="search-clear" id="search-clear" onclick="document.getElementById('search-input').value='';applyFilters();toggleClearBtn();" title="Clear search">&times;</button>
       </div>
       <select class="sort-select" id="sort-select" onchange="applyFilters()" aria-label="Sort videos">

@@ -61,6 +61,10 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
         headers=headers,
         params=params,
     )
+    if response.status_code == 429:
+        raise RuntimeError("Brave Search rate limit exceeded — please try again shortly")
+    if response.status_code == 403:
+        raise RuntimeError("Brave Search API key is invalid or quota exhausted")
     response.raise_for_status()
     data = response.json()
 

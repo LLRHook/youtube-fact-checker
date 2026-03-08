@@ -105,9 +105,13 @@ Return ONLY a JSON array of claims. No other text."""
             category = claim.get("category", "fact")
             if category not in valid_categories:
                 category = "fact"
+            try:
+                ts = max(0.0, float(claim.get("timestamp_seconds", 0)))
+            except (TypeError, ValueError):
+                ts = 0.0
             valid_claims.append({
                 "text": claim["text"],
-                "timestamp_seconds": claim.get("timestamp_seconds", 0),
+                "timestamp_seconds": ts,
                 "category": category,
             })
 

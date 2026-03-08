@@ -63,9 +63,9 @@ function applyFilters() {
 
   const countEl = document.getElementById('results-count');
   if (query) {
-    countEl.textContent = `${filtered.length} of ${allVideos.length} on this page (${totalVideos} total)`;
+    countEl.textContent = `Showing ${filtered.length} of ${allVideos.length} on this page`;
   } else {
-    countEl.textContent = `${totalVideos} videos`;
+    countEl.textContent = `${totalVideos} video${totalVideos !== 1 ? 's' : ''} checked`;
   }
 
   renderGrid(filtered);
