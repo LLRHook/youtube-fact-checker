@@ -1,6 +1,7 @@
 """YouTube Fact Checker — FastAPI application."""
 
 import os
+import re
 import time
 import asyncio
 import logging
@@ -551,9 +552,14 @@ async def public_list_videos(page: int = 1, limit: int = 50):
     }
 
 
+_VIDEO_ID_PATTERN = re.compile(r"^[a-zA-Z0-9_-]{11}$")
+
+
 @app.get("/api/videos/{video_id}")
 async def public_get_video(video_id: str):
     """Public video detail."""
+    if not _VIDEO_ID_PATTERN.match(video_id):
+        raise HTTPException(status_code=404, detail="Video not found.")
     video = await db.get_video(video_id)
     if not video or video["status"] != "completed":
         raise HTTPException(status_code=404, detail="Video not found.")

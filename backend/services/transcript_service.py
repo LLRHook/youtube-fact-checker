@@ -58,9 +58,9 @@ def get_video_info(video_id: str) -> dict:
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)
         return {
-            "title": info.get("title", "Unknown"),
+            "title": (info.get("title") or "Unknown").strip(),
             "duration": info.get("duration", 0),
-            "channel": info.get("channel", "Unknown"),
+            "channel": (info.get("channel") or "Unknown").strip(),
         }
 
 

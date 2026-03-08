@@ -1139,6 +1139,33 @@ footer {
   .back-to-top { bottom: 1.5rem; right: 1.5rem; }
 }
 
+/* Keyboard focus indicators */
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+button:focus-visible,
+.btn:focus-visible,
+#check-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--accent) 25%, transparent);
+}
+
+.video-card:focus-visible,
+.claim-card:focus-visible,
+.channel-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 @media (max-width: 600px) {
   .container { padding: 1.5rem 1rem; }
   .page-container { padding: 1.5rem 1rem; }

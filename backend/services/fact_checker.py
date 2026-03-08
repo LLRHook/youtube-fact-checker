@@ -60,7 +60,8 @@ async def fact_check_claim(claim_text: str) -> dict:
         Dict with truth_percentage, confidence, reasoning, sources, category
     """
     # Step 1: Search for evidence
-    if not claim_text or not claim_text.strip():
+    claim_text = (claim_text or "").strip()
+    if not claim_text:
         return {
             "truth_percentage": 50,
             "confidence": 0.1,

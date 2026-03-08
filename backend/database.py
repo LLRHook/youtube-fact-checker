@@ -371,7 +371,8 @@ async def list_channels() -> list[dict]:
                FROM videos
                WHERE status = 'completed' AND channel != ''
                GROUP BY channel
-               ORDER BY video_count DESC"""
+               ORDER BY video_count DESC, channel ASC
+               LIMIT 500"""
         ) as cursor:
             rows = await cursor.fetchall()
             return [dict(r) for r in rows]
