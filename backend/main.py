@@ -255,13 +255,16 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 async def queue_processor():
     """Background loop that processes queued videos and recovers stale ones."""
     first_run = True
+    consecutive_errors = 0
     while True:
         try:
             if first_run:
                 first_run = False
                 await asyncio.sleep(5)
             else:
-                await asyncio.sleep(settings.QUEUE_INTERVAL_MINUTES * 60)
+                base = settings.QUEUE_INTERVAL_MINUTES * 60
+                backoff = min(base * (2 ** consecutive_errors), 3600)
+                await asyncio.sleep(backoff)
 
             # Recover videos stuck in "processing" (e.g., from a server crash)
             stale = await db.get_stale_processing_videos(stale_minutes=10, limit=3)
@@ -284,10 +287,13 @@ async def queue_processor():
                 )
                 await db.update_video_status(video_id, "processing")
                 await process_video(task_id, video_id, youtube_url)
+
+            consecutive_errors = 0
         except asyncio.CancelledError:
             break
         except Exception:
-            logger.exception("Queue processor error")
+            consecutive_errors += 1
+            logger.exception("Queue processor error (consecutive: %d)", consecutive_errors)
 
 
 def _cleanup_task(task_id: str):
@@ -504,7 +510,7 @@ def _calculate_public_score(claims: list[dict]) -> int:
         total_weight += conf
         weighted_sum += c.get("truth_percentage", 50) * conf
     if total_weight > 0:
-        return round(weighted_sum / total_weight)
+        return max(0, min(100, round(weighted_sum / total_weight)))
     return 0
 
 

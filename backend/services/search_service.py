@@ -46,6 +46,9 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     if not settings.BRAVE_API_KEY:
         raise ValueError("BRAVE_API_KEY not set. Add it to your .env file.")
 
+    if not query or not query.strip():
+        return []
+
     headers = {
         "Accept": "application/json",
         "Accept-Encoding": "gzip",
@@ -76,7 +79,7 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     web_results = data.get("web", {}).get("results", [])
     for item in web_results[:num_results]:
         url = item.get("url", "").strip()
-        if not url or not url.startswith(("https://", "http://")) or "\n" in url:
+        if not url or not url.startswith(("https://", "http://")) or any(c in url for c in "\n\r\t\0"):
             continue
         results.append(
             SearchResult(

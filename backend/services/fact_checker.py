@@ -60,6 +60,15 @@ async def fact_check_claim(claim_text: str) -> dict:
         Dict with truth_percentage, confidence, reasoning, sources, category
     """
     # Step 1: Search for evidence
+    if not claim_text or not claim_text.strip():
+        return {
+            "truth_percentage": 50,
+            "confidence": 0.1,
+            "reasoning": "Empty claim text — nothing to verify.",
+            "sources": [],
+            "category": "unclear",
+        }
+
     search_query = claim_text
     # Trim very long claims for better search (at word boundary)
     if len(search_query) > 200:
