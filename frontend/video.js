@@ -21,8 +21,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadVideo(videoId) {
   const container = document.getElementById('content');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
-    const resp = await fetch(`/api/videos/${videoId}`);
+    const resp = await fetch(`/api/videos/${videoId}`, { signal: controller.signal });
     if (!resp.ok) {
       container.innerHTML = `<div class="empty-state">
         <p class="empty-heading">Video not found</p>
@@ -46,20 +48,26 @@ async function loadVideo(videoId) {
       setMeta('meta[name="description"]', video.summary);
     }
   } catch (err) {
+    const msg = err.name === 'AbortError'
+      ? 'Request timed out. The server may be busy — please try again.'
+      : 'Something went wrong. Please try again later.';
     container.innerHTML = `<div class="empty-state">
       <p class="empty-heading">Error loading video</p>
-      <p class="empty-text">Something went wrong. Please try again later.</p>
+      <p class="empty-text">${msg}</p>
       <div class="empty-links">
         <button onclick="location.reload()" class="empty-link">Retry</button>
         <a href="/videos" class="empty-link">Browse videos</a>
       </div>
     </div>`;
     document.title = 'Error — YouTube Fact Checker';
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 
 function renderVideo(video) {
   const container = document.getElementById('content');
+  const safeId = escapeHtml(video.id);
   const sc = scoreColor(video.public_score);
   const circumference = 2 * Math.PI * 54;
   const offset = circumference - (video.public_score / 100) * circumference;
@@ -77,7 +85,7 @@ function renderVideo(video) {
   container.innerHTML = `
     <div class="video-embed">
       <iframe id="yt-player"
-        src="https://www.youtube-nocookie.com/embed/${video.id}?enablejsapi=1&rel=0"
+        src="https://www.youtube-nocookie.com/embed/${safeId}?enablejsapi=1&rel=0"
         title="${escapeHtml(video.title)}"
         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
         allowfullscreen></iframe>
@@ -117,7 +125,7 @@ function renderVideo(video) {
 
     <div class="action-row">
       <button class="share-btn" onclick="copyShareLink()">Share this page</button>
-      <a href="https://www.youtube.com/watch?v=${video.id}" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--link">Open on YouTube</a>
+      <a href="https://www.youtube.com/watch?v=${safeId}" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--link">Open on YouTube</a>
     </div>
 
     <div id="breakdown-bar" class="breakdown-bar-container"></div>

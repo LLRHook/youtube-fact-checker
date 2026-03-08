@@ -327,6 +327,7 @@ header {
   font-size: 1.3rem;
   font-weight: 700;
   margin-bottom: 0.5rem;
+  overflow-wrap: break-word;
 }
 
 .video-info h2 {
@@ -709,7 +710,7 @@ header {
 
 /* === Channel Page === */
 .channel-header { margin-bottom: 1.5rem; }
-.channel-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; }
+.channel-header h1 { font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem; overflow-wrap: break-word; }
 .channel-stats { display: flex; gap: 1.5rem; color: var(--text-muted); font-size: 0.9rem; }
 .channel-stats .stat-value { color: var(--text); font-weight: 600; }
 

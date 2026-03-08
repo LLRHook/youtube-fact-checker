@@ -142,21 +142,25 @@ async def update_video_results(
 ):
     """Write final results to a completed video row."""
     async with _db() as db:
-        await db.execute(
-            """UPDATE videos SET
-                title = ?, channel = ?, duration_seconds = ?,
-                transcript_text = ?, overall_truth_percentage = ?,
-                summary = ?, processing_time_seconds = ?,
-                status = 'completed', error = NULL, updated_at = datetime('now')
-            WHERE id = ?""",
-            (
-                title, channel, duration_seconds,
-                transcript_text, overall_truth_percentage,
-                summary, processing_time_seconds,
-                video_id,
-            ),
-        )
-        await db.commit()
+        try:
+            await db.execute(
+                """UPDATE videos SET
+                    title = ?, channel = ?, duration_seconds = ?,
+                    transcript_text = ?, overall_truth_percentage = ?,
+                    summary = ?, processing_time_seconds = ?,
+                    status = 'completed', error = NULL, updated_at = datetime('now')
+                WHERE id = ?""",
+                (
+                    title, channel, duration_seconds,
+                    transcript_text, overall_truth_percentage,
+                    summary, processing_time_seconds,
+                    video_id,
+                ),
+            )
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
 
 _LIST_COLUMNS = "id, title, channel, youtube_url, duration_seconds, overall_truth_percentage, summary, status, created_at"

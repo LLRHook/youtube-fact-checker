@@ -372,12 +372,13 @@ function _isRealChannel(ch) {
 }
 
 function buildVideoCardHtml(v, { query, showChannel } = {}) {
+  const safeId = escapeHtml(v.id);
   const title = query ? highlightMatch(v.title || v.id, query) : escapeHtml(v.title || v.id);
   const channelHtml = showChannel && _isRealChannel(v.channel)
     ? `<span class="channel-link" data-channel="${escapeHtml(v.channel)}">${query ? highlightMatch(v.channel, query) : escapeHtml(v.channel)}</span>`
     : '';
-  return `<a class="video-card" href="/video/${v.id}">
-    <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">
+  return `<a class="video-card" href="/video/${safeId}">
+    <img class="thumb" src="https://img.youtube.com/vi/${safeId}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">
     <h3>${title}</h3>
     <div class="video-card-meta">
       ${channelHtml}

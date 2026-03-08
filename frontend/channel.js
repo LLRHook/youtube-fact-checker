@@ -20,8 +20,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
 async function loadChannel(channelName) {
   const container = document.getElementById('content');
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 15000);
   try {
-    const resp = await fetch(`/api/channels/${encodeURIComponent(channelName)}`);
+    const resp = await fetch(`/api/channels/${encodeURIComponent(channelName)}`, { signal: controller.signal });
     if (!resp.ok) {
       container.innerHTML = `<div class="empty-state">
         <p class="empty-heading">Channel not found</p>
@@ -42,15 +44,20 @@ async function loadChannel(channelName) {
     setMeta('meta[property="og:description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy.`);
     setMeta('meta[name="description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
   } catch (err) {
+    const msg = err.name === 'AbortError'
+      ? 'Request timed out. The server may be busy — please try again.'
+      : 'Something went wrong. Please try again later.';
     container.innerHTML = `<div class="empty-state">
       <p class="empty-heading">Error loading channel</p>
-      <p class="empty-text">Something went wrong. Please try again later.</p>
+      <p class="empty-text">${msg}</p>
       <div class="empty-links">
         <button onclick="location.reload()" class="empty-link">Retry</button>
         <a href="/videos" class="empty-link">Browse videos</a>
       </div>
     </div>`;
     document.title = 'Error — YouTube Fact Checker';
+  } finally {
+    clearTimeout(timeoutId);
   }
 }
 

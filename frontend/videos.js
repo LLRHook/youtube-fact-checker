@@ -107,7 +107,7 @@ function renderGrid(videos) {
       empty.style.display = 'block';
     } else {
       empty.style.display = 'none';
-      grid.innerHTML = '<div class="no-results"><p>No matching videos found.</p><button class="clear-search-btn" onclick="document.getElementById(\'search-input\').value=\'\';applyFilters();">Clear search</button></div>';
+      grid.innerHTML = '<div class="no-results"><p>No matching videos found.</p><button class="clear-search-btn" data-action="clear-search">Clear search</button></div>';
     }
     return;
   }
@@ -176,6 +176,14 @@ function toggleClearBtn() {
   const btn = document.getElementById('search-clear');
   if (btn) btn.style.display = document.getElementById('search-input').value ? 'block' : 'none';
 }
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="clear-search"]')) {
+    document.getElementById('search-input').value = '';
+    applyFilters();
+    toggleClearBtn();
+  }
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === '/' && !e.ctrlKey && !e.metaKey && !e.altKey) {
