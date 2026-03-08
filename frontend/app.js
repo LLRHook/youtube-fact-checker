@@ -455,7 +455,7 @@ document.addEventListener('keydown', (e) => {
 
 const _previewThumb = document.getElementById('preview-thumb');
 const _previewEl = document.getElementById('url-preview');
-if (_previewThumb) _previewThumb.onerror = () => { _previewEl.style.display = 'none'; };
+if (_previewThumb) _previewThumb.addEventListener('error', () => { _previewEl.style.display = 'none'; });
 
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();

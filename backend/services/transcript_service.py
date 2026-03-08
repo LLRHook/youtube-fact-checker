@@ -88,7 +88,7 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     try:
         info = get_video_info(video_id)
     except Exception as e:
-        raise TranscriptError(f"Could not fetch video info: {str(e)}") from e
+        raise TranscriptError(f"Could not fetch video info: {str(e)[:200]}") from e
 
     duration = float(info.get("duration") or 0)
     if not duration:
@@ -110,7 +110,7 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     except VideoUnavailable:
         raise TranscriptError("Video is unavailable.") from None
     except Exception as e:
-        raise TranscriptError(f"Could not extract transcript: {str(e)}") from e
+        raise TranscriptError(f"Could not extract transcript: {str(e)[:200]}") from e
 
     # Build segments and full text
     segments = []

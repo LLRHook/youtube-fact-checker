@@ -446,9 +446,14 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     # Under limits — process immediately
     task_id = video_id
 
-    # Reserve the slot in-memory BEFORE any awaits to prevent duplicate processing.
-    # Without this, a concurrent request could pass the tasks.get() check above
-    # while this request is awaiting DB operations.
+    # Re-check after awaits: another coroutine may have reserved this task
+    # while we were awaiting rate-limit DB queries above.
+    existing_task = tasks.get(task_id)
+    if existing_task and existing_task.status == TaskStatus.PROCESSING:
+        return TaskResponse(
+            task_id=task_id, status=TaskStatus.PROCESSING, progress=existing_task.progress,
+        ).model_dump()
+
     tasks[task_id] = TaskResponse(
         task_id=task_id,
         status=TaskStatus.PROCESSING,
