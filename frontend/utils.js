@@ -169,6 +169,13 @@ function addCardClickListeners(containerId) {
       const toggle = card.querySelector('.claim-toggle');
       if (toggle) toggleClaim(toggle);
     });
+    card.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const toggle = card.querySelector('.claim-toggle');
+        if (toggle) toggleClaim(toggle);
+      }
+    });
   });
 }
 
@@ -254,20 +261,21 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
   const seekSeconds = Math.max(0, Math.floor(c.timestamp_seconds)) || 0;
   const sourcesHtml = buildSourcesHtml(c.sources, sourcesLimit);
 
+  const videoIdSafe = escapeHtml(videoId);
   const timestampLink = seekable
     ? `<a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>`
     : videoId
-      ? `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`
+      ? `<a href="https://youtube.com/watch?v=${videoIdSafe}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`
       : `<span>${ts}</span>`;
 
   return `
-    <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">
+    <div class="claim-card claim-enter ${borderClass}" tabindex="0" role="button" style="animation-delay:${i * 60}ms">
       <div class="claim-header">
         <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
         <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
       </div>
       <div class="claim-meta">
-        <span class="category-tag">${c.category}</span>
+        <span class="category-tag">${escapeHtml(c.category)}</span>
         ${timestampLink}
         ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
         ${sourceCountHtml(c.sources)}

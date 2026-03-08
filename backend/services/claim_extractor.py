@@ -115,8 +115,13 @@ Return ONLY a JSON array of claims. No other text."""
                 ts = 0.0
             text = claim["text"].strip()
             if len(text) > 500:
-                logger.info("Truncating claim from %d to 500 chars", len(text))
-                text = text[:500]
+                truncated = text[:500]
+                last_space = truncated.rfind(' ')
+                if last_space > 400:
+                    text = truncated[:last_space] + "…"
+                else:
+                    text = truncated + "…"
+                logger.info("Truncated claim from %d to %d chars", len(claim["text"]), len(text))
             if not text:
                 continue
             valid_claims.append({

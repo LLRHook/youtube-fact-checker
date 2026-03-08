@@ -1,5 +1,6 @@
 """SQLite database layer for persistent video/claim storage."""
 
+import logging
 import sqlite3
 
 import aiosqlite
@@ -7,13 +8,19 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from backend.config import settings
 
+logger = logging.getLogger(__name__)
+
 _DB_PATH = settings.DATABASE_PATH
 
 
 @asynccontextmanager
 async def _db():
     """Async context manager for DB connections with WAL and FK enabled."""
-    db = await aiosqlite.connect(_DB_PATH)
+    try:
+        db = await aiosqlite.connect(_DB_PATH)
+    except Exception:
+        logger.exception("Failed to connect to database at %s", _DB_PATH)
+        raise
     db.row_factory = aiosqlite.Row
     await db.execute("PRAGMA journal_mode=WAL")
     await db.execute("PRAGMA foreign_keys=ON")
