@@ -145,7 +145,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 video_duration_seconds=transcript.duration_seconds,
                 transcript_text=transcript.full_text[:2000],
                 claims=[],
-                overall_truth_percentage=0,
+                overall_truth_percentage=50,
                 summary="No verifiable factual claims found in this video.",
                 processing_time_seconds=round(elapsed, 1),
             )
@@ -161,7 +161,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 channel=transcript.channel,
                 duration_seconds=transcript.duration_seconds,
                 transcript_text=transcript.full_text,
-                overall_truth_percentage=0,
+                overall_truth_percentage=50,
                 summary=result.summary,
                 processing_time_seconds=result.processing_time_seconds,
             )

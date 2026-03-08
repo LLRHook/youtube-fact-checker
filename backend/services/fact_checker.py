@@ -104,6 +104,8 @@ async def fact_check_claim(claim_text: str) -> dict:
             ],
         )
 
+        if not response.content or not hasattr(response.content[0], 'text'):
+            raise ValueError("LLM returned empty content for fact-check evaluation")
         response_text = response.content[0].text.strip()
         result = parse_llm_json(response_text)
         if result is None:
@@ -131,10 +133,19 @@ async def fact_check_claim(claim_text: str) -> dict:
     if category not in ("fact", "opinion", "unclear"):
         category = "fact"
 
+    try:
+        truth_pct = int(float(result.get("truth_percentage", 50)))
+    except (TypeError, ValueError):
+        truth_pct = 50
+    try:
+        confidence = float(result.get("confidence", 0.5))
+    except (TypeError, ValueError):
+        confidence = 0.5
+
     return {
-        "truth_percentage": max(0, min(100, result.get("truth_percentage", 50))),
-        "confidence": max(0.0, min(1.0, result.get("confidence", 0.5))),
-        "reasoning": result.get("reasoning", "No reasoning provided."),
+        "truth_percentage": max(0, min(100, truth_pct)),
+        "confidence": max(0.0, min(1.0, confidence)),
+        "reasoning": str(result.get("reasoning", "No reasoning provided.")).strip() or "No reasoning provided.",
         "sources": sources,
         "category": category,
     }
