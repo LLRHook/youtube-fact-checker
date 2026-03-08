@@ -1,7 +1,11 @@
 """Web search service using Brave Search API."""
 
+import logging
+
 import httpx
 from backend.config import settings
+
+logger = logging.getLogger(__name__)
 
 _http_client: httpx.AsyncClient | None = None
 _http_shutdown = False

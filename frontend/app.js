@@ -43,7 +43,6 @@ async function submitVideo() {
       body: JSON.stringify({ youtube_url: url }),
       signal: submitController.signal,
     });
-    clearTimeout(submitTimeout);
 
     if (!resp.ok) {
       let message = `Request failed (${resp.status})`;
@@ -57,7 +56,12 @@ async function submitVideo() {
       throw new Error(message);
     }
 
-    const data = await resp.json();
+    let data;
+    try {
+      data = await resp.json();
+    } catch (_) {
+      throw new Error('Invalid response from server');
+    }
     currentTaskId = data.task_id;
 
     if (data.status === 'completed') {
@@ -81,6 +85,8 @@ async function submitVideo() {
     errorEl.textContent = err.message;
     resetButton();
     return;
+  } finally {
+    clearTimeout(submitTimeout);
   }
 }
 
@@ -105,9 +111,17 @@ function startPolling() {
       const timeoutId = setTimeout(() => controller.abort(), 10000);
       const resp = await fetch(`/api/check/${currentTaskId}`, { signal: controller.signal });
       clearTimeout(timeoutId);
-      if (!resp.ok) throw new Error('Polling failed');
+      if (!resp.ok) {
+        if (resp.status >= 400 && resp.status < 500) {
+          stopPolling();
+          showError(resp.status === 404 ? 'Analysis task not found.' : `Server error (${resp.status}).`);
+          return;
+        }
+        throw new Error('Polling failed');
+      }
 
-      const data = await resp.json();
+      let data;
+      try { data = await resp.json(); } catch (_) { throw new Error('Invalid JSON'); }
       pollFailures = 0;
 
       if (data.status === 'processing') {
@@ -344,9 +358,14 @@ document.getElementById('url-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitVideo();
 });
 
-// URL preview on input
-document.getElementById('url-input').addEventListener('input', showUrlPreview);
+// URL preview on input (debounced)
+let _previewTimer;
+document.getElementById('url-input').addEventListener('input', () => {
+  clearTimeout(_previewTimer);
+  _previewTimer = setTimeout(showUrlPreview, 200);
+});
 document.getElementById('url-input').addEventListener('paste', () => {
+  clearTimeout(_previewTimer);
   setTimeout(showUrlPreview, 0);
 });
 
