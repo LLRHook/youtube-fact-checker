@@ -96,7 +96,10 @@ function startPolling() {
 
   pollInterval = setInterval(async () => {
     try {
-      const resp = await fetch(`/api/check/${currentTaskId}`);
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      const resp = await fetch(`/api/check/${currentTaskId}`, { signal: controller.signal });
+      clearTimeout(timeoutId);
       if (!resp.ok) throw new Error('Polling failed');
 
       const data = await resp.json();

@@ -582,7 +582,7 @@ header {
   flex-wrap: wrap;
 }
 
-.video-card-meta .channel-link { color: var(--blue); text-decoration: none; }
+.video-card-meta .channel-link { color: var(--blue); text-decoration: none; cursor: pointer; }
 .video-card-meta .channel-link:hover { text-decoration: underline; }
 
 .score-badge {

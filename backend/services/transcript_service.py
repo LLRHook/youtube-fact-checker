@@ -60,7 +60,7 @@ def get_video_info(video_id: str) -> dict:
         return {
             "title": (info.get("title") or "Unknown").strip(),
             "duration": info.get("duration", 0),
-            "channel": (info.get("channel") or "Unknown").strip(),
+            "channel": (info.get("channel") or "").strip(),
         }
 
 

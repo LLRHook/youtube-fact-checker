@@ -352,10 +352,14 @@ function highlightMatch(text, query) {
 
 /* --- Video Card HTML (shared for listings) --- */
 
+function _isRealChannel(ch) {
+  return ch && ch !== 'Unknown' && ch.trim() !== '';
+}
+
 function buildVideoCardHtml(v, { query, showChannel } = {}) {
   const title = query ? highlightMatch(v.title || v.id, query) : escapeHtml(v.title || v.id);
-  const channelHtml = showChannel
-    ? `<a href="/channel/${encodeURIComponent(v.channel)}" class="channel-link" onclick="event.stopPropagation()">${query ? highlightMatch(v.channel || 'Unknown', query) : escapeHtml(v.channel || 'Unknown')}</a>`
+  const channelHtml = showChannel && _isRealChannel(v.channel)
+    ? `<span class="channel-link" onclick="event.preventDefault();event.stopPropagation();window.location.href='/channel/${encodeURIComponent(v.channel)}'">${query ? highlightMatch(v.channel, query) : escapeHtml(v.channel)}</span>`
     : '';
   return `<a class="video-card" href="/video/${v.id}">
     <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">

@@ -376,7 +376,7 @@ async def list_channels() -> list[dict]:
             """SELECT channel, COUNT(*) as video_count,
                       AVG(overall_truth_percentage) as avg_score
                FROM videos
-               WHERE status = 'completed' AND channel != ''
+               WHERE status = 'completed' AND channel != '' AND channel != 'Unknown'
                GROUP BY channel
                ORDER BY video_count DESC, channel ASC
                LIMIT 500"""
@@ -407,7 +407,7 @@ async def get_stats() -> dict:
                 (SELECT COUNT(*) FROM claims WHERE video_id IN
                     (SELECT id FROM videos WHERE status = 'completed')),
                 (SELECT COUNT(DISTINCT channel) FROM videos
-                    WHERE status = 'completed' AND channel != '')
+                    WHERE status = 'completed' AND channel != '' AND channel != 'Unknown')
         """) as c:
             row = await c.fetchone()
             return {

@@ -67,7 +67,7 @@ function renderVideo(video) {
     ? allVideoClaims.map((c, i) => buildClaimCardHtml(c, i, { seekable: true })).join('')
     : '<div class="empty-state">No claims for this video.</div>';
 
-  const channelLink = video.channel
+  const channelLink = _isRealChannel(video.channel)
     ? `<a href="/channel/${encodeURIComponent(video.channel)}">${escapeHtml(video.channel)}</a>`
     : '';
 
