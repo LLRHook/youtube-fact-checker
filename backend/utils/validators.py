@@ -4,7 +4,7 @@ import re
 def extract_video_id(url: str) -> str | None:
     """Extract YouTube video ID from various URL formats."""
     patterns = [
-        r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/)([a-zA-Z0-9_-]{11})',
+        r'(?:youtube\.com/watch\?v=|youtu\.be/|youtube\.com/embed/|youtube\.com/v/|youtube\.com/shorts/)([a-zA-Z0-9_-]{11})',
         r'^([a-zA-Z0-9_-]{11})$',  # bare video ID
     ]
     for pattern in patterns:

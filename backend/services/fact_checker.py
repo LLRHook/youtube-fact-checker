@@ -134,7 +134,7 @@ async def fact_check_claim(claim_text: str) -> dict:
         category = "fact"
 
     try:
-        truth_pct = int(float(result.get("truth_percentage", 50)))
+        truth_pct = round(float(result.get("truth_percentage", 50)))
     except (TypeError, ValueError):
         truth_pct = 50
     try:

@@ -43,6 +43,8 @@ async function loadVideos(page) {
   } catch (err) {
     document.getElementById('empty').textContent = 'Error loading videos.';
     document.getElementById('empty').style.display = 'block';
+    const pag = document.getElementById('pagination');
+    if (pag) pag.innerHTML = '';
   } finally {
     const skel = document.getElementById('videos-skeleton');
     if (skel) skel.style.display = 'none';

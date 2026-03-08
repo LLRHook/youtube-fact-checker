@@ -298,7 +298,8 @@ header {
 .error-card--warning { border-color: var(--yellow); }
 .error-actions { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
 
-.error-card > button {
+.error-card > button,
+.error-actions button {
   margin-top: 1rem;
   background: var(--surface-2);
   color: var(--text);
@@ -310,7 +311,8 @@ header {
   transition: border-color 0.2s, background 0.2s;
 }
 
-.error-card > button:hover {
+.error-card > button:hover,
+.error-actions button:hover {
   border-color: var(--accent);
   background: var(--surface);
 }

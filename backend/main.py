@@ -437,16 +437,20 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
 
     # Under limits — process immediately
     task_id = video_id
-    if not existing:
-        await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
-    elif existing["status"] in ("failed", "processing"):
-        await db.update_video_status(video_id, "processing")
 
+    # Reserve the slot in-memory BEFORE any awaits to prevent duplicate processing.
+    # Without this, a concurrent request could pass the tasks.get() check above
+    # while this request is awaiting DB operations.
     tasks[task_id] = TaskResponse(
         task_id=task_id,
         status=TaskStatus.PROCESSING,
         progress="Starting...",
     )
+
+    if not existing:
+        await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
+    elif existing["status"] in ("failed", "processing"):
+        await db.update_video_status(video_id, "processing")
 
     background_tasks.add_task(process_video, task_id, video_id, req.youtube_url)
 
