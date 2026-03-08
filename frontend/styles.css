@@ -1,5 +1,6 @@
 /* === Reset & Base === */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+input, button, select, textarea { font-family: inherit; }
 :root {
   color-scheme: dark;
   --bg: #0f0f0f;

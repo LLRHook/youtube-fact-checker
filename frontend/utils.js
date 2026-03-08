@@ -32,7 +32,7 @@ function absoluteDate(dateStr) {
 
 function formatTimestamp(seconds) {
   if (!seconds && seconds !== 0) return '0:00';
-  const total = Math.round(seconds);
+  const total = Math.max(0, Math.round(seconds));
   const m = Math.floor(total / 60);
   const s = total % 60;
   return `${m}:${s.toString().padStart(2, '0')}`;
@@ -278,7 +278,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
       : `<span>${ts}</span>`;
 
   return `
-    <div class="claim-card claim-enter ${borderClass}" tabindex="0" role="button" style="animation-delay:${i * 60}ms">
+    <div class="claim-card claim-enter ${borderClass}" tabindex="0" style="animation-delay:${i * 60}ms">
       <div class="claim-header">
         <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
         <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>

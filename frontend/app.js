@@ -413,8 +413,10 @@ document.addEventListener('keydown', (e) => {
 
 // Load site stats
 (async function loadStats() {
+  const statsController = new AbortController();
+  setTimeout(() => statsController.abort(), 5000);
   try {
-    const resp = await fetch('/api/stats');
+    const resp = await fetch('/api/stats', { signal: statsController.signal });
     if (!resp.ok) return;
     const data = await resp.json();
     if (data.video_count > 0) {

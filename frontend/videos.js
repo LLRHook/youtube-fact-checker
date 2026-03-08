@@ -41,6 +41,11 @@ async function loadVideos(page) {
     totalVideos = data.total;
     currentPage = data.page;
     totalPages = data.pages;
+    // Sync URL if backend clamped the page number
+    const expectedUrl = currentPage > 1 ? `?page=${currentPage}` : window.location.pathname;
+    if (page !== currentPage) {
+      history.replaceState({ page: currentPage }, '', expectedUrl);
+    }
     document.title = `${totalVideos} Videos — YouTube Fact Checker`;
     applyFilters();
     renderPagination();
