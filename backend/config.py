@@ -11,7 +11,7 @@ class Settings:
     MAX_CLAIMS_PER_VIDEO: int = 30
     CLAUDE_MODEL: str = "claude-haiku-4-5-20251001"
     SEARCH_RESULTS_PER_CLAIM: int = 5
-    FACT_CHECK_CONCURRENCY: int = int(os.getenv("FACT_CHECK_CONCURRENCY", "3"))
+    FACT_CHECK_CONCURRENCY: int = max(1, min(10, int(os.getenv("FACT_CHECK_CONCURRENCY", "3"))))
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "data/factchecker.db")
     DAILY_VIDEO_LIMIT: int = int(os.getenv("DAILY_VIDEO_LIMIT", "20"))
     IP_DAILY_LIMIT: int = int(os.getenv("IP_DAILY_LIMIT", "3"))

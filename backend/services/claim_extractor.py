@@ -1,8 +1,11 @@
 """LLM-based claim extraction from transcript text."""
 
+import logging
 import anthropic
 from backend.config import settings
 from backend.utils.json_parser import parse_llm_json
+
+logger = logging.getLogger(__name__)
 
 _anthropic_client: anthropic.Anthropic | None = None
 
@@ -110,8 +113,9 @@ Return ONLY a JSON array of claims. No other text."""
             except (TypeError, ValueError):
                 ts = 0.0
             text = claim["text"].strip()
-            if not text or len(text) > 500:
-                text = text[:500] if text else ""
+            if len(text) > 500:
+                logger.info("Truncating claim from %d to 500 chars", len(text))
+                text = text[:500]
             if not text:
                 continue
             valid_claims.append({

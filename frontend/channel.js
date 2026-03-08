@@ -25,9 +25,9 @@ async function loadChannel(channelName) {
     }
     const data = await resp.json();
     renderChannel(data);
-    document.title = `${data.channel} (${data.video_count} video${data.video_count !== 1 ? 's' : ''}, ${Math.round(data.avg_score)}% avg) — YouTube Fact Checker`;
-    setMeta('meta[property="og:title"]', `${data.channel} — YouTube Fact Checker`);
     const plural = data.video_count !== 1 ? 's' : '';
+    document.title = `${data.channel} (${data.video_count} video${plural}, ${Math.round(data.avg_score)}% avg) — YouTube Fact Checker`;
+    setMeta('meta[property="og:title"]', `${data.channel} — YouTube Fact Checker`);
     setMeta('meta[property="og:description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy.`);
     setMeta('meta[name="description"]', `${data.video_count} fact-checked video${plural} with ${Math.round(data.avg_score)}% average accuracy for ${data.channel}.`);
   } catch (err) {
