@@ -111,6 +111,7 @@ Return ONLY a JSON array of claims. No other text."""
             try:
                 ts = max(0.0, float(claim.get("timestamp_seconds", 0)))
             except (TypeError, ValueError):
+                logger.warning("Invalid timestamp for claim: %.50s", claim.get("text", ""))
                 ts = 0.0
             text = claim["text"].strip()
             if len(text) > 500:

@@ -184,7 +184,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 confidence=c.get("confidence", 0.5),
                 reasoning=c.get("reasoning", ""),
                 sources=[Source(**s) for s in c.get("sources", [])],
-                category=ClaimCategory(c.get("category", "fact")),
+                category=_safe_category(c.get("category", "fact")),
             )
             for i, c in enumerate(checked_claims)
         ]
@@ -360,7 +360,8 @@ def _build_video_summary(video: dict, claims: list[dict]) -> PublicVideoSummary:
 def _get_client_ip(request: Request) -> str:
     forwarded = request.headers.get("x-forwarded-for")
     if forwarded:
-        return forwarded.split(",")[0].strip()
+        ip = forwarded.split(",")[0].strip()
+        return ip[:45] if ip else ""
     return request.client.host if request.client else ""
 
 

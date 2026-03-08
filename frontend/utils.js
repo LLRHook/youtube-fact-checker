@@ -332,7 +332,7 @@ function buildVideoCardHtml(v, { query, showChannel } = {}) {
     ? `<a href="/channel/${encodeURIComponent(v.channel)}" class="channel-link" onclick="event.stopPropagation()">${query ? highlightMatch(v.channel || 'Unknown', query) : escapeHtml(v.channel || 'Unknown')}</a>`
     : '';
   return `<a class="video-card" href="/video/${v.id}">
-    <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
+    <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">
     <h3>${title}</h3>
     <div class="video-card-meta">
       ${channelHtml}

@@ -61,9 +61,9 @@ async def fact_check_claim(claim_text: str) -> dict:
     """
     # Step 1: Search for evidence
     search_query = claim_text
-    # Trim very long claims for better search
+    # Trim very long claims for better search (at word boundary)
     if len(search_query) > 200:
-        search_query = search_query[:200]
+        search_query = search_query[:200].rsplit(" ", 1)[0] or search_query[:200]
 
     try:
         search_results = await search_brave(search_query, num_results=settings.SEARCH_RESULTS_PER_CLAIM)
