@@ -98,13 +98,17 @@ Return ONLY a JSON array of claims. No other text."""
         return []
 
     # Validate and normalize
+    valid_categories = {"fact", "opinion", "unclear"}
     valid_claims = []
     for claim in claims:
         if isinstance(claim, dict) and "text" in claim:
+            category = claim.get("category", "fact")
+            if category not in valid_categories:
+                category = "fact"
             valid_claims.append({
                 "text": claim["text"],
                 "timestamp_seconds": claim.get("timestamp_seconds", 0),
-                "category": claim.get("category", "fact"),
+                "category": category,
             })
 
     # Cap at max claims

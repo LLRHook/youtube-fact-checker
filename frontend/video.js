@@ -145,6 +145,9 @@ function filterVideoClaims(filter) {
 
   container.innerHTML = filtered.map((c, i) => buildClaimCardHtml(c, i, { seekable: true })).join('');
   addCardClickListeners('claims-container');
+
+  const btn = document.getElementById('toggle-all-btn');
+  if (btn) btn.textContent = 'Expand all';
 }
 
 async function copyShareLink() {

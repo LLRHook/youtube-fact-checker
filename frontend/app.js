@@ -214,6 +214,7 @@ function renderResults(data) {
   renderBreakdownBar(allClaims);
 
   // Render claims
+  setActiveFilter('all');
   renderClaimsList(allClaims);
 
   // Update claims heading and filter button counts
@@ -259,6 +260,9 @@ function filterClaims(filter) {
     : allClaims.filter(c => c.category === filter);
 
   renderClaimsList(filtered);
+
+  const btn = document.getElementById('toggle-all-btn');
+  if (btn) btn.textContent = 'Expand all';
 }
 
 function cancelAnalysis() {
