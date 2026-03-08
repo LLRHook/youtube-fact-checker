@@ -51,7 +51,7 @@ async function loadChannel(channelName) {
       <p class="empty-heading">Error loading channel</p>
       <p class="empty-text">${msg}</p>
       <div class="empty-links">
-        <button onclick="location.reload()" class="empty-link">Retry</button>
+        <button data-action="reload" class="empty-link">Retry</button>
         <a href="/videos" class="empty-link">Browse videos</a>
       </div>
     </div>`;
@@ -60,6 +60,10 @@ async function loadChannel(channelName) {
     clearTimeout(timeoutId);
   }
 }
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="reload"]')) location.reload();
+});
 
 function renderChannel(data) {
   const container = document.getElementById('content');
@@ -91,5 +95,6 @@ function renderChannel(data) {
     ${distBarHtml}
     <div class="video-grid">${videosHtml}</div>
   `;
+  addThumbErrorHandlers(container);
 }
 

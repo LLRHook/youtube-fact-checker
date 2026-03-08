@@ -35,6 +35,8 @@ async function loadVideos(page) {
   if (_fetchController) _fetchController.abort();
   _fetchController = new AbortController();
   const myController = _fetchController;
+  let timedOut = false;
+  const timeoutId = setTimeout(() => { timedOut = true; myController.abort(); }, 15000);
   try {
     const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`, { signal: myController.signal });
     if (!resp.ok) throw new Error('Failed to load videos');
@@ -52,12 +54,16 @@ async function loadVideos(page) {
     applyFilters();
     renderPagination();
   } catch (err) {
-    if (err.name === 'AbortError') return;
-    document.getElementById('empty').textContent = 'Error loading videos.';
+    if (err.name === 'AbortError' && !timedOut) return;
+    const msg = timedOut
+      ? 'Request timed out. The server may be busy — please try again.'
+      : 'Error loading videos.';
+    document.getElementById('empty').textContent = msg;
     document.getElementById('empty').style.display = 'block';
     const pag = document.getElementById('pagination');
     if (pag) pag.innerHTML = '';
   } finally {
+    clearTimeout(timeoutId);
     if (_fetchController === myController) {
       const skel = document.getElementById('videos-skeleton');
       if (skel) skel.style.display = 'none';
@@ -117,6 +123,7 @@ function renderGrid(videos) {
 
   const query = document.getElementById('search-input').value.toLowerCase().trim();
   grid.innerHTML = videos.map(v => buildVideoCardHtml(v, { query, showChannel: true })).join('');
+  addThumbErrorHandlers(grid);
 }
 
 function renderPagination() {

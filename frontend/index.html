@@ -47,7 +47,7 @@
           aria-label="YouTube video URL"
           aria-describedby="input-error"
         />
-        <button id="check-btn" onclick="submitVideo()">
+        <button id="check-btn">
           <span class="btn-text">Check Facts</span>
           <span class="btn-loading" style="display:none;">
             <span class="spinner-small"></span>
@@ -96,7 +96,7 @@
         <div class="progress-bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100" aria-label="Analysis progress">
           <div id="progress-fill" class="progress-fill"></div>
         </div>
-        <button id="cancel-btn" class="cancel-btn" onclick="cancelAnalysis()">Cancel</button>
+        <button id="cancel-btn" class="cancel-btn">Cancel</button>
       </div>
     </section>
 
@@ -105,7 +105,7 @@
       <div class="error-card error-card--warning">
         <span class="error-icon">&#128337;</span>
         <p>We've hit our daily processing limit. Your video has been queued and will be processed automatically.</p>
-        <button onclick="resetUI()">Check Another Video</button>
+        <button data-action="reset-ui">Check Another Video</button>
       </div>
     </section>
 
@@ -115,8 +115,8 @@
         <span class="error-icon">&#9888;</span>
         <p id="error-message"></p>
         <div class="error-actions">
-          <button onclick="retryVideo()">Retry</button>
-          <button onclick="resetUI()">Try Another Video</button>
+          <button data-action="retry-video">Retry</button>
+          <button data-action="reset-ui">Try Another Video</button>
         </div>
       </div>
     </section>
@@ -163,10 +163,10 @@
 
       <!-- Filter Bar -->
       <div class="filter-bar" role="toolbar" aria-label="Filter claims by category">
-        <button class="filter-btn active" data-filter="all" onclick="filterClaims('all')">All</button>
-        <button class="filter-btn" data-filter="fact" onclick="filterClaims('fact')">Facts</button>
-        <button class="filter-btn" data-filter="opinion" onclick="filterClaims('opinion')">Opinions</button>
-        <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims('claims-list')">Expand all</button>
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="fact">Facts</button>
+        <button class="filter-btn" data-filter="opinion">Opinions</button>
+        <button id="toggle-all-btn" class="filter-btn filter-btn--end">Expand all</button>
       </div>
 
       <!-- Claims List -->
@@ -175,7 +175,7 @@
       <!-- Actions -->
       <div class="reset-row">
         <a id="view-report-link" href="#" class="report-link" style="display:none;">View full report</a>
-        <button class="reset-btn" onclick="resetUI()">Check Another Video</button>
+        <button class="reset-btn" data-action="reset-ui">Check Another Video</button>
       </div>
     </section>
 

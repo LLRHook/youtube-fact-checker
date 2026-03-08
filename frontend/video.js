@@ -55,7 +55,7 @@ async function loadVideo(videoId) {
       <p class="empty-heading">Error loading video</p>
       <p class="empty-text">${msg}</p>
       <div class="empty-links">
-        <button onclick="location.reload()" class="empty-link">Retry</button>
+        <button data-action="reload" class="empty-link">Retry</button>
         <a href="/videos" class="empty-link">Browse videos</a>
       </div>
     </div>`;
@@ -124,7 +124,7 @@ function renderVideo(video) {
     </div>
 
     <div class="action-row">
-      <button class="share-btn" aria-live="polite" onclick="copyShareLink()">Share this page</button>
+      <button class="share-btn" aria-live="polite" data-action="share">Share this page</button>
       <a href="https://www.youtube.com/watch?v=${safeId}" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--link">Open on YouTube</a>
     </div>
 
@@ -132,10 +132,10 @@ function renderVideo(video) {
 
     <h3 class="claims-heading">Claims (${allVideoClaims.length})</h3>
     <div class="filter-bar" role="toolbar" aria-label="Filter claims by category">
-      <button class="filter-btn active" data-filter="all" onclick="filterVideoClaims('all')">All</button>
-      <button class="filter-btn" data-filter="fact" onclick="filterVideoClaims('fact')">Facts</button>
-      <button class="filter-btn" data-filter="opinion" onclick="filterVideoClaims('opinion')">Opinions</button>
-      <button id="toggle-all-btn" class="filter-btn filter-btn--end" onclick="toggleAllClaims('claims-container')">Expand all</button>
+      <button class="filter-btn active" data-filter="all">All</button>
+      <button class="filter-btn" data-filter="fact">Facts</button>
+      <button class="filter-btn" data-filter="opinion">Opinions</button>
+      <button id="toggle-all-btn" class="filter-btn filter-btn--end">Expand all</button>
     </div>
     <div id="claims-container" class="claims-list">${claimsHtml}</div>
   `;
@@ -201,6 +201,16 @@ async function copyShareLink() {
   btn.textContent = ok ? 'Link copied!' : 'Copy failed';
   setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
 }
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="reload"]')) { location.reload(); return; }
+  if (e.target.closest('[data-action="share"]')) { copyShareLink(); return; }
+  const seekLink = e.target.closest('[data-seek]');
+  if (seekLink) { e.preventDefault(); seekTo(parseInt(seekLink.dataset.seek, 10)); return; }
+  const filterBtn = e.target.closest('.filter-btn[data-filter]');
+  if (filterBtn) { filterVideoClaims(filterBtn.dataset.filter); return; }
+  if (e.target.closest('#toggle-all-btn')) { toggleAllClaims('claims-container'); }
+});
 
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {

@@ -282,7 +282,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
 
   const videoIdSafe = escapeHtml(videoId);
   const timestampLink = seekable
-    ? `<a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>`
+    ? `<a href="#" data-seek="${seekSeconds}">${ts}</a>`
     : videoId
       ? `<a href="https://youtube.com/watch?v=${videoIdSafe}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`
       : `<span>${ts}</span>`;
@@ -384,7 +384,7 @@ function buildVideoCardHtml(v, { query, showChannel } = {}) {
     ? `<span class="channel-link" data-channel="${escapeHtml(v.channel)}">${query ? highlightMatch(v.channel, query) : escapeHtml(v.channel)}</span>`
     : '';
   return `<a class="video-card" href="/video/${safeId}">
-    <img class="thumb" src="https://img.youtube.com/vi/${safeId}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">
+    <img class="thumb" src="https://img.youtube.com/vi/${safeId}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy">
     <h3>${title}</h3>
     <div class="video-card-meta">
       ${channelHtml}
@@ -393,6 +393,15 @@ function buildVideoCardHtml(v, { query, showChannel } = {}) {
       <span title="${absoluteDate(v.created_at)}">${formatDate(v.created_at)}</span>
     </div>
   </a>`;
+}
+
+/* --- Thumbnail Error Handler --- */
+
+function addThumbErrorHandlers(container) {
+  if (!container) return;
+  container.querySelectorAll('img.thumb').forEach(img => {
+    img.addEventListener('error', () => { img.style.display = 'none'; }, { once: true });
+  });
 }
 
 /* --- YouTube URL Regex --- */

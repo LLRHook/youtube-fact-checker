@@ -376,6 +376,18 @@ function resetUI() {
   allClaims = [];
 }
 
+// Button & action listeners
+document.getElementById('check-btn').addEventListener('click', submitVideo);
+document.getElementById('cancel-btn').addEventListener('click', cancelAnalysis);
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('[data-action="reset-ui"]')) { resetUI(); return; }
+  if (e.target.closest('[data-action="retry-video"]')) { retryVideo(); return; }
+  const filterBtn = e.target.closest('.filter-btn[data-filter]');
+  if (filterBtn) { filterClaims(filterBtn.dataset.filter); return; }
+  if (e.target.closest('#toggle-all-btn')) { toggleAllClaims('claims-list'); }
+});
+
 // Enter key support
 document.getElementById('url-input').addEventListener('keydown', (e) => {
   if (e.key === 'Enter') submitVideo();
