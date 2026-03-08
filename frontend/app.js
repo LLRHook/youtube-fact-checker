@@ -79,6 +79,8 @@ async function submitVideo() {
 // --- Polling ---
 
 function startPolling() {
+  if (pollTimeout) clearTimeout(pollTimeout);
+  if (pollInterval) clearInterval(pollInterval);
   lastProgressPct = 0;
   updateProgress('Starting analysis...', 10);
   startElapsedTimer();

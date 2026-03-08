@@ -8,7 +8,8 @@ function escapeHtml(str) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
+  const hasTimezone = dateStr.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(dateStr);
+  const d = new Date(hasTimezone ? dateStr : dateStr + 'Z');
   const now = new Date();
   const diffMs = now - d;
   if (diffMs < 0) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -25,7 +26,8 @@ function formatDate(dateStr) {
 
 function absoluteDate(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  const hasTimezone = dateStr.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(dateStr);
+  return new Date(hasTimezone ? dateStr : dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatTimestamp(seconds) {
@@ -228,8 +230,10 @@ function sourceCountHtml(sources) {
 function buildSourcesHtml(sources, limit) {
   if (!sources || sources.length === 0) return '';
   const items = limit ? sources.slice(0, limit) : sources;
+  const safe = items.filter(s => s.url && (s.url.startsWith('https://') || s.url.startsWith('http://')));
+  if (safe.length === 0) return '';
   return '<div class="claim-sources">' +
-    items.map(s =>
+    safe.map(s =>
       `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="source-link">${escapeHtml(s.title)}</a>` +
       (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
     ).join('') + '</div>';
@@ -243,7 +247,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
   const bt = badgeText(c.truth_percentage, c.category);
   const btTitle = badgeTitle(c.truth_percentage, c.category);
   const ts = formatTimestamp(c.timestamp_seconds);
-  const seekSeconds = Math.floor(c.timestamp_seconds) || 0;
+  const seekSeconds = Math.max(0, Math.floor(c.timestamp_seconds)) || 0;
   const sourcesHtml = buildSourcesHtml(c.sources, sourcesLimit);
 
   const timestampLink = seekable

@@ -83,7 +83,7 @@ async def init_db():
         except sqlite3.OperationalError:
             pass  # column already exists
 
-        await db.execute("CREATE INDEX IF NOT EXISTS idx_videos_ip_address ON videos(ip_address)")
+        await db.execute("CREATE INDEX IF NOT EXISTS idx_videos_ip_status_created ON videos(ip_address, status, created_at)")
         await db.commit()
 
 
