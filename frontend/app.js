@@ -374,10 +374,14 @@ document.addEventListener('keydown', (e) => {
     if (!resp.ok) return;
     const data = await resp.json();
     if (data.video_count > 0) {
-      document.getElementById('stat-videos').textContent = data.video_count;
-      document.getElementById('stat-claims').textContent = data.claim_count;
-      document.getElementById('stat-channels').textContent = data.channel_count;
-      document.getElementById('site-stats').style.display = '';
+      const vEl = document.getElementById('stat-videos');
+      const cEl = document.getElementById('stat-claims');
+      const chEl = document.getElementById('stat-channels');
+      const container = document.getElementById('site-stats');
+      if (vEl) vEl.textContent = data.video_count;
+      if (cEl) cEl.textContent = data.claim_count;
+      if (chEl) chEl.textContent = data.channel_count;
+      if (container) container.style.display = '';
     }
   } catch (_) {}
 })();

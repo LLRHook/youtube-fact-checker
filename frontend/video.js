@@ -154,6 +154,7 @@ function filterVideoClaims(filter) {
 
 async function copyShareLink() {
   const btn = document.querySelector('.share-btn');
+  if (!btn) return;
   try {
     await navigator.clipboard.writeText(window.location.href);
     btn.textContent = 'Link copied!';

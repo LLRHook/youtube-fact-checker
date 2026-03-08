@@ -2,7 +2,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
   const parts = window.location.pathname.split('/');
-  const channelName = decodeURIComponent(parts[parts.length - 1]);
+  let channelName;
+  try { channelName = decodeURIComponent(parts[parts.length - 1]); } catch (_) { channelName = parts[parts.length - 1]; }
   if (channelName) loadChannel(channelName);
 });
 

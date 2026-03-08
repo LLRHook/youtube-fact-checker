@@ -86,7 +86,7 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     except Exception as e:
         raise TranscriptError(f"Could not fetch video info: {str(e)}") from e
 
-    duration = info["duration"]
+    duration = int(info["duration"])
     if duration > max_duration_seconds:
         raise VideoTooLongError(
             f"Video is {duration}s ({duration/60:.1f} min). "
