@@ -150,7 +150,7 @@ async def fact_check_claim(claim_text: str) -> dict:
     return {
         "truth_percentage": max(0, min(100, truth_pct)),
         "confidence": max(0.0, min(1.0, confidence)),
-        "reasoning": str(result.get("reasoning", "No reasoning provided.")).strip() or "No reasoning provided.",
+        "reasoning": (str(result.get("reasoning", "No reasoning provided.")).strip() or "No reasoning provided.")[:1000],
         "sources": sources,
         "category": category,
     }

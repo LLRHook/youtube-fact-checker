@@ -105,7 +105,11 @@ function startPolling() {
     showErrorHtml('Analysis is taking too long. The video may still be processing — check the <a href="/videos">Videos page</a> later.');
   }, POLL_TIMEOUT_MS);
 
-  pollInterval = setInterval(async () => {
+  schedulePoll();
+}
+
+async function schedulePoll() {
+  pollInterval = setTimeout(async () => {
     try {
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -130,27 +134,32 @@ function startPolling() {
       } else if (data.status === 'completed') {
         stopPolling();
         renderResults(data.data);
+        return;
       } else if (data.status === 'failed') {
         stopPolling();
         showError(data.error || 'An error occurred during analysis.');
+        return;
       } else if (data.status === 'queued') {
         stopPolling();
         document.title = 'YouTube Fact Checker';
         showSection('queued');
+        return;
       }
     } catch (err) {
       pollFailures++;
       if (pollFailures >= MAX_POLL_FAILURES) {
         stopPolling();
         showError('Connection lost. Please try again.');
+        return;
       }
     }
+    if (pollInterval !== null) schedulePoll();
   }, 2000);
 }
 
 function stopPolling() {
   if (pollInterval) {
-    clearInterval(pollInterval);
+    clearTimeout(pollInterval);
     pollInterval = null;
   }
   if (pollTimeout) {

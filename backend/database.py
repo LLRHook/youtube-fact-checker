@@ -122,11 +122,15 @@ async def create_video(video_id: str, youtube_url: str, *, ip_address: str = "",
 async def update_video_status(video_id: str, status: str, error: str | None = None):
     """Set video status (processing/completed/failed) and optional error."""
     async with _db() as db:
-        await db.execute(
-            "UPDATE videos SET status = ?, error = ?, updated_at = datetime('now') WHERE id = ?",
-            (status, error, video_id),
-        )
-        await db.commit()
+        try:
+            await db.execute(
+                "UPDATE videos SET status = ?, error = ?, updated_at = datetime('now') WHERE id = ?",
+                (status, error, video_id),
+            )
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
 
 async def update_video_results(
