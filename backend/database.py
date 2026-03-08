@@ -165,7 +165,7 @@ async def list_videos(status: str | None = None, *, limit: int = 0, offset: int 
     if status:
         query += " AND status = ?"
         params.append(status)
-    query += " ORDER BY created_at DESC"
+    query += " ORDER BY created_at DESC, id DESC"
     if limit > 0:
         query += " LIMIT ? OFFSET ?"
         params.extend([limit, offset])
@@ -383,7 +383,7 @@ async def get_channel_videos(channel: str) -> list[dict]:
         async with db.execute(
             f"""SELECT {_LIST_COLUMNS} FROM videos
                WHERE channel = ? AND status = 'completed'
-               ORDER BY created_at DESC""",
+               ORDER BY created_at DESC, id DESC""",
             (channel,),
         ) as cursor:
             rows = await cursor.fetchall()

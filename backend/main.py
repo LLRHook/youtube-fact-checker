@@ -282,6 +282,10 @@ async def queue_processor():
                 youtube_url = video["youtube_url"]
                 task_id = video_id
 
+                if task_id in tasks:
+                    logger.info("Skipping queued video %s — already in-flight", video_id)
+                    continue
+
                 tasks[task_id] = TaskResponse(
                     task_id=task_id,
                     status=TaskStatus.PROCESSING,
@@ -424,7 +428,9 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
             await db.create_video(video_id, req.youtube_url, ip_address=client_ip, status="queued")
         else:
             await db.update_video_status(video_id, "queued")
-        return {"task_id": video_id, "status": "queued"}
+        return TaskResponse(
+            task_id=video_id, status=TaskStatus.QUEUED, progress="Queued — will be processed soon.",
+        ).model_dump()
 
     # Under limits — process immediately
     task_id = video_id
@@ -441,7 +447,9 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
 
     background_tasks.add_task(process_video, task_id, video_id, req.youtube_url)
 
-    return {"task_id": task_id, "status": "processing"}
+    return TaskResponse(
+        task_id=task_id, status=TaskStatus.PROCESSING, progress="Starting...",
+    ).model_dump()
 
 
 @app.get("/api/check/{task_id}")

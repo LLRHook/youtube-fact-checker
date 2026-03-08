@@ -1113,7 +1113,7 @@ footer {
 @media print {
   body { background: white; color: #111; }
   .container, .page-container { max-width: 100%; padding: 0; }
-  header, .input-section, .how-it-works, footer, .page-footer,
+  header, .page-header, .nav-links, .input-section, .how-it-works, footer, .page-footer,
   .cancel-btn, .reset-btn, .reset-row, .filter-bar, .claim-toggle,
   .coffee-btn, .back-to-top, .share-btn, .kbd-hint, #theme-toggle,
   #loading-section, #error-section, #queued-section { display: none !important; }

@@ -1,5 +1,6 @@
 """YouTube transcript extraction service."""
 
+import logging
 from youtube_transcript_api import YouTubeTranscriptApi
 from youtube_transcript_api._errors import (
     TranscriptsDisabled,
@@ -9,6 +10,8 @@ from youtube_transcript_api._errors import (
 import yt_dlp
 
 from backend.utils.validators import extract_video_id
+
+logger = logging.getLogger(__name__)
 
 
 class TranscriptError(Exception):
@@ -116,7 +119,8 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
             text = str(entry.text).strip()
             start = float(entry.start)
             dur = float(entry.duration)
-        except (TypeError, ValueError, AttributeError):
+        except (TypeError, ValueError, AttributeError) as e:
+            logger.warning("Skipping malformed transcript segment: %s", e)
             continue
         # Skip empty or music/sound effect markers
         if not text or (text.startswith("[") and text.endswith("]")):
