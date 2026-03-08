@@ -14,6 +14,8 @@ function debouncedApplyFilters() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('search-input').addEventListener('input', () => { debouncedApplyFilters(); toggleClearBtn(); });
+  document.getElementById('sort-select').addEventListener('change', applyFilters);
   const params = new URLSearchParams(window.location.search);
   const initialPage = Math.max(1, parseInt(params.get('page'), 10) || 1);
   loadVideos(initialPage);

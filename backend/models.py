@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from enum import Enum
 
 
@@ -16,7 +16,7 @@ class ClaimCategory(str, Enum):
 
 
 class CheckRequest(BaseModel):
-    youtube_url: str
+    youtube_url: str = Field(..., max_length=500)
 
 
 class Source(BaseModel):

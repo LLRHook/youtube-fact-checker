@@ -29,10 +29,10 @@
     <main>
     <div class="toolbar">
       <div class="search-wrapper">
-        <input type="text" class="search-input" id="search-input" placeholder="Filter this page by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()" aria-label="Filter videos on this page">
+        <input type="text" class="search-input" id="search-input" placeholder="Filter this page by title or channel..." aria-label="Filter videos on this page">
         <button class="search-clear" id="search-clear" data-action="clear-search" title="Clear search">&times;</button>
       </div>
-      <select class="sort-select" id="sort-select" onchange="applyFilters()" aria-label="Sort videos">
+      <select class="sort-select" id="sort-select" aria-label="Sort videos">
         <option value="date-desc">Newest first</option>
         <option value="date-asc">Oldest first</option>
         <option value="score-desc">Highest score</option>

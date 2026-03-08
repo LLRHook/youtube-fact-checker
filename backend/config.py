@@ -24,9 +24,9 @@ class Settings:
     SEARCH_RESULTS_PER_CLAIM: int = 5
     FACT_CHECK_CONCURRENCY: int = _int_env("FACT_CHECK_CONCURRENCY", 3, 1, 10)
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "data/factchecker.db")
-    DAILY_VIDEO_LIMIT: int = _int_env("DAILY_VIDEO_LIMIT", 20)
-    IP_DAILY_LIMIT: int = _int_env("IP_DAILY_LIMIT", 3)
-    QUEUE_INTERVAL_MINUTES: int = _int_env("QUEUE_INTERVAL_MINUTES", 60)
+    DAILY_VIDEO_LIMIT: int = _int_env("DAILY_VIDEO_LIMIT", 20, 1, 1000)
+    IP_DAILY_LIMIT: int = _int_env("IP_DAILY_LIMIT", 3, 1, 100)
+    QUEUE_INTERVAL_MINUTES: int = _int_env("QUEUE_INTERVAL_MINUTES", 60, 1, 1440)
 
 
 settings = Settings()

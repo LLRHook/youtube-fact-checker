@@ -111,11 +111,15 @@ async def get_video(video_id: str) -> dict | None:
 async def create_video(video_id: str, youtube_url: str, *, ip_address: str = "", status: str = "processing") -> dict:
     """Insert a new video row."""
     async with _db() as db:
-        await db.execute(
-            "INSERT INTO videos (id, youtube_url, ip_address, status) VALUES (?, ?, ?, ?)",
-            (video_id, youtube_url, ip_address, status),
-        )
-        await db.commit()
+        try:
+            await db.execute(
+                "INSERT INTO videos (id, youtube_url, ip_address, status) VALUES (?, ?, ?, ?)",
+                (video_id, youtube_url, ip_address, status),
+            )
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
         return {"id": video_id, "youtube_url": youtube_url, "status": status}
 
 

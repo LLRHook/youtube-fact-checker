@@ -124,7 +124,7 @@ function renderVideo(video) {
     </div>
 
     <div class="action-row">
-      <button class="share-btn" onclick="copyShareLink()">Share this page</button>
+      <button class="share-btn" aria-live="polite" onclick="copyShareLink()">Share this page</button>
       <a href="https://www.youtube.com/watch?v=${safeId}" target="_blank" rel="noopener noreferrer" class="share-btn share-btn--link">Open on YouTube</a>
     </div>
 
