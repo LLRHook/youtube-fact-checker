@@ -101,7 +101,7 @@ function renderPagination() {
   }
 
   let html = '';
-  html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})">&laquo; Prev</button>`;
+  html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})" aria-label="Previous page">&laquo; Prev</button>`;
 
   const maxButtons = 5;
   let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
@@ -116,7 +116,7 @@ function renderPagination() {
   }
 
   for (let i = startPage; i <= endPage; i++) {
-    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})">${i}</button>`;
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})" aria-label="Page ${i}"${i === currentPage ? ' aria-current="page"' : ''}>${i}</button>`;
   }
 
   if (endPage < totalPages) {
@@ -124,7 +124,7 @@ function renderPagination() {
     html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
   }
 
-  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})">Next &raquo;</button>`;
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})" aria-label="Next page">Next &raquo;</button>`;
 
   container.innerHTML = html;
 }

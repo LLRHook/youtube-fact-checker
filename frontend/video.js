@@ -167,12 +167,25 @@ function filterVideoClaims(filter) {
 async function copyShareLink() {
   const btn = document.querySelector('.share-btn');
   if (!btn) return;
+  let ok = false;
   try {
-    await navigator.clipboard.writeText(window.location.href);
-    btn.textContent = 'Link copied!';
-  } catch {
-    btn.textContent = 'Copy failed';
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      await navigator.clipboard.writeText(window.location.href);
+      ok = true;
+    }
+  } catch (_) {}
+  if (!ok) {
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = window.location.href;
+      ta.style.cssText = 'position:fixed;left:-9999px';
+      document.body.appendChild(ta);
+      ta.select();
+      ok = document.execCommand('copy');
+      document.body.removeChild(ta);
+    } catch (_) {}
   }
+  btn.textContent = ok ? 'Link copied!' : 'Copy failed';
   setTimeout(() => { btn.textContent = 'Share this page'; }, 2000);
 }
 

@@ -160,8 +160,19 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
     async def check_one(index, claim):
         nonlocal completed_count
         async with semaphore:
-            result = await fact_check_claim(claim["text"])
-            results[index] = {**claim, **result}
+            try:
+                result = await fact_check_claim(claim["text"])
+                results[index] = {**claim, **result}
+            except Exception as e:
+                logger.warning("Unexpected error fact-checking claim %d: %s", index, e)
+                results[index] = {
+                    **claim,
+                    "truth_percentage": 50,
+                    "confidence": 0.1,
+                    "reasoning": "Fact-check failed due to an unexpected error.",
+                    "sources": [],
+                    "category": "unclear",
+                }
             async with lock:
                 completed_count += 1
                 if on_progress:
