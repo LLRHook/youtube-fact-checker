@@ -526,7 +526,7 @@ def _calculate_public_score(claims: list[dict]) -> int:
         weighted_sum += c.get("truth_percentage", 50) * conf
     if total_weight > 0:
         return max(0, min(100, round(weighted_sum / total_weight)))
-    return 0
+    return 50  # No factual claims to score — return neutral
 
 
 @app.get("/api/videos")

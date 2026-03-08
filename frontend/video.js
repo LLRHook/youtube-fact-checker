@@ -148,7 +148,9 @@ function filterVideoClaims(filter) {
 
   const filtered = filter === 'all'
     ? allVideoClaims
-    : allVideoClaims.filter(c => c.category === filter);
+    : filter === 'fact'
+      ? allVideoClaims.filter(c => c.category === 'fact' || c.category === 'unclear')
+      : allVideoClaims.filter(c => c.category === filter);
 
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty-state">No matching claims.</div>';

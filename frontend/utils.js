@@ -101,7 +101,7 @@ function buildBreakdownHtml(segments) {
 function renderBreakdownBar(claims) {
   const container = document.getElementById('breakdown-bar');
   if (!container) return;
-  const facts = claims.filter(c => c.category === 'fact');
+  const facts = claims.filter(c => c.category === 'fact' || c.category === 'unclear');
   const opinions = claims.filter(c => c.category === 'opinion');
   container.innerHTML = buildBreakdownHtml([
     { count: facts.filter(c => c.truth_percentage >= 75).length, label: 'true', color: 'green' },
@@ -182,7 +182,7 @@ function addCardClickListeners(containerId) {
 /* --- Filter Counts --- */
 
 function updateFilterCounts(claims) {
-  const factCount = claims.filter(c => c.category === 'fact').length;
+  const factCount = claims.filter(c => c.category === 'fact' || c.category === 'unclear').length;
   const opinionCount = claims.filter(c => c.category === 'opinion').length;
   const allBtn = document.querySelector('.filter-btn[data-filter="all"]');
   const factBtn = document.querySelector('.filter-btn[data-filter="fact"]');

@@ -99,6 +99,9 @@ Return ONLY a JSON array of claims. No other text."""
         messages=[{"role": "user", "content": user_prompt}],
     )
 
+    if not response.content or not hasattr(response.content[0], 'text'):
+        logger.warning("LLM returned empty content for claim extraction")
+        return []
     response_text = response.content[0].text.strip()
     claims = parse_llm_json(response_text)
     if claims is None:

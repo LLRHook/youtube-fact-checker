@@ -293,7 +293,9 @@ function filterClaims(filter) {
 
   const filtered = filter === 'all'
     ? allClaims
-    : allClaims.filter(c => c.category === filter);
+    : filter === 'fact'
+      ? allClaims.filter(c => c.category === 'fact' || c.category === 'unclear')
+      : allClaims.filter(c => c.category === filter);
 
   renderClaimsList(filtered);
 
@@ -356,7 +358,7 @@ function resetUI() {
   showSection(null);
   document.getElementById('url-input').value = '';
   document.getElementById('input-error').textContent = '';
-  document.getElementById('url-preview').style.display = 'none';
+  _previewEl.style.display = 'none';
   document.getElementById('view-report-link').style.display = 'none';
   resetButton();
   allClaims = [];
@@ -395,7 +397,7 @@ document.addEventListener('keydown', (e) => {
         const input = document.getElementById('url-input');
         if (input.value) {
           input.value = '';
-          document.getElementById('url-preview').style.display = 'none';
+          _previewEl.style.display = 'none';
           document.getElementById('input-error').textContent = '';
           input.focus();
         } else {
@@ -425,19 +427,20 @@ document.addEventListener('keydown', (e) => {
   } catch (_) {}
 })();
 
+const _previewThumb = document.getElementById('preview-thumb');
+const _previewEl = document.getElementById('url-preview');
+if (_previewThumb) _previewThumb.onerror = () => { _previewEl.style.display = 'none'; };
+
 function showUrlPreview() {
   const url = document.getElementById('url-input').value.trim();
-  const preview = document.getElementById('url-preview');
   const match = url.match(YT_URL_REGEX);
 
   if (match) {
     const videoId = match[1];
-    const thumb = document.getElementById('preview-thumb');
-    thumb.onerror = () => { preview.style.display = 'none'; };
-    thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    _previewThumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     document.getElementById('preview-id').textContent = `Video ID: ${videoId}`;
-    preview.style.display = 'flex';
+    _previewEl.style.display = 'flex';
   } else {
-    preview.style.display = 'none';
+    _previewEl.style.display = 'none';
   }
 }
