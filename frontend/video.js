@@ -140,6 +140,8 @@ function filterVideoClaims(filter) {
 
   if (filtered.length === 0) {
     container.innerHTML = '<div class="empty-state">No matching claims.</div>';
+    const btn = document.getElementById('toggle-all-btn');
+    if (btn) btn.textContent = 'Expand all';
     return;
   }
 

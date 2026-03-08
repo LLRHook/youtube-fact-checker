@@ -1,7 +1,8 @@
 /* YouTube Fact Checker — Shared Utilities */
 
 function escapeHtml(str) {
-  if (!str) return '';
+  if (str == null) return '';
+  str = String(str);
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
@@ -240,7 +241,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
   const bt = badgeText(c.truth_percentage, c.category);
   const btTitle = badgeTitle(c.truth_percentage, c.category);
   const ts = formatTimestamp(c.timestamp_seconds);
-  const seekSeconds = Math.floor(c.timestamp_seconds);
+  const seekSeconds = Math.floor(c.timestamp_seconds) || 0;
   const sourcesHtml = buildSourcesHtml(c.sources, sourcesLimit);
 
   const timestampLink = seekable

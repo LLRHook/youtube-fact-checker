@@ -1,5 +1,7 @@
 """SQLite database layer for persistent video/claim storage."""
 
+import sqlite3
+
 import aiosqlite
 from contextlib import asynccontextmanager
 from pathlib import Path
@@ -78,7 +80,7 @@ async def init_db():
         # Migration: add ip_address column
         try:
             await db.execute("ALTER TABLE videos ADD COLUMN ip_address TEXT DEFAULT ''")
-        except Exception:
+        except sqlite3.OperationalError:
             pass  # column already exists
 
 

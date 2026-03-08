@@ -105,6 +105,7 @@ function startPolling() {
         showError(data.error || 'An error occurred during analysis.');
       } else if (data.status === 'queued') {
         stopPolling();
+        document.title = 'YouTube Fact Checker';
         showSection('queued');
       }
     } catch (err) {
