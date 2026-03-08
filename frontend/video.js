@@ -172,6 +172,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 function seekTo(seconds) {
+  seconds = Math.max(0, Math.floor(seconds)) || 0;
   const iframe = document.getElementById('yt-player');
   if (iframe) {
     iframe.contentWindow.postMessage(JSON.stringify({

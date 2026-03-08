@@ -305,6 +305,14 @@ async def _fail_task(task_id: str, video_id: str, error_msg: str):
     _cleanup_task(task_id)
 
 
+def _safe_category(value: str) -> ClaimCategory:
+    """Convert a string to ClaimCategory with fallback to FACT."""
+    try:
+        return ClaimCategory(value)
+    except ValueError:
+        return ClaimCategory.FACT
+
+
 def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:
     """Convert DB claim rows (with nested sources) to Claim model instances."""
     return [
@@ -316,7 +324,7 @@ def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:
             confidence=cr["confidence"],
             reasoning=cr["reasoning"],
             sources=[Source(title=s["title"], url=s["url"], snippet=s["snippet"]) for s in cr["sources"]],
-            category=ClaimCategory(cr["category"]),
+            category=_safe_category(cr["category"]),
         )
         for cr in claims_rows
     ]
@@ -495,7 +503,7 @@ def _calculate_public_score(claims: list[dict]) -> int:
         weighted_sum += c.get("truth_percentage", 50) * conf
     if total_weight > 0:
         return round(weighted_sum / total_weight)
-    return 50 if claims else 0
+    return 0
 
 
 @app.get("/api/videos")

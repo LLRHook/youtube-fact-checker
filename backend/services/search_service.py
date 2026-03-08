@@ -4,10 +4,13 @@ import httpx
 from backend.config import settings
 
 _http_client: httpx.AsyncClient | None = None
+_http_shutdown = False
 
 
 def _get_http_client() -> httpx.AsyncClient:
     global _http_client
+    if _http_shutdown:
+        raise RuntimeError("HTTP client is shut down")
     if _http_client is None or _http_client.is_closed:
         _http_client = httpx.AsyncClient(timeout=15.0)
     return _http_client
@@ -15,7 +18,8 @@ def _get_http_client() -> httpx.AsyncClient:
 
 async def close_http_client():
     """Close the shared HTTP client. Call on app shutdown."""
-    global _http_client
+    global _http_client, _http_shutdown
+    _http_shutdown = True
     if _http_client is not None and not _http_client.is_closed:
         await _http_client.aclose()
         _http_client = None

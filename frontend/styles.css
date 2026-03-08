@@ -114,7 +114,7 @@ header {
   white-space: nowrap;
 }
 
-#check-btn:hover { background: #5a52d5; }
+#check-btn:hover { background: color-mix(in srgb, var(--accent) 85%, black); }
 #check-btn:active { transform: scale(0.97); }
 #check-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
@@ -1019,7 +1019,7 @@ footer {
   border-color: var(--accent);
 }
 
-[data-theme="light"] #check-btn:hover { background: #4946b8; }
+
 
 [data-theme="light"] .skel::after {
   background: linear-gradient(90deg, transparent, rgba(0,0,0,0.04), transparent);
