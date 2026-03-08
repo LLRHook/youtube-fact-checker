@@ -9,3 +9,4 @@ build/
 *.db
 data/
 .deploy.json
+GRADING_REPORT.md

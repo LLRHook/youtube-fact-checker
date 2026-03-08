@@ -27,6 +27,7 @@ class Settings:
     DAILY_VIDEO_LIMIT: int = _int_env("DAILY_VIDEO_LIMIT", 20, 1, 1000)
     IP_DAILY_LIMIT: int = _int_env("IP_DAILY_LIMIT", 3, 1, 100)
     QUEUE_INTERVAL_MINUTES: int = _int_env("QUEUE_INTERVAL_MINUTES", 60, 1, 1440)
+    BASE_URL: str = os.getenv("BASE_URL", "https://backend-production-e740.up.railway.app").rstrip("/")
 
 
 settings = Settings()

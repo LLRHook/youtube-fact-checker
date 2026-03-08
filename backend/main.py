@@ -5,11 +5,14 @@ import re
 import time
 import asyncio
 import logging
+import html as html_module
+import json as json_module
 from contextlib import asynccontextmanager
 from pathlib import Path
+from urllib.parse import quote as url_quote
 from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
@@ -51,6 +54,12 @@ tasks: dict[str, TaskResponse] = {}
 
 # Serve frontend static files
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
+
+# Template caching — read once at import time
+_VIDEO_TEMPLATE = (FRONTEND_DIR / "video.html").read_text(encoding="utf-8")
+_CHANNEL_TEMPLATE = (FRONTEND_DIR / "channel.html").read_text(encoding="utf-8")
+_INDEX_TEMPLATE = (FRONTEND_DIR / "index.html").read_text(encoding="utf-8")
+_VIDEOS_TEMPLATE = (FRONTEND_DIR / "videos.html").read_text(encoding="utf-8")
 
 # Queue processor task handle
 _queue_task: asyncio.Task | None = None
@@ -389,6 +398,117 @@ def _get_client_ip(request: Request) -> str:
     return request.client.host if request.client else ""
 
 
+def _is_valid_channel_name(name: str) -> bool:
+    """Return True if the channel name passes basic sanity checks."""
+    return bool(
+        name
+        and len(name) <= 200
+        and not any(c in name for c in '\x00/\\\n\r')
+        and '..' not in name
+    )
+
+
+# --- SEO meta injection helpers ---
+
+
+def _html_escape(s: str) -> str:
+    """Escape string for safe injection into HTML attributes."""
+    return html_module.escape(s, quote=True)
+
+
+def _inject_meta(template: str, replacements: dict[str, str]) -> str:
+    """Replace placeholder tokens in a template with escaped values."""
+    result = template
+    for token, value in replacements.items():
+        result = result.replace(token, value)
+    return result
+
+
+def _video_fallback_meta(video_id: str) -> dict[str, str]:
+    """Default meta tokens when a video is not yet in the DB."""
+    base = settings.BASE_URL
+    thumbnail = f"https://img.youtube.com/vi/{url_quote(video_id)}/hqdefault.jpg"
+    canonical = f"{base}/video/{url_quote(video_id)}"
+    return {
+        "__META_TITLE__": "Video Fact Check — YouTube Fact Checker",
+        "__META_DESCRIPTION__": "AI-powered fact-check with accuracy scores and sourced evidence for every claim.",
+        "__OG_TITLE__": "Video Fact Check — YouTube Fact Checker",
+        "__OG_DESCRIPTION__": "AI-powered fact-check with accuracy scores and sourced evidence for every claim.",
+        "__OG_IMAGE__": thumbnail,
+        "__OG_URL__": canonical,
+        "__CANONICAL_URL__": canonical,
+        "__JSON_LD__": "",
+    }
+
+
+def _channel_fallback_meta(channel_name: str) -> dict[str, str]:
+    """Default meta tokens when a channel is not found."""
+    base = settings.BASE_URL
+    canonical = f"{base}/channel/{url_quote(channel_name)}"
+    return {
+        "__META_TITLE__": f"{_html_escape(channel_name)} — YouTube Fact Checker",
+        "__META_DESCRIPTION__": "See all fact-checked videos and average accuracy scores for this YouTube channel.",
+        "__OG_TITLE__": f"{_html_escape(channel_name)} — YouTube Fact Checker",
+        "__OG_DESCRIPTION__": "See all fact-checked videos and average accuracy scores for this YouTube channel.",
+        "__OG_IMAGE__": "",
+        "__OG_URL__": canonical,
+        "__CANONICAL_URL__": canonical,
+        "__JSON_LD__": "",
+    }
+
+
+def _iso_duration(seconds: int | float | None) -> str:
+    """Convert seconds to ISO 8601 duration (PT#M#S)."""
+    if not seconds:
+        return "PT0S"
+    total = int(seconds)
+    minutes, secs = divmod(total, 60)
+    hours, minutes = divmod(minutes, 60)
+    if hours:
+        return f"PT{hours}H{minutes}M{secs}S"
+    if minutes:
+        return f"PT{minutes}M{secs}S"
+    return f"PT{secs}S"
+
+
+def _video_jsonld(video: dict, canonical: str, thumbnail: str, score: int) -> str:
+    """Build a <script type="application/ld+json"> block with VideoObject schema."""
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "VideoObject",
+        "name": video.get("title", ""),
+        "description": video.get("summary", ""),
+        "thumbnailUrl": thumbnail,
+        "uploadDate": video.get("created_at", ""),
+        "duration": _iso_duration(video.get("duration_seconds")),
+        "url": canonical,
+        "aggregateRating": {
+            "@type": "AggregateRating",
+            "ratingValue": score,
+            "bestRating": 100,
+            "worstRating": 0,
+            "ratingCount": 1,
+        },
+    }
+    return f'<script type="application/ld+json">{json_module.dumps(ld, ensure_ascii=False)}</script>'
+
+
+def _channel_jsonld(name: str, count: int, avg_score: float, canonical: str) -> str:
+    """Build a <script type="application/ld+json"> block with ProfilePage schema."""
+    ld = {
+        "@context": "https://schema.org",
+        "@type": "ProfilePage",
+        "name": name,
+        "url": canonical,
+        "description": f"{count} fact-checked videos with {avg_score:.0f}% average accuracy.",
+        "mainEntity": {
+            "@type": "Person",
+            "name": name,
+        },
+    }
+    return f'<script type="application/ld+json">{json_module.dumps(ld, ensure_ascii=False)}</script>'
+
+
 # --- API Routes ---
 
 
@@ -650,12 +770,7 @@ async def public_list_channels():
 @app.get("/api/channels/{channel_name}")
 async def public_get_channel(channel_name: str):
     """Channel detail with its videos."""
-    if (
-        not channel_name
-        or len(channel_name) > 200
-        or any(c in channel_name for c in '\x00/\\\n\r')
-        or '..' in channel_name
-    ):
+    if not _is_valid_channel_name(channel_name):
         raise HTTPException(status_code=400, detail="Invalid channel name.")
     videos = await db.get_channel_videos(channel_name)
     if not videos:
@@ -677,27 +792,150 @@ async def public_get_channel(channel_name: str):
     ).model_dump()
 
 
-# --- Frontend ---
+# --- Frontend (server-side meta injection) ---
+
+
+@app.get("/robots.txt")
+async def robots_txt():
+    body = (
+        "User-agent: *\n"
+        "Allow: /\n"
+        "Allow: /videos\n"
+        "Allow: /video/\n"
+        "Allow: /channel/\n"
+        "Disallow: /api/\n"
+        f"\nSitemap: {settings.BASE_URL}/sitemap.xml\n"
+    )
+    return Response(content=body, media_type="text/plain")
+
+
+_sitemap_cache: str | None = None
+_sitemap_cache_time: float = 0
+_SITEMAP_TTL = 300  # seconds
+
+
+@app.get("/sitemap.xml")
+async def sitemap():
+    global _sitemap_cache, _sitemap_cache_time
+    now = time.time()
+    if _sitemap_cache is not None and now - _sitemap_cache_time < _SITEMAP_TTL:
+        return Response(content=_sitemap_cache, media_type="application/xml")
+
+    base = settings.BASE_URL
+    parts = [
+        '<?xml version="1.0" encoding="UTF-8"?>',
+        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+        f"  <url><loc>{base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>",
+        f"  <url><loc>{base}/videos</loc><changefreq>daily</changefreq><priority>0.8</priority></url>",
+    ]
+
+    videos, channels = await asyncio.gather(
+        db.list_videos(status="completed", limit=1000),
+        db.list_channels(),
+    )
+    for v in videos:
+        vid = _html_escape(v["id"])
+        lastmod = ""
+        if v.get("created_at"):
+            lastmod = f"<lastmod>{_html_escape(v['created_at'][:10])}</lastmod>"
+        parts.append(f"  <url><loc>{base}/video/{vid}</loc>{lastmod}<changefreq>monthly</changefreq><priority>0.7</priority></url>")
+
+    for ch in channels:
+        name = _html_escape(url_quote(ch["channel"]))
+        parts.append(f"  <url><loc>{base}/channel/{name}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>")
+
+    parts.append("</urlset>")
+    xml = "\n".join(parts)
+    _sitemap_cache = xml
+    _sitemap_cache_time = now
+    return Response(content=xml, media_type="application/xml")
 
 
 @app.get("/")
 async def serve_index():
-    return FileResponse(FRONTEND_DIR / "index.html")
+    base = settings.BASE_URL
+    html = _INDEX_TEMPLATE.replace("__CANONICAL_URL__", base)
+    return HTMLResponse(html)
 
 
 @app.get("/videos")
 async def serve_videos_page():
-    return FileResponse(FRONTEND_DIR / "videos.html")
+    base = settings.BASE_URL
+    html = _VIDEOS_TEMPLATE.replace("__CANONICAL_URL__", f"{base}/videos")
+    return HTMLResponse(html)
 
 
 @app.get("/video/{video_id}")
 async def serve_video_page(video_id: str):
-    return FileResponse(FRONTEND_DIR / "video.html")
+    if not _VIDEO_ID_PATTERN.match(video_id):
+        return HTMLResponse(_inject_meta(_VIDEO_TEMPLATE, _video_fallback_meta(video_id)))
+
+    video = await db.get_video(video_id)
+    if not video or video["status"] != "completed":
+        return HTMLResponse(_inject_meta(_VIDEO_TEMPLATE, _video_fallback_meta(video_id)))
+
+    base = settings.BASE_URL
+    canonical = f"{base}/video/{url_quote(video_id)}"
+    thumbnail = f"https://img.youtube.com/vi/{url_quote(video_id)}/hqdefault.jpg"
+    title = _html_escape(video.get("title") or "Video")
+    score = video.get("overall_truth_percentage", 50)
+    summary = _html_escape(video.get("summary") or "")
+
+    meta_title = f"{title} — {score}% Accuracy — YouTube Fact Checker"
+    meta_desc = summary or "AI-powered fact-check with accuracy scores and sourced evidence for every claim."
+    og_desc = f"Accuracy: {score}%. {summary}" if summary else meta_desc
+
+    jsonld = _video_jsonld(video, canonical, thumbnail, score)
+
+    replacements = {
+        "__META_TITLE__": meta_title,
+        "__META_DESCRIPTION__": meta_desc,
+        "__OG_TITLE__": meta_title,
+        "__OG_DESCRIPTION__": og_desc,
+        "__OG_IMAGE__": thumbnail,
+        "__OG_URL__": canonical,
+        "__CANONICAL_URL__": canonical,
+        "__JSON_LD__": jsonld,
+    }
+    return HTMLResponse(_inject_meta(_VIDEO_TEMPLATE, replacements))
 
 
 @app.get("/channel/{channel_name}")
 async def serve_channel_page(channel_name: str):
-    return FileResponse(FRONTEND_DIR / "channel.html")
+    if not _is_valid_channel_name(channel_name):
+        return HTMLResponse(_inject_meta(_CHANNEL_TEMPLATE, _channel_fallback_meta(channel_name or "Unknown")))
+
+    videos = await db.get_channel_videos(channel_name)
+    if not videos:
+        return HTMLResponse(_inject_meta(_CHANNEL_TEMPLATE, _channel_fallback_meta(channel_name)))
+
+    base = settings.BASE_URL
+    canonical = f"{base}/channel/{url_quote(channel_name)}"
+    safe_name = _html_escape(channel_name)
+    count = len(videos)
+
+    scores = [v.get("overall_truth_percentage", 50) for v in videos]
+    avg_score = round(sum(scores) / len(scores), 1) if scores else 0
+
+    # Use first video's thumbnail as the channel OG image
+    first_vid = videos[0]["id"] if videos else ""
+    thumbnail = f"https://img.youtube.com/vi/{url_quote(first_vid)}/hqdefault.jpg" if first_vid else ""
+
+    meta_title = f"{safe_name} — {avg_score:.0f}% Avg Accuracy — YouTube Fact Checker"
+    meta_desc = f"{count} fact-checked video{'s' if count != 1 else ''} with {avg_score:.0f}% average accuracy score."
+    jsonld = _channel_jsonld(channel_name, count, avg_score, canonical)
+
+    replacements = {
+        "__META_TITLE__": meta_title,
+        "__META_DESCRIPTION__": meta_desc,
+        "__OG_TITLE__": meta_title,
+        "__OG_DESCRIPTION__": meta_desc,
+        "__OG_IMAGE__": thumbnail,
+        "__OG_URL__": canonical,
+        "__CANONICAL_URL__": canonical,
+        "__JSON_LD__": jsonld,
+    }
+    return HTMLResponse(_inject_meta(_CHANNEL_TEMPLATE, replacements))
 
 
 app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="static")
