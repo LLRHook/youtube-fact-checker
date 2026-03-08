@@ -245,7 +245,7 @@ function buildSourcesHtml(sources, limit) {
   if (safe.length === 0) return '';
   return '<div class="claim-sources">' +
     safe.map(s =>
-      `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="source-link">${escapeHtml(s.title)}</a>` +
+      `<a href="${escapeHtml(s.url)}" target="_blank" rel="noopener noreferrer" class="source-link">${escapeHtml(s.title || s.url)}</a>` +
       (s.snippet ? `<p class="source-snippet">${escapeHtml(s.snippet)}</p>` : '')
     ).join('') + '</div>';
 }

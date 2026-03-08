@@ -33,12 +33,17 @@ async function submitVideo() {
   btn.querySelector('.btn-text').style.display = 'none';
   btn.querySelector('.btn-loading').style.display = 'inline';
 
+  const submitController = new AbortController();
+  const submitTimeout = setTimeout(() => submitController.abort(), 30000);
+
   try {
     const resp = await fetch('/api/check', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ youtube_url: url }),
+      signal: submitController.signal,
     });
+    clearTimeout(submitTimeout);
 
     if (!resp.ok) {
       let message = `Request failed (${resp.status})`;

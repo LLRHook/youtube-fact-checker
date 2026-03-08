@@ -101,6 +101,8 @@ Return ONLY a JSON array of claims. No other text."""
 
     response_text = response.content[0].text.strip()
     claims = parse_llm_json(response_text)
+    if isinstance(claims, dict):
+        claims = claims.get("claims", [])
     if not isinstance(claims, list):
         return []
 
@@ -113,7 +115,7 @@ Return ONLY a JSON array of claims. No other text."""
             if category not in valid_categories:
                 category = "fact"
             try:
-                ts = max(0.0, float(claim.get("timestamp_seconds", 0)))
+                ts = min(86400.0, max(0.0, float(claim.get("timestamp_seconds", 0))))
             except (TypeError, ValueError):
                 logger.warning("Invalid timestamp for claim: %.50s", claim.get("text", ""))
                 ts = 0.0
