@@ -43,8 +43,11 @@ async function submitVideo() {
     if (!resp.ok) {
       let message = `Request failed (${resp.status})`;
       try {
-        const data = await resp.json();
-        message = data.detail || message;
+        const ct = resp.headers.get('content-type') || '';
+        if (ct.includes('application/json')) {
+          const data = await resp.json();
+          message = data.detail || message;
+        }
       } catch (_) {}
       throw new Error(message);
     }

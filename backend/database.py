@@ -17,7 +17,7 @@ _DB_PATH = settings.DATABASE_PATH
 async def _db():
     """Async context manager for DB connections with WAL and FK enabled."""
     try:
-        db = await aiosqlite.connect(_DB_PATH)
+        db = await aiosqlite.connect(_DB_PATH, timeout=10.0)
     except Exception:
         logger.exception("Failed to connect to database at %s", _DB_PATH)
         raise

@@ -157,9 +157,9 @@ initTheme();
 function toggleClaim(btn) {
   const card = btn.closest('.claim-card');
   card.classList.toggle('expanded');
-  btn.innerHTML = card.classList.contains('expanded')
-    ? 'Hide details &#9652;'
-    : 'Show details &#9662;';
+  const isExpanded = card.classList.contains('expanded');
+  btn.innerHTML = isExpanded ? 'Hide details &#9652;' : 'Show details &#9662;';
+  btn.setAttribute('aria-expanded', isExpanded);
 }
 
 function addCardClickListeners(containerId) {
@@ -280,7 +280,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
         ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
         ${sourceCountHtml(c.sources)}
       </div>
-      <button class="claim-toggle" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
+      <button class="claim-toggle" aria-expanded="false" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
       <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
       ${sourcesHtml}
     </div>
@@ -304,7 +304,10 @@ function collapseAllCards(containerId) {
   cards.forEach(c => {
     c.classList.remove('expanded');
     const toggle = c.querySelector('.claim-toggle');
-    if (toggle) toggle.innerHTML = 'Show details &#9662;';
+    if (toggle) {
+      toggle.innerHTML = 'Show details &#9662;';
+      toggle.setAttribute('aria-expanded', 'false');
+    }
   });
   const btn = document.getElementById('toggle-all-btn');
   if (btn) btn.textContent = 'Expand all';
@@ -320,7 +323,10 @@ function toggleAllClaims(containerId) {
   cards.forEach(c => {
     c.classList.toggle('expanded', anyCollapsed);
     const toggle = c.querySelector('.claim-toggle');
-    if (toggle) toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
+    if (toggle) {
+      toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
+      toggle.setAttribute('aria-expanded', anyCollapsed);
+    }
   });
   if (btn) btn.textContent = anyCollapsed ? 'Collapse all' : 'Expand all';
 }
@@ -328,14 +334,20 @@ function toggleAllClaims(containerId) {
 /* --- Search Highlight --- */
 
 function highlightMatch(text, query) {
-  const escaped = escapeHtml(text);
-  if (!query) return escaped;
-  const idx = text.toLowerCase().indexOf(query);
-  if (idx === -1) return escaped;
-  const before = escapeHtml(text.slice(0, idx));
-  const match = escapeHtml(text.slice(idx, idx + query.length));
-  const after = escapeHtml(text.slice(idx + query.length));
-  return `${before}<mark class="search-highlight">${match}</mark>${after}`;
+  if (!query) return escapeHtml(text);
+  const lower = text.toLowerCase();
+  const qLen = query.length;
+  let result = '';
+  let last = 0;
+  let idx = lower.indexOf(query, last);
+  while (idx !== -1) {
+    result += escapeHtml(text.slice(last, idx));
+    result += `<mark class="search-highlight">${escapeHtml(text.slice(idx, idx + qLen))}</mark>`;
+    last = idx + qLen;
+    idx = lower.indexOf(query, last);
+  }
+  result += escapeHtml(text.slice(last));
+  return result;
 }
 
 /* --- Video Card HTML (shared for listings) --- */

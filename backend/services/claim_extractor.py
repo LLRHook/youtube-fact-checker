@@ -74,8 +74,12 @@ def extract_claims(transcript_text: str, segments: list = None) -> list[dict]:
     if segments:
         timestamped = []
         for seg in segments:
-            mins = int(seg.start // 60)
-            secs = int(seg.start % 60)
+            start = seg.start
+            if not isinstance(start, (int, float)) or start < 0:
+                start = 0.0
+            start = min(start, 86400.0)
+            mins = int(start // 60)
+            secs = int(start % 60)
             timestamped.append(f"[{mins:02d}:{secs:02d}] {seg.text}")
         transcript_for_llm = "\n".join(timestamped)
     else:
