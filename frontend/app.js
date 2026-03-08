@@ -387,7 +387,9 @@ function showUrlPreview() {
 
   if (match) {
     const videoId = match[1];
-    document.getElementById('preview-thumb').src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
+    const thumb = document.getElementById('preview-thumb');
+    thumb.onerror = () => { preview.style.display = 'none'; };
+    thumb.src = `https://img.youtube.com/vi/${videoId}/hqdefault.jpg`;
     document.getElementById('preview-id').textContent = `Video ID: ${videoId}`;
     preview.style.display = 'flex';
   } else {

@@ -130,7 +130,7 @@ function renderPagination() {
 }
 
 function goToPage(page) {
-  if (page < 1 || page > totalPages || page === currentPage) return;
+  if (!page || page < 1 || page > totalPages || page === currentPage) return;
   window.scrollTo({ top: 0, behavior: 'smooth' });
   const skel = document.getElementById('videos-skeleton');
   if (skel) skel.style.display = '';

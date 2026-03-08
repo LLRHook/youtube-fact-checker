@@ -112,12 +112,14 @@ function renderBreakdownBar(claims) {
 /* --- Theme --- */
 
 function initTheme() {
-  const saved = localStorage.getItem('theme');
-  if (saved) {
-    document.documentElement.setAttribute('data-theme', saved);
-  } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
-    document.documentElement.setAttribute('data-theme', 'light');
-  }
+  try {
+    const saved = localStorage.getItem('theme');
+    if (saved) {
+      document.documentElement.setAttribute('data-theme', saved);
+    } else if (window.matchMedia('(prefers-color-scheme: light)').matches) {
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
+  } catch (_) {}
   updateToggleIcon();
   updateThemeMeta();
 }
@@ -126,7 +128,7 @@ function toggleTheme() {
   const current = document.documentElement.getAttribute('data-theme');
   const next = current === 'light' ? 'dark' : 'light';
   document.documentElement.setAttribute('data-theme', next);
-  localStorage.setItem('theme', next);
+  try { localStorage.setItem('theme', next); } catch (_) {}
   updateToggleIcon();
   updateThemeMeta();
 }

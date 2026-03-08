@@ -109,11 +109,11 @@ async def fact_check_claim(claim_text: str) -> dict:
             "category": "unclear",
         }
 
-    # Combine with sources, deduplicating by URL
+    # Combine with sources, deduplicating by URL and filtering unsafe schemes
     seen_urls = set()
     sources = []
     for r in search_results:
-        if r.url not in seen_urls:
+        if r.url not in seen_urls and r.url.startswith(("https://", "http://")):
             seen_urls.add(r.url)
             sources.append({"title": r.title, "url": r.url, "snippet": r.snippet})
 

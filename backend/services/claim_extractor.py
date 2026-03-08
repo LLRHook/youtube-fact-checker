@@ -109,8 +109,13 @@ Return ONLY a JSON array of claims. No other text."""
                 ts = max(0.0, float(claim.get("timestamp_seconds", 0)))
             except (TypeError, ValueError):
                 ts = 0.0
+            text = claim["text"].strip()
+            if not text or len(text) > 500:
+                text = text[:500] if text else ""
+            if not text:
+                continue
             valid_claims.append({
-                "text": claim["text"],
+                "text": text,
                 "timestamp_seconds": ts,
                 "category": category,
             })
