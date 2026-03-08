@@ -1075,7 +1075,7 @@ footer {
 .empty-heading { font-size: 1.1rem; margin-bottom: 0.75rem; }
 .empty-text { margin-bottom: 1rem; }
 .empty-links { display: flex; gap: 0.75rem; justify-content: center; flex-wrap: wrap; }
-.empty-link { color: var(--accent); text-decoration: none; font-weight: 600; }
+.empty-link { color: var(--accent); text-decoration: none; font-weight: 600; background: none; border: none; cursor: pointer; font: inherit; }
 .empty-link:hover { text-decoration: underline; }
 
 /* === Skeleton Loading === */

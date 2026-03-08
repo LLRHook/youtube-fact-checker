@@ -79,8 +79,8 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     response.raise_for_status()
     try:
         data = response.json()
-    except Exception:
-        logger.warning("Brave Search returned non-JSON response (status %s)", response.status_code)
+    except Exception as exc:
+        logger.warning("Brave Search returned non-JSON response (status %s): %s", response.status_code, exc)
         return []
 
     results = []

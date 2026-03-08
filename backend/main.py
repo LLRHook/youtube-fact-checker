@@ -139,20 +139,8 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
 
         if not raw_claims:
             elapsed = time.time() - start_time
-            result = CheckResult(
-                video_title=transcript.title,
-                video_id=video_id,
-                video_duration_seconds=transcript.duration_seconds,
-                transcript_text=transcript.full_text[:2000],
-                claims=[],
-                overall_truth_percentage=50,
-                summary="No verifiable factual claims found in this video.",
-                processing_time_seconds=round(elapsed, 1),
-            )
-            task = tasks.get(task_id)
-            if task:
-                task.status = TaskStatus.COMPLETED
-                task.data = result
+            summary = "No verifiable factual claims found in this video."
+            processing_time = round(elapsed, 1)
 
             await db.delete_claims_for_video(video_id)
             await db.update_video_results(
@@ -162,9 +150,24 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 duration_seconds=transcript.duration_seconds,
                 transcript_text=transcript.full_text,
                 overall_truth_percentage=50,
-                summary=result.summary,
-                processing_time_seconds=result.processing_time_seconds,
+                summary=summary,
+                processing_time_seconds=processing_time,
             )
+
+            task = tasks.get(task_id)
+            if task:
+                task.status = TaskStatus.COMPLETED
+                task.data = CheckResult(
+                    video_title=transcript.title,
+                    video_id=video_id,
+                    video_duration_seconds=transcript.duration_seconds,
+                    transcript_text=transcript.full_text[:2000],
+                    claims=[],
+                    overall_truth_percentage=50,
+                    summary=summary,
+                    processing_time_seconds=processing_time,
+                )
+
             _cleanup_task(task_id)
             return
 
@@ -448,10 +451,14 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
         progress="Starting...",
     )
 
-    if not existing:
-        await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
-    elif existing["status"] in ("failed", "processing"):
-        await db.update_video_status(video_id, "processing")
+    try:
+        if not existing:
+            await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
+        elif existing["status"] in ("failed", "processing"):
+            await db.update_video_status(video_id, "processing")
+    except Exception:
+        tasks.pop(task_id, None)
+        raise
 
     background_tasks.add_task(process_video, task_id, video_id, req.youtube_url)
 

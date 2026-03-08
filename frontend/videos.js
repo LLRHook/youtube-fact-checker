@@ -6,6 +6,7 @@ let currentPage = 1;
 let totalPages = 1;
 const pageLimit = 50;
 let searchTimer = null;
+let _fetchController = null;
 
 function debouncedApplyFilters() {
   clearTimeout(searchTimer);
@@ -29,8 +30,10 @@ window.addEventListener('popstate', (e) => {
 });
 
 async function loadVideos(page) {
+  if (_fetchController) _fetchController.abort();
+  _fetchController = new AbortController();
   try {
-    const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`);
+    const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`, { signal: _fetchController.signal });
     if (!resp.ok) throw new Error('Failed to load videos');
     const data = await resp.json();
     allVideos = data.items;
@@ -41,6 +44,7 @@ async function loadVideos(page) {
     applyFilters();
     renderPagination();
   } catch (err) {
+    if (err.name === 'AbortError') return;
     document.getElementById('empty').textContent = 'Error loading videos.';
     document.getElementById('empty').style.display = 'block';
     const pag = document.getElementById('pagination');
