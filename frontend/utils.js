@@ -8,7 +8,7 @@ function escapeHtml(str) {
 
 function formatDate(dateStr) {
   if (!dateStr) return '';
-  const d = new Date(dateStr + 'Z');
+  const d = new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z');
   const now = new Date();
   const diffMs = now - d;
   if (diffMs < 0) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -25,7 +25,7 @@ function formatDate(dateStr) {
 
 function absoluteDate(dateStr) {
   if (!dateStr) return '';
-  return new Date(dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  return new Date(dateStr.endsWith('Z') ? dateStr : dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatTimestamp(seconds) {
@@ -270,9 +270,11 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
 /* --- Active Filter --- */
 
 function setActiveFilter(filter) {
-  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
-  const btn = document.querySelector(`.filter-btn[data-filter="${filter}"]`);
-  if (btn) btn.classList.add('active');
+  document.querySelectorAll('.filter-btn[data-filter]').forEach(b => {
+    const isActive = b.dataset.filter === filter;
+    b.classList.toggle('active', isActive);
+    b.setAttribute('aria-pressed', isActive);
+  });
 }
 
 /* --- Collapse All Cards (shared) --- */

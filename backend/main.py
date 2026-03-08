@@ -310,6 +310,7 @@ def _safe_category(value: str) -> ClaimCategory:
     try:
         return ClaimCategory(value)
     except ValueError:
+        logger.warning("Unknown claim category %r, defaulting to 'fact'", value)
         return ClaimCategory.FACT
 
 

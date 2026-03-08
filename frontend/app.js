@@ -9,6 +9,7 @@ let pollFailures = 0;
 const MAX_POLL_FAILURES = 5;
 let pollTimeout = null;
 const POLL_TIMEOUT_MS = 5 * 60 * 1000;
+let lastProgressPct = 0;
 
 // --- Submit ---
 
@@ -78,6 +79,7 @@ async function submitVideo() {
 // --- Polling ---
 
 function startPolling() {
+  lastProgressPct = 0;
   updateProgress('Starting analysis...', 10);
   startElapsedTimer();
   pollFailures = 0;
@@ -176,6 +178,8 @@ function estimateProgress(progressText) {
 }
 
 function updateProgress(text, pct) {
+  pct = Math.max(pct, lastProgressPct);
+  lastProgressPct = pct;
   document.getElementById('loading-status').textContent = text;
   document.getElementById('progress-fill').style.width = pct + '%';
   document.title = `${pct}% — ${text} | YouTube Fact Checker`;
