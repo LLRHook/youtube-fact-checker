@@ -192,7 +192,7 @@ async function copyShareLink() {
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
     if (!collapseAllCards('claims-container')) {
-      window.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: _prefersReducedMotion.matches ? 'auto' : 'smooth' });
     }
   }
 });
@@ -206,6 +206,6 @@ function seekTo(seconds) {
       func: 'seekTo',
       args: [seconds, true]
     }), 'https://www.youtube-nocookie.com');
-    iframe.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    smoothScroll(iframe);
   }
 }

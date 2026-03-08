@@ -78,7 +78,7 @@ async function submitVideo() {
 
     // Show loading
     showSection('loading');
-    document.getElementById('loading-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    smoothScroll(document.getElementById('loading-section'));
     startPolling();
 
   } catch (err) {
@@ -122,6 +122,7 @@ function startPolling() {
 
       let data;
       try { data = await resp.json(); } catch (_) { throw new Error('Invalid JSON'); }
+      if (!data || typeof data.status !== 'string') throw new Error('Unexpected response');
       pollFailures = 0;
 
       if (data.status === 'processing') {
@@ -268,7 +269,7 @@ function renderResults(data) {
 
   document.title = `${data.video_title || 'Results'} — YouTube Fact Checker`;
   showSection('results');
-  document.getElementById('results-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  smoothScroll(document.getElementById('results-section'));
 }
 
 function renderClaimsList(claims) {
@@ -320,7 +321,7 @@ function showError(message) {
   document.getElementById('error-message').textContent = message;
   document.title = 'YouTube Fact Checker';
   showSection('error');
-  document.getElementById('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  smoothScroll(document.getElementById('error-section'));
   resetButton();
 }
 
@@ -328,7 +329,7 @@ function showErrorHtml(html) {
   document.getElementById('error-message').innerHTML = html;
   document.title = 'YouTube Fact Checker';
   showSection('error');
-  document.getElementById('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  smoothScroll(document.getElementById('error-section'));
   resetButton();
 }
 

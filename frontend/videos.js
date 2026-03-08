@@ -138,10 +138,15 @@ function renderPagination() {
 
 function goToPage(page) {
   if (!page || page < 1 || page > totalPages || page === currentPage) return;
-  window.scrollTo({ top: 0, behavior: 'smooth' });
+  window.scrollTo({ top: 0, behavior: _prefersReducedMotion.matches ? 'auto' : 'smooth' });
   const skel = document.getElementById('videos-skeleton');
   if (skel) skel.style.display = '';
   document.getElementById('video-grid').innerHTML = '';
+  const searchInput = document.getElementById('search-input');
+  if (searchInput && searchInput.value) {
+    searchInput.value = '';
+    toggleClearBtn();
+  }
   const url = page > 1 ? `?page=${page}` : window.location.pathname;
   history.pushState({ page }, '', url);
   loadVideos(page);

@@ -192,6 +192,15 @@ function updateFilterCounts(claims) {
   if (opinionBtn) opinionBtn.textContent = `Opinions (${opinionCount})`;
 }
 
+/* --- Scroll Helper (respects prefers-reduced-motion) --- */
+
+const _prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+function smoothScroll(el, block) {
+  if (!el) return;
+  el.scrollIntoView({ behavior: _prefersReducedMotion.matches ? 'auto' : 'smooth', block: block || 'start' });
+}
+
 /* --- Back to Top --- */
 
 function initBackToTop() {

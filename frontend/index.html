@@ -34,6 +34,7 @@
       </nav>
     </header>
 
+    <main>
     <!-- Input Section -->
     <section class="input-section">
       <div class="input-wrapper">
@@ -176,6 +177,8 @@
       </div>
     </section>
 
+    </main>
+
     <!-- Site Stats -->
     <div id="site-stats" class="site-stats" style="display:none;">
       <span><strong id="stat-videos">0</strong> videos checked</span>
@@ -194,7 +197,7 @@
     </footer>
   </div>
 
-  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:_prefersReducedMotion.matches?'auto':'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
   <script src="/utils.js"></script>
   <script src="/app.js"></script>
 </body>

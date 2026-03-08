@@ -25,6 +25,7 @@
       </div>
     </div>
 
+    <main>
     <div class="toolbar">
       <div class="search-wrapper">
         <input type="text" class="search-input" id="search-input" placeholder="Filter this page by title or channel..." oninput="debouncedApplyFilters();toggleClearBtn()" aria-label="Filter videos on this page">
@@ -52,13 +53,14 @@
     <div id="video-grid" class="video-grid"></div>
     <div id="empty" class="empty-state" style="display:none;">No videos checked yet. <a href="/">Check one now!</a></div>
     <div id="pagination" class="pagination"></div>
+    </main>
 
     <footer class="page-footer">
       <p>Results are AI-generated estimates, not definitive verdicts. Always verify important claims yourself.</p>
     </footer>
   </div>
 
-  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:_prefersReducedMotion.matches?'auto':'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
   <script src="/utils.js"></script>
   <script src="/videos.js"></script>
 </body>

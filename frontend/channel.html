@@ -24,7 +24,7 @@
       </div>
     </div>
 
-    <div id="content">
+    <main id="content">
       <div class="skeleton-loader">
         <div class="skel skel-heading"></div>
         <div class="skel skel-stats"></div>
@@ -34,14 +34,14 @@
           <div class="skel skel-card"></div>
         </div>
       </div>
-    </div>
+    </main>
 
     <footer class="page-footer">
       <p>Results are AI-generated estimates, not definitive verdicts. Always verify important claims yourself.</p>
     </footer>
   </div>
 
-  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
+  <button class="back-to-top" id="back-to-top" onclick="window.scrollTo({top:0,behavior:_prefersReducedMotion.matches?'auto':'smooth'})" title="Back to top" aria-label="Back to top">&#9650;</button>
   <script src="/utils.js"></script>
   <script src="/channel.js"></script>
 </body>
