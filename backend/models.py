@@ -73,7 +73,7 @@ class PublicClaimDetail(BaseModel):
     truth_percentage: int = 50
     confidence: float = 0.5
     reasoning: str = ""
-    category: str = "fact"
+    category: ClaimCategory = ClaimCategory.FACT
     sources: list[Source] = []
 
 

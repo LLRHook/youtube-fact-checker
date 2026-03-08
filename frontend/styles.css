@@ -530,8 +530,10 @@ header {
 .claim-card.border-red { border-left-color: var(--red); }
 .claim-card.border-gray { border-left-color: var(--text-muted); }
 
-.claim-card:hover {
-  border-color: var(--accent);
+@media (hover: hover) {
+  .claim-card:hover {
+    border-color: var(--accent);
+  }
 }
 
 /* === Video Grid & Cards (shared listings) === */
@@ -553,10 +555,12 @@ header {
   display: block;
 }
 
-.video-card:hover {
-  border-color: var(--accent);
-  transform: translateY(-2px);
-  box-shadow: var(--card-shadow);
+@media (hover: hover) {
+  .video-card:hover {
+    border-color: var(--accent);
+    transform: translateY(-2px);
+    box-shadow: var(--card-shadow);
+  }
 }
 
 .video-card img.thumb {
@@ -988,7 +992,7 @@ footer {
   transition: transform 0.1s;
 }
 
-.coffee-btn:hover { transform: scale(1.03); }
+@media (hover: hover) { .coffee-btn:hover { transform: scale(1.03); } }
 
 .footer-note {
   color: var(--text-muted);
@@ -1114,7 +1118,7 @@ footer {
   z-index: 100;
 }
 .back-to-top.visible { opacity: 1; visibility: visible; }
-.back-to-top:hover { transform: scale(1.1); }
+@media (hover: hover) { .back-to-top:hover { transform: scale(1.1); } }
 
 /* === Print === */
 @media print {

@@ -110,6 +110,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Cache-Control"] = "no-cache"
         elif path.startswith("/api/"):
             response.headers["Cache-Control"] = "no-store"
+            response.headers["X-Robots-Tag"] = "noindex"
         return response
 
 

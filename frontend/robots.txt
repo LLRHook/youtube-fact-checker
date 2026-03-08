@@ -4,5 +4,3 @@ Allow: /videos
 Allow: /video/
 Allow: /channel/
 Disallow: /api/
-
-Sitemap: /sitemap.xml

@@ -435,7 +435,7 @@ document.addEventListener('keydown', (e) => {
 // Load site stats
 (async function loadStats() {
   const statsController = new AbortController();
-  setTimeout(() => statsController.abort(), 5000);
+  const statsTimeout = setTimeout(() => statsController.abort(), 5000);
   try {
     const resp = await fetch('/api/stats', { signal: statsController.signal });
     if (!resp.ok) return;
@@ -450,7 +450,7 @@ document.addEventListener('keydown', (e) => {
       if (chEl) chEl.textContent = data.channel_count;
       if (container) container.style.display = '';
     }
-  } catch (_) {}
+  } catch (_) {} finally { clearTimeout(statsTimeout); }
 })();
 
 const _previewThumb = document.getElementById('preview-thumb');
