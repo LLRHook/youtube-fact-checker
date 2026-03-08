@@ -167,4 +167,7 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
                     on_progress(completed_count, total)
 
     await asyncio.gather(*(check_one(i, c) for i, c in enumerate(claims)))
-    return results
+    valid = [r for r in results if r is not None]
+    if len(valid) < total:
+        logger.warning("fact_check_all_claims: %d/%d results were None", total - len(valid), total)
+    return valid

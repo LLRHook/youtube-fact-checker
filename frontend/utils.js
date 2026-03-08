@@ -256,7 +256,9 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
 
   const timestampLink = seekable
     ? `<a href="#" onclick="seekTo(${seekSeconds});return false;">${ts}</a>`
-    : `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`;
+    : videoId
+      ? `<a href="https://youtube.com/watch?v=${videoId}&t=${seekSeconds}" target="_blank" rel="noopener noreferrer">${ts}</a>`
+      : `<span>${ts}</span>`;
 
   return `
     <div class="claim-card claim-enter ${borderClass}" style="animation-delay:${i * 60}ms">

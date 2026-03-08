@@ -390,20 +390,22 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
     if existing and existing["status"] == "completed":
         claims = _build_claims_from_rows(await db.get_claims_for_video(video_id))
         result = _build_completed_result(existing, claims)
-        return {
-            "task_id": video_id,
-            "status": "completed",
-            "data": result.model_dump(),
-        }
+        return TaskResponse(
+            task_id=video_id, status=TaskStatus.COMPLETED, progress="Done!", data=result,
+        ).model_dump()
 
     # If already queued, return queued status
     if existing and existing["status"] == "queued":
-        return {"task_id": video_id, "status": "queued"}
+        return TaskResponse(
+            task_id=video_id, status=TaskStatus.QUEUED, progress="Queued — will be processed soon.",
+        ).model_dump()
 
     # Check if already processing in-memory
     existing_task = tasks.get(video_id)
     if existing_task and existing_task.status == TaskStatus.PROCESSING:
-        return {"task_id": video_id, "status": "processing"}
+        return TaskResponse(
+            task_id=video_id, status=TaskStatus.PROCESSING, progress=existing_task.progress,
+        ).model_dump()
 
     # Per-IP rate limit (skip for unresolvable IPs to avoid false positives)
     ip_count = await db.count_videos_today_by_ip(client_ip) if client_ip else 0
@@ -606,7 +608,7 @@ async def public_get_channel(channel_name: str):
 
     video_summaries = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
 
-    all_scores = [vs.public_score for vs in video_summaries if vs.public_score > 0]
+    all_scores = [vs.public_score for vs in video_summaries]
     avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
 
     return ChannelDetail(

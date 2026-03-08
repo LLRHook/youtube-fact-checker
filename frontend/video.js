@@ -51,6 +51,7 @@ async function loadVideo(videoId) {
       <p class="empty-text">Something went wrong. Please try again later.</p>
       <a href="/videos" class="empty-link">Browse videos</a>
     </div>`;
+    document.title = 'Error — YouTube Fact Checker';
   }
 }
 
