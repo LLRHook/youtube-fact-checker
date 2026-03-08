@@ -170,19 +170,23 @@ function toggleClaim(btn) {
 }
 
 function addCardClickListeners(containerId) {
-  document.querySelectorAll(`#${containerId} .claim-card`).forEach(card => {
-    card.addEventListener('click', (e) => {
-      if (e.target.closest('a')) return;
-      const toggle = card.querySelector('.claim-toggle');
-      if (toggle) toggleClaim(toggle);
-    });
-    card.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' || e.key === ' ') {
-        e.preventDefault();
-        const toggle = card.querySelector('.claim-toggle');
-        if (toggle) toggleClaim(toggle);
-      }
-    });
+  const container = document.getElementById(containerId);
+  if (!container || container._claimDelegated) return;
+  container._claimDelegated = true;
+  container.addEventListener('click', (e) => {
+    if (e.target.closest('a')) return;
+    const card = e.target.closest('.claim-card');
+    if (!card) return;
+    const toggle = card.querySelector('.claim-toggle');
+    if (toggle) toggleClaim(toggle);
+  });
+  container.addEventListener('keydown', (e) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const card = e.target.closest('.claim-card');
+    if (!card) return;
+    e.preventDefault();
+    const toggle = card.querySelector('.claim-toggle');
+    if (toggle) toggleClaim(toggle);
   });
 }
 

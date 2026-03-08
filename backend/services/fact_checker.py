@@ -2,6 +2,7 @@
 
 import asyncio
 import logging
+import math
 import anthropic
 from backend.config import settings
 from backend.services.search_service import search_brave, format_search_results
@@ -139,11 +140,16 @@ async def fact_check_claim(claim_text: str) -> dict:
         category = "fact"
 
     try:
-        truth_pct = round(float(result.get("truth_percentage", 50)))
+        truth_pct = float(result.get("truth_percentage", 50))
+        if not math.isfinite(truth_pct):
+            truth_pct = 50
+        truth_pct = round(truth_pct)
     except (TypeError, ValueError):
         truth_pct = 50
     try:
         confidence = float(result.get("confidence", 0.5))
+        if not math.isfinite(confidence):
+            confidence = 0.5
     except (TypeError, ValueError):
         confidence = 0.5
 

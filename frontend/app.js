@@ -242,12 +242,17 @@ function renderResults(data) {
   const score = data.overall_truth_percentage;
   document.getElementById('summary-text').textContent = data.summary || '';
 
-  // Animate score ring
+  // Animate score ring — reset first so re-runs animate from empty
   const sc = scoreColor(score);
   const circle = document.getElementById('score-circle');
   const circumference = 2 * Math.PI * 54;
-  const offset = circumference - (score / 100) * circumference;
   circle.setAttribute('stroke-dasharray', circumference);
+  circle.style.transition = 'none';
+  circle.style.strokeDashoffset = circumference;
+  // Force reflow so the reset takes effect before the animation
+  circle.getBoundingClientRect();
+  circle.style.transition = '';
+  const offset = circumference - (score / 100) * circumference;
   circle.style.strokeDashoffset = offset;
   circle.style.stroke = sc;
 

@@ -171,14 +171,13 @@ function filterVideoClaims(filter) {
   }
 
   container.innerHTML = filtered.map((c, i) => buildClaimCardHtml(c, i, { seekable: true })).join('');
-  addCardClickListeners('claims-container');
 
   const btn = document.getElementById('toggle-all-btn');
   if (btn) btn.textContent = 'Expand all';
 }
 
 async function copyShareLink() {
-  const btn = document.querySelector('.share-btn');
+  const btn = document.querySelector('[data-action="share"]');
   if (!btn) return;
   let ok = false;
   try {
