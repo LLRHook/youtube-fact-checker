@@ -521,10 +521,21 @@ async def health():
     return {"status": "ok"}
 
 
+_stats_cache: dict | None = None
+_stats_cache_time: float = 0
+_STATS_TTL = 60  # seconds
+
+
 @app.get("/api/stats")
 async def public_stats():
-    """Aggregate site statistics."""
-    return await db.get_stats()
+    """Aggregate site statistics (cached for 60s)."""
+    global _stats_cache, _stats_cache_time
+    now = time.time()
+    if _stats_cache is not None and now - _stats_cache_time < _STATS_TTL:
+        return _stats_cache
+    _stats_cache = await db.get_stats()
+    _stats_cache_time = now
+    return _stats_cache
 
 
 # --- Public API ---

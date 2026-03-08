@@ -129,7 +129,7 @@ function renderPagination() {
   }
 
   let html = '';
-  html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} onclick="goToPage(${currentPage - 1})" aria-label="Previous page">&laquo; Prev</button>`;
+  html += `<button class="page-btn" ${currentPage <= 1 ? 'disabled' : ''} data-page="${currentPage - 1}" aria-label="Previous page">&laquo; Prev</button>`;
 
   const maxButtons = 5;
   let startPage = Math.max(1, currentPage - Math.floor(maxButtons / 2));
@@ -139,20 +139,20 @@ function renderPagination() {
   }
 
   if (startPage > 1) {
-    html += `<button class="page-btn" onclick="goToPage(1)">1</button>`;
+    html += `<button class="page-btn" data-page="1">1</button>`;
     if (startPage > 2) html += `<span class="page-ellipsis">&hellip;</span>`;
   }
 
   for (let i = startPage; i <= endPage; i++) {
-    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" onclick="goToPage(${i})" aria-label="Page ${i}"${i === currentPage ? ' aria-current="page"' : ''}>${i}</button>`;
+    html += `<button class="page-btn ${i === currentPage ? 'active' : ''}" data-page="${i}" aria-label="Page ${i}"${i === currentPage ? ' aria-current="page"' : ''}>${i}</button>`;
   }
 
   if (endPage < totalPages) {
     if (endPage < totalPages - 1) html += `<span class="page-ellipsis">&hellip;</span>`;
-    html += `<button class="page-btn" onclick="goToPage(${totalPages})">${totalPages}</button>`;
+    html += `<button class="page-btn" data-page="${totalPages}">${totalPages}</button>`;
   }
 
-  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} onclick="goToPage(${currentPage + 1})" aria-label="Next page">Next &raquo;</button>`;
+  html += `<button class="page-btn" ${currentPage >= totalPages ? 'disabled' : ''} data-page="${currentPage + 1}" aria-label="Next page">Next &raquo;</button>`;
 
   container.innerHTML = html;
 }
@@ -184,6 +184,11 @@ document.addEventListener('click', (e) => {
     document.getElementById('search-input').value = '';
     applyFilters();
     toggleClearBtn();
+    return;
+  }
+  const pageBtn = e.target.closest('.page-btn[data-page]');
+  if (pageBtn && !pageBtn.disabled) {
+    goToPage(parseInt(pageBtn.dataset.page, 10));
   }
 });
 

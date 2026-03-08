@@ -155,6 +155,9 @@ function updateThemeMeta() {
 
 initTheme();
 
+const _themeBtn = document.getElementById('theme-toggle');
+if (_themeBtn) _themeBtn.addEventListener('click', toggleTheme);
+
 /* --- Claim Card Interactions --- */
 
 function toggleClaim(btn) {
@@ -210,6 +213,9 @@ function smoothScroll(el, block) {
 function initBackToTop() {
   const btn = document.getElementById('back-to-top');
   if (!btn) return;
+  btn.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: _prefersReducedMotion.matches ? 'auto' : 'smooth' });
+  });
   window.addEventListener('scroll', () => {
     btn.classList.toggle('visible', window.scrollY > 400);
   }, { passive: true });
@@ -293,7 +299,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
         ${c.confidence ? `<span>Confidence: ${Math.round(c.confidence * 100)}%</span>` : ''}
         ${sourceCountHtml(c.sources)}
       </div>
-      <button class="claim-toggle" aria-expanded="false" onclick="event.stopPropagation();toggleClaim(this)">Show details &#9662;</button>
+      <button class="claim-toggle" aria-expanded="false">Show details &#9662;</button>
       <div class="claim-reasoning">${escapeHtml(c.reasoning)}</div>
       ${sourcesHtml}
     </div>
