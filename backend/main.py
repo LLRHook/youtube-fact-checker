@@ -321,7 +321,10 @@ async def _fail_task(task_id: str, video_id: str, error_msg: str):
     if task:
         task.status = TaskStatus.FAILED
         task.error = error_msg
-    await db.update_video_status(video_id, "failed", error_msg)
+    try:
+        await db.update_video_status(video_id, "failed", error_msg)
+    except Exception:
+        logger.exception("Failed to persist failure status for video %s", video_id)
     _cleanup_task(task_id)
 
 

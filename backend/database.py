@@ -246,12 +246,16 @@ async def get_stale_processing_videos(stale_minutes: int = 10, limit: int = 5) -
 async def delete_claims_for_video(video_id: str):
     """Delete all claims and their sources for a video (used before re-inserting on retry)."""
     async with _db() as db:
-        await db.execute(
-            "DELETE FROM claim_sources WHERE claim_id IN (SELECT id FROM claims WHERE video_id = ?)",
-            (video_id,),
-        )
-        await db.execute("DELETE FROM claims WHERE video_id = ?", (video_id,))
-        await db.commit()
+        try:
+            await db.execute(
+                "DELETE FROM claim_sources WHERE claim_id IN (SELECT id FROM claims WHERE video_id = ?)",
+                (video_id,),
+            )
+            await db.execute("DELETE FROM claims WHERE video_id = ?", (video_id,))
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
 
 async def create_claims(video_id: str, claims_list: list[dict]):

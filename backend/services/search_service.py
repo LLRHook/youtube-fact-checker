@@ -87,7 +87,7 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
     web_results = data.get("web", {}).get("results", [])
     for item in web_results[:num_results]:
         url = item.get("url", "").strip()
-        if not url or not url.startswith(("https://", "http://")) or any(c in url for c in "\n\r\t\0"):
+        if not url or not url.startswith(("https://", "http://")) or any(ord(c) < 32 or ord(c) == 127 for c in url):
             continue
         results.append(
             SearchResult(

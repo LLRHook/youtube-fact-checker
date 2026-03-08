@@ -10,6 +10,7 @@ function formatDate(dateStr) {
   if (!dateStr) return '';
   const hasTimezone = dateStr.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(dateStr);
   const d = new Date(hasTimezone ? dateStr : dateStr + 'Z');
+  if (isNaN(d.getTime())) return '';
   const now = new Date();
   const diffMs = now - d;
   if (diffMs < 0) return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
@@ -27,7 +28,9 @@ function formatDate(dateStr) {
 function absoluteDate(dateStr) {
   if (!dateStr) return '';
   const hasTimezone = dateStr.endsWith('Z') || /[+-]\d{2}:?\d{2}$/.test(dateStr);
-  return new Date(hasTimezone ? dateStr : dateStr + 'Z').toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
+  const d = new Date(hasTimezone ? dateStr : dateStr + 'Z');
+  if (isNaN(d.getTime())) return '';
+  return d.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 }
 
 function formatTimestamp(seconds) {
@@ -160,6 +163,7 @@ function toggleClaim(btn) {
   const isExpanded = card.classList.contains('expanded');
   btn.innerHTML = isExpanded ? 'Hide details &#9652;' : 'Show details &#9662;';
   btn.setAttribute('aria-expanded', isExpanded);
+  card.setAttribute('aria-expanded', isExpanded);
 }
 
 function addCardClickListeners(containerId) {
@@ -278,7 +282,7 @@ function buildClaimCardHtml(c, i, { videoId, seekable, sourcesLimit } = {}) {
       : `<span>${ts}</span>`;
 
   return `
-    <div class="claim-card claim-enter ${borderClass}" tabindex="0" style="animation-delay:${i * 60}ms">
+    <div class="claim-card claim-enter ${borderClass}" tabindex="0" aria-expanded="false" style="animation-delay:${i * 60}ms">
       <div class="claim-header">
         <span class="claim-text"><span class="claim-num">#${c._num || i + 1}</span> ${escapeHtml(c.text)}</span>
         <span class="claim-badge ${badgeClass}" title="${btTitle}">${bt}</span>
@@ -312,6 +316,7 @@ function collapseAllCards(containerId) {
   const cards = document.querySelectorAll(`#${containerId} .claim-card.expanded`);
   cards.forEach(c => {
     c.classList.remove('expanded');
+    c.setAttribute('aria-expanded', 'false');
     const toggle = c.querySelector('.claim-toggle');
     if (toggle) {
       toggle.innerHTML = 'Show details &#9662;';
@@ -331,6 +336,7 @@ function toggleAllClaims(containerId) {
   const anyCollapsed = Array.from(cards).some(c => !c.classList.contains('expanded'));
   cards.forEach(c => {
     c.classList.toggle('expanded', anyCollapsed);
+    c.setAttribute('aria-expanded', anyCollapsed);
     const toggle = c.querySelector('.claim-toggle');
     if (toggle) {
       toggle.innerHTML = anyCollapsed ? 'Hide details &#9652;' : 'Show details &#9662;';
