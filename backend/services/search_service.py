@@ -83,9 +83,9 @@ async def search_brave(query: str, num_results: int = 5) -> list[SearchResult]:
             continue
         results.append(
             SearchResult(
-                title=item.get("title", "").strip(),
+                title=(item.get("title") or "").strip(),
                 url=url,
-                snippet=item.get("description", "").strip(),
+                snippet=(item.get("description") or "").strip(),
             )
         )
 

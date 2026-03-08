@@ -105,6 +105,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         path = request.url.path
         if path.endswith(_STATIC_EXTENSIONS):
             response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
+        elif response.headers.get("content-type", "").startswith("text/html"):
+            response.headers["Cache-Control"] = "no-cache"
         return response
 
 

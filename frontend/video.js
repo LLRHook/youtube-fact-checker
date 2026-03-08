@@ -5,12 +5,12 @@ let allVideoClaims = [];
 document.addEventListener('DOMContentLoaded', () => {
   const parts = window.location.pathname.split('/');
   const videoId = parts[parts.length - 1];
-  if (videoId) {
+  if (videoId && /^[a-zA-Z0-9_-]{11}$/.test(videoId)) {
     loadVideo(videoId);
   } else {
     document.getElementById('content').innerHTML = `<div class="empty-state">
       <p class="empty-heading">Video not found</p>
-      <p class="empty-text">No video ID was provided.</p>
+      <p class="empty-text">${videoId ? 'Invalid video ID.' : 'No video ID was provided.'}</p>
       <div class="empty-links">
         <a href="/" class="empty-link">Check a video</a>
         <a href="/videos" class="empty-link">Browse videos</a>
