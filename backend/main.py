@@ -629,7 +629,12 @@ async def public_list_channels():
 @app.get("/api/channels/{channel_name}")
 async def public_get_channel(channel_name: str):
     """Channel detail with its videos."""
-    if not channel_name or len(channel_name) > 200 or '\x00' in channel_name:
+    if (
+        not channel_name
+        or len(channel_name) > 200
+        or any(c in channel_name for c in '\x00/\\\n\r')
+        or '..' in channel_name
+    ):
         raise HTTPException(status_code=400, detail="Invalid channel name.")
     videos = await db.get_channel_videos(channel_name)
     if not videos:

@@ -393,6 +393,8 @@ document.addEventListener('click', (e) => {
   if (link) {
     e.preventDefault();
     e.stopPropagation();
-    window.location.href = '/channel/' + encodeURIComponent(link.dataset.channel);
+    const ch = (link.dataset.channel || '').trim();
+    if (!ch || ch.includes('/') || ch.includes('\\') || ch.includes('\0')) return;
+    window.location.href = '/channel/' + encodeURIComponent(ch);
   }
 });

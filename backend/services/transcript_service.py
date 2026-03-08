@@ -54,6 +54,7 @@ def get_video_info(video_id: str) -> dict:
         "quiet": True,
         "no_warnings": True,
         "skip_download": True,
+        "socket_timeout": 15,
     }
     with yt_dlp.YoutubeDL(ydl_opts) as ydl:
         info = ydl.extract_info(url, download=False)

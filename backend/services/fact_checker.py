@@ -129,6 +129,11 @@ async def fact_check_claim(claim_text: str) -> dict:
             seen_urls.add(r.url)
             sources.append({"title": r.title, "url": r.url, "snippet": r.snippet})
 
+    required_fields = ("truth_percentage", "confidence", "reasoning")
+    missing = [f for f in required_fields if f not in result]
+    if missing:
+        logger.warning("LLM response missing fields %s for claim '%.50s'", missing, claim_text)
+
     category = result.get("category", "fact")
     if category not in ("fact", "opinion", "unclear"):
         category = "fact"
@@ -173,11 +178,9 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
         async with semaphore:
             try:
                 result = await fact_check_claim(claim["text"])
-                results[index] = {**claim, **result}
             except Exception as e:
                 logger.warning("Unexpected error fact-checking claim %d: %s", index, e)
-                results[index] = {
-                    **claim,
+                result = {
                     "truth_percentage": 50,
                     "confidence": 0.1,
                     "reasoning": "Fact-check failed due to an unexpected error.",
@@ -185,6 +188,7 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
                     "category": "unclear",
                 }
             async with lock:
+                results[index] = {**claim, **result}
                 completed_count += 1
                 if on_progress:
                     on_progress(completed_count, total)
