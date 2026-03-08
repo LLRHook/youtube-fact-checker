@@ -108,6 +108,8 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
         elif response.headers.get("content-type", "").startswith("text/html"):
             response.headers["Cache-Control"] = "no-cache"
+        elif path.startswith("/api/"):
+            response.headers["Cache-Control"] = "no-store"
         return response
 
 
@@ -249,7 +251,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         await _fail_task(task_id, video_id, str(e))
     except Exception as e:
         logger.exception("Unexpected error processing video %s", video_id)
-        await _fail_task(task_id, video_id, f"Unexpected error: {str(e)[:200]}")
+        await _fail_task(task_id, video_id, "An unexpected error occurred. Please try again later.")
 
 
 # --- Queue processor ---

@@ -13,7 +13,14 @@ function debouncedApplyFilters() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  loadVideos(1);
+  const params = new URLSearchParams(window.location.search);
+  const initialPage = Math.max(1, parseInt(params.get('page'), 10) || 1);
+  loadVideos(initialPage);
+});
+
+window.addEventListener('popstate', (e) => {
+  const page = (e.state && e.state.page) || 1;
+  loadVideos(page);
 });
 
 async function loadVideos(page) {
@@ -135,6 +142,8 @@ function goToPage(page) {
   const skel = document.getElementById('videos-skeleton');
   if (skel) skel.style.display = '';
   document.getElementById('video-grid').innerHTML = '';
+  const url = page > 1 ? `?page=${page}` : window.location.pathname;
+  history.pushState({ page }, '', url);
   loadVideos(page);
 }
 

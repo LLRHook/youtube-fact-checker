@@ -102,7 +102,7 @@ function startPolling() {
 
   pollTimeout = setTimeout(() => {
     stopPolling();
-    showError('Analysis is taking too long. The video may still be processing — check the Videos page later.');
+    showErrorHtml('Analysis is taking too long. The video may still be processing — check the <a href="/videos">Videos page</a> later.');
   }, POLL_TIMEOUT_MS);
 
   pollInterval = setInterval(async () => {
@@ -318,6 +318,14 @@ function showSection(name) {
 
 function showError(message) {
   document.getElementById('error-message').textContent = message;
+  document.title = 'YouTube Fact Checker';
+  showSection('error');
+  document.getElementById('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  resetButton();
+}
+
+function showErrorHtml(html) {
+  document.getElementById('error-message').innerHTML = html;
   document.title = 'YouTube Fact Checker';
   showSection('error');
   document.getElementById('error-section').scrollIntoView({ behavior: 'smooth', block: 'start' });
