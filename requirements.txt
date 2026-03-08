@@ -10,3 +10,7 @@ httpx==0.28.1
 tenacity==9.1.4
 aiosqlite==0.21.0
 itsdangerous==2.2.0
+pytest
+pytest-asyncio
+pytest-playwright
+playwright
