@@ -135,6 +135,7 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
             extract_claims,
             transcript.full_text,
             segments=transcript.segments,
+            max_duration_seconds=transcript.duration_seconds,
         )
 
         if not raw_claims:

@@ -257,32 +257,36 @@ async def delete_claims_for_video(video_id: str):
 async def create_claims(video_id: str, claims_list: list[dict]):
     """Bulk-insert claims and their sources for a video."""
     async with _db() as db:
-        for i, c in enumerate(claims_list):
-            cursor = await db.execute(
-                """INSERT INTO claims
-                    (video_id, claim_index, text, timestamp_seconds,
-                     truth_percentage, confidence, reasoning, category)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
-                (
-                    video_id,
-                    i + 1,
-                    c.get("text", ""),
-                    c.get("timestamp_seconds", 0),
-                    c.get("truth_percentage", 50),
-                    c.get("confidence", 0.5),
-                    c.get("reasoning", ""),
-                    c.get("category", "fact"),
-                ),
-            )
-            claim_id = cursor.lastrowid
-
-            for src in c.get("sources", []):
-                await db.execute(
-                    "INSERT INTO claim_sources (claim_id, title, url, snippet) VALUES (?, ?, ?, ?)",
-                    (claim_id, src.get("title", ""), src.get("url", ""), src.get("snippet", "")),
+        try:
+            for i, c in enumerate(claims_list):
+                cursor = await db.execute(
+                    """INSERT INTO claims
+                        (video_id, claim_index, text, timestamp_seconds,
+                         truth_percentage, confidence, reasoning, category)
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+                    (
+                        video_id,
+                        i + 1,
+                        c.get("text", ""),
+                        c.get("timestamp_seconds", 0),
+                        c.get("truth_percentage", 50),
+                        c.get("confidence", 0.5),
+                        c.get("reasoning", ""),
+                        c.get("category", "fact"),
+                    ),
                 )
+                claim_id = cursor.lastrowid
 
-        await db.commit()
+                for src in c.get("sources", []):
+                    await db.execute(
+                        "INSERT INTO claim_sources (claim_id, title, url, snippet) VALUES (?, ?, ?, ?)",
+                        (claim_id, src.get("title", ""), src.get("url", ""), src.get("snippet", "")),
+                    )
+
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
 
 async def get_claims_for_video(video_id: str) -> list[dict]:

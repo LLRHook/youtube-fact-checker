@@ -54,13 +54,14 @@ Return ONLY a JSON array. If no factual claims found, return an empty array [].
 Example: [{"text": "The Great Wall of China is visible from space", "timestamp_seconds": 45, "category": "fact"}]"""
 
 
-def extract_claims(transcript_text: str, segments: list = None) -> list[dict]:
+def extract_claims(transcript_text: str, segments: list = None, max_duration_seconds: float = 0) -> list[dict]:
     """
     Use Claude to extract factual claims from a transcript.
 
     Args:
         transcript_text: Full transcript text
         segments: Optional list of TranscriptSegment objects for timestamp context
+        max_duration_seconds: Video duration for timestamp clamping (0 = no clamping)
 
     Returns:
         List of claim dicts with text, timestamp_seconds, category
@@ -116,32 +117,45 @@ Return ONLY a JSON array of claims. No other text."""
     # Validate and normalize
     valid_categories = {"fact", "opinion", "unclear"}
     valid_claims = []
+    dropped = 0
     for claim in claims:
-        if isinstance(claim, dict) and "text" in claim:
-            category = claim.get("category", "fact")
-            if category not in valid_categories:
-                category = "fact"
-            try:
-                ts = min(86400.0, max(0.0, float(claim.get("timestamp_seconds", 0))))
-            except (TypeError, ValueError):
-                logger.warning("Invalid timestamp for claim: %.50s", claim.get("text", ""))
-                ts = 0.0
-            text = claim["text"].strip()
-            if len(text) > 500:
-                truncated = text[:500]
-                last_space = truncated.rfind(' ')
-                if last_space > 400:
-                    text = truncated[:last_space] + "…"
-                else:
-                    text = truncated + "…"
-                logger.info("Truncated claim from %d to %d chars", len(claim["text"]), len(text))
-            if not text:
-                continue
-            valid_claims.append({
-                "text": text,
-                "timestamp_seconds": ts,
-                "category": category,
-            })
+        if not isinstance(claim, dict) or "text" not in claim:
+            dropped += 1
+            continue
+        category = claim.get("category", "fact")
+        if category not in valid_categories:
+            category = "fact"
+        try:
+            ts = min(86400.0, max(0.0, float(claim.get("timestamp_seconds", 0))))
+            if max_duration_seconds > 0 and ts > max_duration_seconds:
+                logger.warning(
+                    "Claim timestamp %.0f exceeds video duration %.0f, clamping: '%.50s'",
+                    ts, max_duration_seconds, claim.get("text", ""),
+                )
+                ts = max_duration_seconds
+        except (TypeError, ValueError):
+            logger.warning("Invalid timestamp for claim: %.50s", claim.get("text", ""))
+            ts = 0.0
+        text = claim["text"].strip()
+        if len(text) > 500:
+            truncated = text[:500]
+            last_space = truncated.rfind(' ')
+            if last_space > 400:
+                text = truncated[:last_space] + "…"
+            else:
+                text = truncated + "…"
+            logger.info("Truncated claim from %d to %d chars", len(claim["text"]), len(text))
+        if not text:
+            dropped += 1
+            continue
+        valid_claims.append({
+            "text": text,
+            "timestamp_seconds": ts,
+            "category": category,
+        })
+
+    if dropped:
+        logger.warning("Dropped %d/%d invalid items from LLM claim extraction", dropped, len(claims))
 
     # Cap at max claims
     return valid_claims[: settings.MAX_CLAIMS_PER_VIDEO]

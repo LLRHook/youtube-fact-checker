@@ -32,8 +32,9 @@ window.addEventListener('popstate', (e) => {
 async function loadVideos(page) {
   if (_fetchController) _fetchController.abort();
   _fetchController = new AbortController();
+  const myController = _fetchController;
   try {
-    const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`, { signal: _fetchController.signal });
+    const resp = await fetch(`/api/videos?page=${page}&limit=${pageLimit}`, { signal: myController.signal });
     if (!resp.ok) throw new Error('Failed to load videos');
     const data = await resp.json();
     allVideos = data.items;
@@ -50,8 +51,10 @@ async function loadVideos(page) {
     const pag = document.getElementById('pagination');
     if (pag) pag.innerHTML = '';
   } finally {
-    const skel = document.getElementById('videos-skeleton');
-    if (skel) skel.style.display = 'none';
+    if (_fetchController === myController) {
+      const skel = document.getElementById('videos-skeleton');
+      if (skel) skel.style.display = 'none';
+    }
   }
 }
 

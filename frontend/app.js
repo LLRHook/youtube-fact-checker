@@ -211,6 +211,8 @@ function updateProgress(text, pct) {
   lastProgressPct = pct;
   document.getElementById('loading-status').textContent = text;
   document.getElementById('progress-fill').style.width = pct + '%';
+  const bar = document.querySelector('.progress-bar[role="progressbar"]');
+  if (bar) bar.setAttribute('aria-valuenow', pct);
   document.title = `${pct}% — ${text} | YouTube Fact Checker`;
 }
 
