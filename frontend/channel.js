@@ -45,7 +45,10 @@ async function loadChannel(channelName) {
     container.innerHTML = `<div class="empty-state">
       <p class="empty-heading">Error loading channel</p>
       <p class="empty-text">Something went wrong. Please try again later.</p>
-      <a href="/videos" class="empty-link">Browse videos</a>
+      <div class="empty-links">
+        <button onclick="location.reload()" class="empty-link">Retry</button>
+        <a href="/videos" class="empty-link">Browse videos</a>
+      </div>
     </div>`;
     document.title = 'Error — YouTube Fact Checker';
   }

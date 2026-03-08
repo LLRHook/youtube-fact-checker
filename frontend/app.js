@@ -170,6 +170,7 @@ function formatElapsed(ms) {
 }
 
 function startElapsedTimer() {
+  if (elapsedInterval) clearInterval(elapsedInterval);
   elapsedStart = Date.now();
   const el = document.getElementById('loading-elapsed');
   if (el) el.textContent = 'Elapsed: 0s';

@@ -211,6 +211,21 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
         summary = " ".join(summary_parts)
         processing_time = round(elapsed, 1)
 
+        # Persist to DB before marking task completed so a DB failure
+        # doesn't leave the frontend with phantom results.
+        await db.delete_claims_for_video(video_id)
+        await db.create_claims(video_id, checked_claims)
+        await db.update_video_results(
+            video_id,
+            title=transcript.title,
+            channel=transcript.channel,
+            duration_seconds=transcript.duration_seconds,
+            transcript_text=transcript.full_text,
+            overall_truth_percentage=overall,
+            summary=summary,
+            processing_time_seconds=processing_time,
+        )
+
         task = tasks.get(task_id)
         if task:
             task.status = TaskStatus.COMPLETED
@@ -226,20 +241,6 @@ async def process_video(task_id: str, video_id: str, youtube_url: str):
                 processing_time_seconds=processing_time,
             )
 
-        # Write claims before marking video as completed to avoid a window
-        # where the video appears completed with zero claims.
-        await db.delete_claims_for_video(video_id)
-        await db.create_claims(video_id, checked_claims)
-        await db.update_video_results(
-            video_id,
-            title=transcript.title,
-            channel=transcript.channel,
-            duration_seconds=transcript.duration_seconds,
-            transcript_text=transcript.full_text,
-            overall_truth_percentage=overall,
-            summary=summary,
-            processing_time_seconds=processing_time,
-        )
         logger.info("Video %s completed: %d claims, %d%% accuracy, %.1fs", video_id, len(claims), overall, processing_time)
         _cleanup_task(task_id)
 

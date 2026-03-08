@@ -368,7 +368,7 @@ function _isRealChannel(ch) {
 function buildVideoCardHtml(v, { query, showChannel } = {}) {
   const title = query ? highlightMatch(v.title || v.id, query) : escapeHtml(v.title || v.id);
   const channelHtml = showChannel && _isRealChannel(v.channel)
-    ? `<span class="channel-link" onclick="event.preventDefault();event.stopPropagation();window.location.href='/channel/${encodeURIComponent(v.channel)}'">${query ? highlightMatch(v.channel, query) : escapeHtml(v.channel)}</span>`
+    ? `<span class="channel-link" data-channel="${escapeHtml(v.channel)}">${query ? highlightMatch(v.channel, query) : escapeHtml(v.channel)}</span>`
     : '';
   return `<a class="video-card" href="/video/${v.id}">
     <img class="thumb" src="https://img.youtube.com/vi/${v.id}/hqdefault.jpg" alt="${escapeHtml(v.title || v.id)}" loading="lazy" onerror="this.style.display='none'">
@@ -385,3 +385,14 @@ function buildVideoCardHtml(v, { query, showChannel } = {}) {
 /* --- YouTube URL Regex --- */
 
 const YT_URL_REGEX = /(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/)([a-zA-Z0-9_-]{11})/;
+
+/* --- Delegated Channel Link Handler --- */
+
+document.addEventListener('click', (e) => {
+  const link = e.target.closest('.channel-link[data-channel]');
+  if (link) {
+    e.preventDefault();
+    e.stopPropagation();
+    window.location.href = '/channel/' + encodeURIComponent(link.dataset.channel);
+  }
+});

@@ -190,7 +190,16 @@ async def fact_check_all_claims(claims: list[dict], on_progress=None) -> list[di
                     on_progress(completed_count, total)
 
     await asyncio.gather(*(check_one(i, c) for i, c in enumerate(claims)))
-    valid = [r for r in results if r is not None]
-    if len(valid) < total:
-        logger.warning("fact_check_all_claims: %d/%d results were None", total - len(valid), total)
-    return valid
+    # Pad any missing results with neutral fallback instead of silently dropping
+    for i, r in enumerate(results):
+        if r is None:
+            logger.warning("Fact-check result %d was None, padding with fallback", i)
+            results[i] = {
+                **claims[i],
+                "truth_percentage": 50,
+                "confidence": 0.0,
+                "reasoning": "Fact-check could not be completed.",
+                "sources": [],
+                "category": "unclear",
+            }
+    return results
