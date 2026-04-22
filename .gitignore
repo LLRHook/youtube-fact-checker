@@ -10,3 +10,7 @@ build/
 data/
 .deploy.json
 GRADING_REPORT.md
+
+# Local agent context
+CLAUDE.md
+.claude/
