@@ -1,188 +1,180 @@
-"""Tests for backend.services.fact_checker."""
+import asyncio
+from unittest.mock import AsyncMock
 
 import pytest
-from unittest.mock import patch, MagicMock, AsyncMock
-from backend.services.fact_checker import fact_check_claim, fact_check_all_claims
+
+from backend.services import fact_checker as fc
+from backend.services.llm import LLMResult, Usage
 from backend.services.search_service import SearchResult
+from backend.services.transcript_service import TranscriptResult, TranscriptSegment
 
 
-def _mock_search_results():
-    return [
-        SearchResult("Source 1", "https://example.com/1", "snippet 1"),
-        SearchResult("Source 2", "https://example.com/2", "snippet 2"),
+@pytest.fixture
+def transcript():
+    return TranscriptResult(
+        "dQw4w9WgXcQ", "Title", "Channel", 120, [TranscriptSegment("Words", 2, 5)], "Words", published_at="2021-01-01"
+    )
+
+
+def verdict(**kwargs):
+    data = dict(
+        verdict="mostly_false",
+        confidence="high",
+        explanation="  The core claim is wrong.  ",
+        correction="  The accurate version.  ",
+        relies_on_general_knowledge=False,
+        citations=[dict(source=2, stance="refutes", quote="Contradicting passage")],
+    )
+    data.update(kwargs)
+    return LLMResult(data, Usage(input_tokens=10, cost_usd=0.02), "end_turn")
+
+
+async def test_verify_claim_grounded_and_sources_reordered(monkeypatch, transcript):
+    evidence = [
+        SearchResult("Context", "https://example.org", "Context passage", ["extra words"], "example.org", "medium"),
+        SearchResult("Primary", "https://cdc.gov", "Contradicting passage", [], "cdc.gov", "high"),
     ]
+    monkeypatch.setattr(fc, "gather_evidence", AsyncMock(return_value=(evidence, 3)))
+    mock = AsyncMock(return_value=verdict())
+    monkeypatch.setattr(fc, "structured_call", mock)
+    context = fc.build_video_context_block(transcript)
+    result, usage, count = await fc.verify_claim(
+        dict(text="Claim", quote="Speaker words", timestamp_seconds=62, speaker="guest"), context
+    )
+    assert result["verdict"] == "mostly_false" and result["truth_percentage"] == 25
+    assert result["confidence"] == 0.9 and result["category"] == "fact"
+    assert result["corrected_claim"] == "The accurate version."
+    assert result["reasoning"] == "The core claim is wrong."
+    assert [s["title"] for s in result["sources"]] == ["Primary", "Context"]
+    assert result["sources"][0]["stance"] == "refutes" and result["sources"][0]["quote"] == "Contradicting passage"
+    assert (
+        result["sources"][1]["stance"] == "" and result["sources"][1]["snippet"] == "Context passage \u2026 extra words"
+    )
+    assert count == 3 and usage.cost_usd == 0.02
+    kwargs = mock.call_args.kwargs
+    assert kwargs["system"] == [{"type": "text", "text": fc.VERDICT_SYSTEM}, context]
+    assert context["cache_control"] == {"type": "ephemeral"}
+    assert "[00:02] Words" in context["text"]
+    assert "at 01:02, speaker: guest" in kwargs["messages"][0]["content"]
+    assert kwargs["max_tokens"] == 8000
 
 
-def _make_async_llm_response(text: str):
-    block = MagicMock()
-    block.text = text
-    resp = MagicMock()
-    resp.content = [block]
-    return resp
+@pytest.mark.parametrize(
+    "error,message",
+    [
+        ("refusal", "Our automated review could not assess this claim."),
+        ("invalid_json", "We could not complete the assessment for this claim."),
+    ],
+)
+async def test_llm_failure_keeps_uncited_evidence(monkeypatch, error, message):
+    monkeypatch.setattr(
+        fc, "gather_evidence", AsyncMock(return_value=([SearchResult("S", "https://example.org", "Passage")], 2))
+    )
+    monkeypatch.setattr(fc, "structured_call", AsyncMock(return_value=LLMResult(None, Usage(cost_usd=0.01), "", error)))
+    result, usage, count = await fc.verify_claim({"text": "Claim"}, {})
+    assert result["verdict"] == "unverifiable" and result["reasoning"] == message
+    assert result["sources"][0]["stance"] == "" and usage.cost_usd == 0.01 and count == 2
 
 
-class TestFactCheckClaim:
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_success(self, mock_search, mock_get_client):
-        mock_search.return_value = _mock_search_results()
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(return_value=_make_async_llm_response(
-            '{"truth_percentage": 85, "confidence": 0.9, "reasoning": "Well supported.", "category": "fact"}'
-        ))
-        result = await fact_check_claim("The Earth is round")
-        assert result["truth_percentage"] == 85
-        assert result["confidence"] == 0.9
-        assert len(result["sources"]) == 2
-        assert result["category"] == "fact"
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_search_failure_fallback(self, mock_search, mock_get_client):
-        mock_search.side_effect = RuntimeError("Search failed")
-        result = await fact_check_claim("Some claim")
-        assert result["truth_percentage"] == 50
-        assert result["confidence"] == 0.2
-        assert result["category"] == "unclear"
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_llm_failure_fallback(self, mock_search, mock_get_client):
-        mock_search.return_value = _mock_search_results()
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(side_effect=Exception("LLM error"))
-        result = await fact_check_claim("Some claim")
-        assert result["truth_percentage"] == 50
-        assert result["confidence"] == 0.2
-
-    @pytest.mark.asyncio
-    async def test_empty_claim(self):
-        result = await fact_check_claim("")
-        assert result["truth_percentage"] == 50
-        assert result["confidence"] == 0.1
-        assert result["category"] == "unclear"
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_invalid_category(self, mock_search, mock_get_client):
-        mock_search.return_value = _mock_search_results()
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(return_value=_make_async_llm_response(
-            '{"truth_percentage": 50, "confidence": 0.5, "reasoning": "test", "category": "invalid"}'
-        ))
-        result = await fact_check_claim("test")
-        assert result["category"] == "fact"
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_truth_clamped(self, mock_search, mock_get_client):
-        mock_search.return_value = _mock_search_results()
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(return_value=_make_async_llm_response(
-            '{"truth_percentage": 150, "confidence": 2.0, "reasoning": "test", "category": "fact"}'
-        ))
-        result = await fact_check_claim("test")
-        assert 0 <= result["truth_percentage"] <= 100
-        assert 0.0 <= result["confidence"] <= 1.0
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_source_dedup(self, mock_search, mock_get_client):
-        mock_search.return_value = [
-            SearchResult("S1", "https://example.com/same", "a"),
-            SearchResult("S2", "https://example.com/same", "b"),
-        ]
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(return_value=_make_async_llm_response(
-            '{"truth_percentage": 80, "confidence": 0.8, "reasoning": "ok", "category": "fact"}'
-        ))
-        result = await fact_check_claim("test")
-        assert len(result["sources"]) == 1
-
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker._get_anthropic_client")
-    @patch("backend.services.fact_checker.search_brave", new_callable=AsyncMock)
-    async def test_unsafe_url_filtered(self, mock_search, mock_get_client):
-        mock_search.return_value = [
-            SearchResult("Good", "https://example.com", "ok"),
-            SearchResult("Bad", "javascript:alert(1)", "xss"),
-        ]
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create = AsyncMock(return_value=_make_async_llm_response(
-            '{"truth_percentage": 80, "confidence": 0.8, "reasoning": "ok", "category": "fact"}'
-        ))
-        result = await fact_check_claim("test")
-        assert len(result["sources"]) == 1
-        assert result["sources"][0]["url"] == "https://example.com"
+async def test_retrieval_failure(monkeypatch):
+    monkeypatch.setattr(fc, "gather_evidence", AsyncMock(side_effect=RuntimeError("search failed")))
+    mock = AsyncMock()
+    monkeypatch.setattr(fc, "structured_call", mock)
+    result, usage, count = await fc.verify_claim({"text": "Claim"}, {})
+    assert result["verdict"] == "unverifiable" and result["confidence_label"] == "low"
+    assert result["reasoning"] == "We could not retrieve evidence for this claim right now."
+    assert result["sources"] == [] and usage == Usage() and count == 0
+    mock.assert_not_awaited()
 
 
-class TestFactCheckAllClaims:
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker.fact_check_claim", new_callable=AsyncMock)
-    async def test_all_succeed(self, mock_fc):
-        mock_fc.return_value = {
-            "truth_percentage": 80, "confidence": 0.8, "reasoning": "ok",
-            "sources": [], "category": "fact",
-        }
-        claims = [{"text": "claim1"}, {"text": "claim2"}]
-        results = await fact_check_all_claims(claims)
-        assert len(results) == 2
-        assert results[0]["text"] == "claim1"
-        assert results[1]["text"] == "claim2"
+async def test_explanation_and_correction_limits(monkeypatch):
+    evidence = [SearchResult("Source", "https://cdc.gov", "Contradicting passage", reliability="high")]
+    monkeypatch.setattr(fc, "gather_evidence", AsyncMock(return_value=(evidence, 1)))
+    monkeypatch.setattr(
+        fc,
+        "structured_call",
+        AsyncMock(
+            return_value=verdict(
+                explanation="x" * 1300,
+                correction="y" * 500,
+                citations=[dict(source=1, stance="refutes", quote="Contradicting passage")],
+            )
+        ),
+    )
+    result, _, _ = await fc.verify_claim({"text": "Claim"}, {})
+    assert len(result["reasoning"]) == 1200 and len(result["corrected_claim"]) == 400
 
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker.fact_check_claim", new_callable=AsyncMock)
-    async def test_progress_callback(self, mock_fc):
-        mock_fc.return_value = {
-            "truth_percentage": 80, "confidence": 0.8, "reasoning": "ok",
-            "sources": [], "category": "fact",
-        }
-        progress_calls = []
-        claims = [{"text": "c1"}, {"text": "c2"}]
-        await fact_check_all_claims(claims, on_progress=lambda c, t: progress_calls.append((c, t)))
-        assert len(progress_calls) == 2
-        assert progress_calls[-1] == (2, 2)
 
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker.fact_check_claim", new_callable=AsyncMock)
-    async def test_one_exception(self, mock_fc):
-        async def side_effect(text):
-            if text == "bad":
-                raise RuntimeError("boom")
-            return {
-                "truth_percentage": 80, "confidence": 0.8, "reasoning": "ok",
-                "sources": [], "category": "fact",
-            }
-        mock_fc.side_effect = side_effect
-        claims = [{"text": "good"}, {"text": "bad"}]
-        results = await fact_check_all_claims(claims)
-        assert len(results) == 2
-        # The failed one gets fallback
-        assert results[1]["category"] == "unclear"
-        assert results[1]["confidence"] == 0.1
+async def test_verify_all_warms_cache_preserves_order_and_concurrency(monkeypatch, transcript):
+    events = []
+    active = 0
+    max_active = 0
+    context_ids = []
 
-    @pytest.mark.asyncio
-    @patch("backend.services.fact_checker.fact_check_claim", new_callable=AsyncMock)
-    async def test_order_preserved(self, mock_fc):
-        async def side_effect(text):
-            return {
-                "truth_percentage": int(text[-1]) * 10,
-                "confidence": 0.5, "reasoning": text,
-                "sources": [], "category": "fact",
-            }
-        mock_fc.side_effect = side_effect
-        claims = [{"text": "c1"}, {"text": "c2"}, {"text": "c3"}]
-        results = await fact_check_all_claims(claims)
-        assert [r["truth_percentage"] for r in results] == [10, 20, 30]
+    async def verify(claim, context):
+        nonlocal active, max_active
+        index = int(claim["text"])
+        if index:
+            assert "end0" in events
+        events.append(f"start{index}")
+        context_ids.append(id(context))
+        active += 1
+        max_active = max(max_active, active)
+        await asyncio.sleep(0.01 * (4 - index))
+        active -= 1
+        events.append(f"end{index}")
+        return fc._result("true", "high", "Evidence"), Usage(10, 5, cost_usd=0.01), 2
+
+    monkeypatch.setattr(fc, "verify_claim", verify)
+    monkeypatch.setattr(fc.settings, "FACT_CHECK_CONCURRENCY", 2)
+    done = []
+    results, usage, count = await fc.verify_all(
+        [{"text": str(i)} for i in range(4)], transcript, lambda index, merged: done.append((index, merged))
+    )
+    assert events[:2] == ["start0", "end0"]
+    assert [r["text"] for r in results] == ["0", "1", "2", "3"]
+    assert len(set(context_ids)) == 1 and max_active == 2
+    assert {index for index, _ in done} == {0, 1, 2, 3}
+    assert (
+        usage.input_tokens == 40 and usage.output_tokens == 20 and usage.cost_usd == pytest.approx(0.04) and count == 8
+    )
+
+
+async def test_verify_all_exception_padding_and_empty(monkeypatch, transcript):
+    monkeypatch.setattr(
+        fc,
+        "verify_claim",
+        AsyncMock(side_effect=[RuntimeError("failure"), (fc._result("true", "medium", "ok"), Usage(), 1)]),
+    )
+    results, _, count = await fc.verify_all([dict(text="first"), dict(text="second")], transcript)
+    assert [r["text"] for r in results] == ["first", "second"]
+    assert results[0]["verdict"] == "unverifiable" and results[1]["verdict"] == "true" and count == 1
+    assert await fc.verify_all([], transcript) == ([], Usage(), 0)
+
+
+async def test_summarize_fallback(monkeypatch, transcript):
+    monkeypatch.setattr(fc, "structured_call", AsyncMock(return_value=LLMResult(None, Usage(), "", "refusal")))
+    claims = [
+        {"text": v, **fc._result(v, "medium", "Explanation")}
+        for v in ["true", "mostly_true", "false", "mixed", "unverifiable"]
+    ]
+    summary, _ = await fc.summarize(transcript, claims)
+    assert summary == dict(
+        summary="Checked 5 claims: 2 accurate or mostly accurate, 1 false or mostly false, 1 mixed, 1 unverified.",
+        key_issues=[],
+    )
+    summary, _ = await fc.summarize(transcript, claims[:2])
+    assert summary["summary"] == "Checked 2 claims: 2 accurate or mostly accurate."
+
+
+async def test_summary_success_limits(monkeypatch, transcript):
+    mock = AsyncMock(
+        return_value=LLMResult(dict(summary="x" * 900, key_issues=["y" * 250] * 4), Usage(cost_usd=0.03), "end_turn")
+    )
+    monkeypatch.setattr(fc, "structured_call", mock)
+    report, usage = await fc.summarize(
+        transcript, [{"text": "Claim", **fc._result("mixed", "low", "Explanation", "Correction")}]
+    )
+    assert len(report["summary"]) == 800 and [len(s) for s in report["key_issues"]] == [200] * 3
+    assert usage.cost_usd == 0.03 and mock.call_args.kwargs["max_tokens"] == 4000
+    assert "(Correction)" in mock.call_args.kwargs["messages"][0]["content"]

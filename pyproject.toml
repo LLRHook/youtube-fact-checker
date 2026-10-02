@@ -1,5 +1,13 @@
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-markers = ["e2e: End-to-end tests against live deployed site"]
+markers = ["e2e: Local or deployed browser tests", "seeded: Requires the local demo database"]
 addopts = "-m 'not e2e'"
+
+[tool.ruff]
+line-length = 120
+target-version = "py313"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP"]
+ignore = ["E501"]

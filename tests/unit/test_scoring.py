@@ -1,8 +1,10 @@
 """Tests for scoring functions in backend.main."""
 
 import pytest
+
 from backend.main import _calculate_public_score, _safe_category
-from backend.models import ClaimCategory
+from backend.models import Claim, ClaimCategory, claim_row_to_public, legacy_verdict
+from backend.services.fact_checker import VERDICT_SCORE, legacy_category, overall_score
 
 
 class TestCalculatePublicScore:
@@ -77,3 +79,81 @@ class TestSafeCategory:
     def test_uppercase_defaults_to_fact(self):
         # ClaimCategory uses lowercase values, so "FACT" is invalid
         assert _safe_category("FACT") == ClaimCategory.FACT
+
+
+@pytest.mark.parametrize(
+    "verdict,score",
+    [
+        ("true", 95),
+        ("mostly_true", 75),
+        ("mixed", 50),
+        ("mostly_false", 25),
+        ("false", 5),
+        ("unverifiable", 50),
+        ("opinion", 50),
+    ],
+)
+def test_verdict_score(verdict, score):
+    assert VERDICT_SCORE[verdict] == score
+
+
+def test_overall_weighting():
+    assert (
+        overall_score(
+            [
+                dict(verdict="true", truth_percentage=95, confidence=0.9),
+                dict(verdict="false", truth_percentage=5, confidence=0.35),
+                dict(verdict="unverifiable", truth_percentage=50, confidence=0.9),
+            ]
+        )
+        == 70
+    )
+
+
+@pytest.mark.parametrize("claims", [[], [dict(verdict="opinion")], [dict(verdict="unverifiable")]])
+def test_no_checkable_claims(claims):
+    assert overall_score(claims) is None
+
+
+def test_legacy_scoring():
+    assert (
+        overall_score(
+            [
+                dict(category="fact", truth_percentage=90, confidence=0.8),
+                dict(category="opinion", truth_percentage=0, confidence=1),
+            ]
+        )
+        == 90
+    )
+
+
+@pytest.mark.parametrize(
+    "category,score,expected",
+    [
+        ("opinion", 99, "opinion"),
+        ("unclear", 99, "unverifiable"),
+        ("fact", 85, "true"),
+        ("fact", 84, "mostly_true"),
+        ("fact", 65, "mostly_true"),
+        ("fact", 64, "mixed"),
+        ("fact", 40, "mixed"),
+        ("fact", 39, "mostly_false"),
+        ("fact", 20, "mostly_false"),
+        ("fact", 19, "false"),
+    ],
+)
+def test_legacy_verdict(category, score, expected):
+    assert legacy_verdict(category, score) == expected
+    assert Claim(id="legacy", text="claim", category=category, truth_percentage=score).verdict == expected
+    assert claim_row_to_public(dict(category=category, truth_percentage=score, verdict=None)).verdict == expected
+
+
+@pytest.mark.parametrize("confidence,label", [(0.8, "high"), (0.5, "medium"), (0.49, "low")])
+def test_legacy_confidence_label(confidence, label):
+    assert claim_row_to_public(dict(confidence=confidence, verdict=None)).confidence_label == label
+
+
+def test_legacy_categories():
+    assert legacy_category("opinion") == "opinion"
+    assert legacy_category("unverifiable") == "unclear"
+    assert legacy_category("false") == "fact"

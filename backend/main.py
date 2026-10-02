@@ -1,56 +1,57 @@
 """YouTube Fact Checker — FastAPI application."""
 
-import os
+import asyncio
+import json as json_module
+import logging
 import re
 import time
-import asyncio
-import logging
-import html as html_module
-import json as json_module
 from contextlib import asynccontextmanager
 from pathlib import Path
 from urllib.parse import quote as url_quote
-from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+
+from fastapi import BackgroundTasks, FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
+from pydantic import BaseModel
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import Response
 
-from backend.config import settings, validate_settings
+from backend import database as db
+from backend.config import PIPELINE_VERSION, settings, validate_settings
 from backend.models import (
+    ChannelDetail,
+    ChannelSummary,
     CheckRequest,
-    TaskResponse,
-    TaskStatus,
     CheckResult,
     Claim,
-    Source,
     ClaimCategory,
-    PublicVideoSummary,
-    PublicClaimDetail,
     PublicVideoDetail,
-    ChannelSummary,
-    ChannelDetail,
+    PublicVideoSummary,
+    TaskResponse,
+    TaskStatus,
+    claim_row_to_public,
 )
+from backend.seo import (
+    _channel_fallback_meta,
+    _channel_jsonld,
+    _html_escape,
+    _inject_meta,
+    _video_fallback_meta,
+    _video_jsonld,
+    build_robots,
+    build_sitemap,
+)
+from backend.services import llm, pipeline, search_service
+from backend.services.fact_checker import overall_score
+from backend.services.pipeline import TaskState, capacity_available, tasks
 from backend.utils.validators import extract_video_id, is_valid_youtube_url
-from backend.services.transcript_service import (
-    extract_transcript,
-    TranscriptError,
-    VideoTooLongError,
-)
-from backend.services.claim_extractor import extract_claims, close_anthropic_client as close_sync_anthropic
-from backend.services.fact_checker import fact_check_all_claims, close_anthropic_client as close_async_anthropic
-from backend.services.search_service import close_http_client
-from backend import database as db
 
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s %(levelname)s %(name)s: %(message)s",
 )
 logger = logging.getLogger(__name__)
-
-# In-memory task store (for in-flight progress tracking only)
-tasks: dict[str, TaskResponse] = {}
 
 # Serve frontend static files
 FRONTEND_DIR = Path(__file__).parent.parent / "frontend"
@@ -63,6 +64,7 @@ _VIDEOS_TEMPLATE = (FRONTEND_DIR / "videos.html").read_text(encoding="utf-8")
 
 # Queue processor task handle
 _queue_task: asyncio.Task | None = None
+_admission_lock = asyncio.Lock()
 
 
 @asynccontextmanager
@@ -70,27 +72,27 @@ async def lifespan(app: FastAPI):
     global _queue_task
     validate_settings()
     await db.init_db()
-    _queue_task = asyncio.create_task(queue_processor())
+    _queue_task = asyncio.create_task(pipeline.queue_processor())
     yield
     _queue_task.cancel()
     try:
         await _queue_task
     except asyncio.CancelledError:
         pass
-    await close_http_client()
-    await close_async_anthropic()
-    close_sync_anthropic()
+    await llm.close_client()
+    await search_service.close_http_client()
 
 
-app = FastAPI(title="YouTube Fact Checker", version="1.0.0", lifespan=lifespan)
+app = FastAPI(title="YouTube Fact Checker", version="2.0.0", lifespan=lifespan)
 
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=os.getenv("CORS_ORIGINS", "*").split(","),
-    allow_credentials=True,
-    allow_methods=["GET", "POST"],
-    allow_headers=["*"],
-)
+if settings.CORS_ORIGINS.strip():
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=[s.strip() for s in settings.CORS_ORIGINS.split(",") if s.strip()],
+        allow_credentials=False,
+        allow_methods=["GET", "POST"],
+        allow_headers=["*"],
+    )
 
 
 _STATIC_EXTENSIONS = (".css", ".js", ".png", ".jpg", ".jpeg", ".svg", ".ico", ".woff", ".woff2")
@@ -105,13 +107,15 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Permissions-Policy"] = "camera=(), microphone=(), geolocation=()"
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
-            "script-src 'self' 'unsafe-inline'; "
+            "script-src 'self'; "
             "style-src 'self' 'unsafe-inline'; "
             "img-src 'self' https://img.youtube.com https://i.ytimg.com data:; "
-            "frame-src https://www.youtube-nocookie.com; "
+            "frame-src https://www.youtube-nocookie.com https://www.youtube.com; "
             "connect-src 'self'; "
-            "font-src 'self'"
+            "font-src 'self'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'"
         )
+        if settings.BASE_URL.startswith("https://"):
+            response.headers["Strict-Transport-Security"] = "max-age=31536000"
         path = request.url.path
         if path.endswith(_STATIC_EXTENSIONS):
             response.headers["Cache-Control"] = "public, max-age=3600, stale-while-revalidate=86400"
@@ -126,218 +130,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 app.add_middleware(SecurityHeadersMiddleware)
 
 
-async def process_video(task_id: str, video_id: str, youtube_url: str):
-    """Background task: extract transcript → claims → fact-check, then persist."""
-    start_time = time.time()
-
-    try:
-        # Step 1: Extract transcript
-        task = tasks.get(task_id)
-        if task:
-            task.progress = "Extracting transcript..."
-        transcript = await asyncio.to_thread(extract_transcript, youtube_url, settings.MAX_VIDEO_DURATION_SECONDS)
-
-        # Step 2: Extract claims
-        task = tasks.get(task_id)
-        if task:
-            task.progress = f"Analyzing transcript ({len(transcript.full_text)} chars)..."
-        raw_claims = await asyncio.to_thread(
-            extract_claims,
-            transcript.full_text,
-            segments=transcript.segments,
-            max_duration_seconds=transcript.duration_seconds,
-        )
-
-        if not raw_claims:
-            elapsed = time.time() - start_time
-            summary = "No verifiable factual claims found in this video."
-            processing_time = round(elapsed, 1)
-
-            await db.delete_claims_for_video(video_id)
-            await db.update_video_results(
-                video_id,
-                title=transcript.title,
-                channel=transcript.channel,
-                duration_seconds=transcript.duration_seconds,
-                transcript_text=transcript.full_text,
-                overall_truth_percentage=50,
-                summary=summary,
-                processing_time_seconds=processing_time,
-            )
-
-            task = tasks.get(task_id)
-            if task:
-                task.status = TaskStatus.COMPLETED
-                task.data = CheckResult(
-                    video_title=transcript.title,
-                    video_id=video_id,
-                    video_duration_seconds=transcript.duration_seconds,
-                    transcript_text=transcript.full_text[:2000],
-                    claims=[],
-                    overall_truth_percentage=50,
-                    summary=summary,
-                    processing_time_seconds=processing_time,
-                )
-
-            _cleanup_task(task_id)
-            return
-
-        # Step 3: Fact-check each claim
-        def on_progress(completed, total):
-            t = tasks.get(task_id)
-            if t:
-                t.progress = f"Fact-checking claim {completed}/{total}..."
-
-        task = tasks.get(task_id)
-        if task:
-            task.progress = f"Fact-checking {len(raw_claims)} claims..."
-        checked_claims = await fact_check_all_claims(raw_claims, on_progress=on_progress)
-
-        # Step 4: Build results
-        claims = [
-            Claim(
-                id=f"claim-{i+1}",
-                text=c["text"],
-                timestamp_seconds=c.get("timestamp_seconds", 0),
-                truth_percentage=c.get("truth_percentage", 50),
-                confidence=c.get("confidence", 0.5),
-                reasoning=c.get("reasoning", ""),
-                sources=[Source(**s) for s in c.get("sources", [])],
-                category=_safe_category(c.get("category", "fact")),
-            )
-            for i, c in enumerate(checked_claims)
-        ]
-
-        fact_count = sum(1 for c in claims if c.category == ClaimCategory.FACT)
-        opinion_count = sum(1 for c in claims if c.category == ClaimCategory.OPINION)
-        overall = _calculate_public_score(
-            [{"category": c.category.value, "confidence": c.confidence,
-              "truth_percentage": c.truth_percentage} for c in claims]
-        )
-
-        summary_parts = [f"Analyzed {len(claims)} statements."]
-        if fact_count:
-            summary_parts.append(f"{fact_count} factual claims with {overall}% average accuracy.")
-        if opinion_count:
-            summary_parts.append(f"{opinion_count} opinions identified.")
-
-        elapsed = time.time() - start_time
-        summary = " ".join(summary_parts)
-        processing_time = round(elapsed, 1)
-
-        # Persist to DB before marking task completed so a DB failure
-        # doesn't leave the frontend with phantom results.
-        await db.delete_claims_for_video(video_id)
-        await db.create_claims(video_id, checked_claims)
-        await db.update_video_results(
-            video_id,
-            title=transcript.title,
-            channel=transcript.channel,
-            duration_seconds=transcript.duration_seconds,
-            transcript_text=transcript.full_text,
-            overall_truth_percentage=overall,
-            summary=summary,
-            processing_time_seconds=processing_time,
-        )
-
-        task = tasks.get(task_id)
-        if task:
-            task.status = TaskStatus.COMPLETED
-            task.progress = "Done!"
-            task.data = CheckResult(
-                video_title=transcript.title,
-                video_id=video_id,
-                video_duration_seconds=transcript.duration_seconds,
-                transcript_text=transcript.full_text[:2000],
-                claims=claims,
-                overall_truth_percentage=overall,
-                summary=summary,
-                processing_time_seconds=processing_time,
-            )
-
-        logger.info("Video %s completed: %d claims, %d%% accuracy, %.1fs", video_id, len(claims), overall, processing_time)
-        _cleanup_task(task_id)
-
-    except VideoTooLongError as e:
-        logger.warning("Video %s too long: %s", video_id, e)
-        await _fail_task(task_id, video_id, str(e))
-    except TranscriptError as e:
-        logger.warning("Transcript error for video %s: %s", video_id, e)
-        await _fail_task(task_id, video_id, str(e))
-    except Exception as e:
-        logger.exception("Unexpected error processing video %s", video_id)
-        await _fail_task(task_id, video_id, "An unexpected error occurred. Please try again later.")
-
-
-# --- Queue processor ---
-
-
-async def queue_processor():
-    """Background loop that processes queued videos and recovers stale ones."""
-    first_run = True
-    consecutive_errors = 0
-    while True:
-        try:
-            if first_run:
-                first_run = False
-                await asyncio.sleep(5)
-            else:
-                base = settings.QUEUE_INTERVAL_MINUTES * 60
-                backoff = min(base * (2 ** consecutive_errors), 3600)
-                await asyncio.sleep(backoff)
-
-            # Recover videos stuck in "processing" (e.g., from a server crash)
-            stale = await db.get_stale_processing_videos(stale_minutes=10, limit=3)
-            for video in stale:
-                vid = video["id"]
-                if vid not in tasks:
-                    logger.info("Recovering stale video %s", vid)
-                    await db.update_video_status(vid, "queued")
-
-            queued = await db.get_queued_videos(limit=5)
-            for video in queued:
-                video_id = video["id"]
-                youtube_url = video["youtube_url"]
-                task_id = video_id
-
-                if task_id in tasks:
-                    logger.info("Skipping queued video %s — already in-flight", video_id)
-                    continue
-
-                tasks[task_id] = TaskResponse(
-                    task_id=task_id,
-                    status=TaskStatus.PROCESSING,
-                    progress="Starting (from queue)...",
-                )
-                await db.update_video_status(video_id, "processing")
-                await process_video(task_id, video_id, youtube_url)
-
-            consecutive_errors = 0
-        except asyncio.CancelledError:
-            break
-        except Exception:
-            consecutive_errors += 1
-            logger.exception("Queue processor error (consecutive: %d)", consecutive_errors)
-
-
-def _cleanup_task(task_id: str):
-    """Remove a completed/failed task from memory after persisting to DB."""
-    tasks.pop(task_id, None)
-
-
-async def _fail_task(task_id: str, video_id: str, error_msg: str):
-    """Mark a task as failed in memory and DB, then clean up."""
-    task = tasks.get(task_id)
-    if task:
-        task.status = TaskStatus.FAILED
-        task.error = error_msg
-    try:
-        await db.update_video_status(video_id, "failed", error_msg)
-    except Exception:
-        logger.exception("Failed to persist failure status for video %s", video_id)
-    _cleanup_task(task_id)
-
-
 def _safe_category(value: str) -> ClaimCategory:
     """Convert a string to ClaimCategory with fallback to FACT."""
     try:
@@ -348,20 +140,7 @@ def _safe_category(value: str) -> ClaimCategory:
 
 
 def _build_claims_from_rows(claims_rows: list[dict]) -> list[Claim]:
-    """Convert DB claim rows (with nested sources) to Claim model instances."""
-    return [
-        Claim(
-            id=f"claim-{cr['claim_index']}",
-            text=cr["text"],
-            timestamp_seconds=cr["timestamp_seconds"],
-            truth_percentage=cr["truth_percentage"],
-            confidence=cr["confidence"],
-            reasoning=cr["reasoning"],
-            sources=[Source(title=s["title"], url=s["url"], snippet=s["snippet"]) for s in cr["sources"]],
-            category=_safe_category(cr["category"]),
-        )
-        for cr in claims_rows
-    ]
+    return [Claim(id=f"claim-{row['claim_index']}", **claim_row_to_public(row).model_dump()) for row in claims_rows]
 
 
 def _build_completed_result(video: dict, claims: list[Claim]) -> CheckResult:
@@ -378,135 +157,52 @@ def _build_completed_result(video: dict, claims: list[Claim]) -> CheckResult:
     )
 
 
-def _build_video_summary(video: dict, claims: list[dict]) -> PublicVideoSummary:
-    """Build a PublicVideoSummary from a video row and its claims."""
+def _build_video_summary(video: dict, claims: list[dict], verdict_counts=None) -> PublicVideoSummary:
     return PublicVideoSummary(
         id=video["id"],
         title=video["title"],
         channel=video["channel"],
-        public_score=_calculate_public_score(claims),
+        public_score=_calculate_public_score(claims)
+        if video.get("pipeline_version", 1) == 1
+        else (overall_score(claims) or 50),
         claim_count=len(claims),
         created_at=video["created_at"] or "",
+        verdict_counts=verdict_counts or {},
+        published_at=video.get("published_at", ""),
+        thumbnail_url=f"https://i.ytimg.com/vi/{video['id']}/hqdefault.jpg",
     )
 
 
 def _get_client_ip(request: Request) -> str:
-    forwarded = request.headers.get("x-forwarded-for")
-    if forwarded:
-        ip = forwarded.split(",")[0].strip()
-        return ip[:45] if ip else ""
-    return request.client.host if request.client else ""
+    parts = [p.strip() for p in request.headers.get("x-forwarded-for", "").split(",") if p.strip()]
+    hops = settings.TRUSTED_PROXY_HOPS
+    ip = (
+        (request.client.host if request.client else "")
+        if hops == 0 or not parts
+        else parts[-hops]
+        if len(parts) >= hops
+        else parts[0]
+    )
+    return ip[:45]
+
+
+def _task_response(state):
+    return TaskResponse(
+        task_id=state.task_id,
+        status=state.status,
+        progress=state.message,
+        stage=state.stage,
+        completed=state.completed,
+        total=state.total,
+        video=state.video,
+        claims=state.claims,
+        error=state.error,
+    )
 
 
 def _is_valid_channel_name(name: str) -> bool:
     """Return True if the channel name passes basic sanity checks."""
-    return bool(
-        name
-        and len(name) <= 200
-        and not any(c in name for c in '\x00/\\\n\r')
-        and '..' not in name
-    )
-
-
-# --- SEO meta injection helpers ---
-
-
-def _html_escape(s: str) -> str:
-    """Escape string for safe injection into HTML attributes."""
-    return html_module.escape(s, quote=True)
-
-
-def _inject_meta(template: str, replacements: dict[str, str]) -> str:
-    """Replace placeholder tokens in a template with escaped values."""
-    result = template
-    for token, value in replacements.items():
-        result = result.replace(token, value)
-    return result
-
-
-def _video_fallback_meta(video_id: str) -> dict[str, str]:
-    """Default meta tokens when a video is not yet in the DB."""
-    base = settings.BASE_URL
-    thumbnail = f"https://img.youtube.com/vi/{url_quote(video_id)}/hqdefault.jpg"
-    canonical = f"{base}/video/{url_quote(video_id)}"
-    return {
-        "__META_TITLE__": "Video Fact Check — YouTube Fact Checker",
-        "__META_DESCRIPTION__": "AI-powered fact-check with accuracy scores and sourced evidence for every claim.",
-        "__OG_TITLE__": "Video Fact Check — YouTube Fact Checker",
-        "__OG_DESCRIPTION__": "AI-powered fact-check with accuracy scores and sourced evidence for every claim.",
-        "__OG_IMAGE__": thumbnail,
-        "__OG_URL__": canonical,
-        "__CANONICAL_URL__": canonical,
-        "__JSON_LD__": "",
-    }
-
-
-def _channel_fallback_meta(channel_name: str) -> dict[str, str]:
-    """Default meta tokens when a channel is not found."""
-    base = settings.BASE_URL
-    canonical = f"{base}/channel/{url_quote(channel_name)}"
-    return {
-        "__META_TITLE__": f"{_html_escape(channel_name)} — YouTube Fact Checker",
-        "__META_DESCRIPTION__": "See all fact-checked videos and average accuracy scores for this YouTube channel.",
-        "__OG_TITLE__": f"{_html_escape(channel_name)} — YouTube Fact Checker",
-        "__OG_DESCRIPTION__": "See all fact-checked videos and average accuracy scores for this YouTube channel.",
-        "__OG_IMAGE__": "",
-        "__OG_URL__": canonical,
-        "__CANONICAL_URL__": canonical,
-        "__JSON_LD__": "",
-    }
-
-
-def _iso_duration(seconds: int | float | None) -> str:
-    """Convert seconds to ISO 8601 duration (PT#M#S)."""
-    if not seconds:
-        return "PT0S"
-    total = int(seconds)
-    minutes, secs = divmod(total, 60)
-    hours, minutes = divmod(minutes, 60)
-    if hours:
-        return f"PT{hours}H{minutes}M{secs}S"
-    if minutes:
-        return f"PT{minutes}M{secs}S"
-    return f"PT{secs}S"
-
-
-def _video_jsonld(video: dict, canonical: str, thumbnail: str, score: int) -> str:
-    """Build a <script type="application/ld+json"> block with VideoObject schema."""
-    ld = {
-        "@context": "https://schema.org",
-        "@type": "VideoObject",
-        "name": video.get("title", ""),
-        "description": video.get("summary", ""),
-        "thumbnailUrl": thumbnail,
-        "uploadDate": video.get("created_at", ""),
-        "duration": _iso_duration(video.get("duration_seconds")),
-        "url": canonical,
-        "aggregateRating": {
-            "@type": "AggregateRating",
-            "ratingValue": score,
-            "bestRating": 100,
-            "worstRating": 0,
-            "ratingCount": 1,
-        },
-    }
-    return f'<script type="application/ld+json">{json_module.dumps(ld, ensure_ascii=False)}</script>'
-
-
-def _channel_jsonld(name: str, count: int, avg_score: float, canonical: str) -> str:
-    """Build a <script type="application/ld+json"> block with ProfilePage schema."""
-    ld = {
-        "@context": "https://schema.org",
-        "@type": "ProfilePage",
-        "name": name,
-        "url": canonical,
-        "description": f"{count} fact-checked videos with {avg_score:.0f}% average accuracy.",
-        "mainEntity": {
-            "@type": "Person",
-            "name": name,
-        },
-    }
-    return f'<script type="application/ld+json">{json_module.dumps(ld, ensure_ascii=False)}</script>'
+    return bool(name and len(name) <= 200 and not any(c in name for c in "\x00/\\\n\r") and ".." not in name)
 
 
 # --- API Routes ---
@@ -523,78 +219,105 @@ async def check_video(req: CheckRequest, background_tasks: BackgroundTasks, requ
         raise HTTPException(status_code=400, detail="Could not extract video ID from URL.")
     client_ip = _get_client_ip(request)
 
-    # Dedup: if video already completed in DB, return it
-    existing = await db.get_video(video_id)
-    if existing and existing["status"] == "completed":
-        claims = _build_claims_from_rows(await db.get_claims_for_video(video_id))
-        result = _build_completed_result(existing, claims)
-        return TaskResponse(
-            task_id=video_id, status=TaskStatus.COMPLETED, progress="Done!", data=result,
-        ).model_dump()
+    async with _admission_lock:
+        # Dedup: if video already completed in DB, return it
+        existing = await db.get_video(video_id)
+        if existing and existing["status"] == "completed":
+            claims = _build_claims_from_rows(await db.get_claims_for_video(video_id))
+            result = _build_completed_result(existing, claims)
+            return TaskResponse(
+                task_id=video_id,
+                status=TaskStatus.COMPLETED,
+                progress="Done!",
+                data=result,
+                stage="completed",
+                claims=[claim_row_to_public(row) for row in await db.get_claims_for_video(video_id)],
+            ).model_dump()
 
-    # If already queued, return queued status
-    if existing and existing["status"] == "queued":
-        return TaskResponse(
-            task_id=video_id, status=TaskStatus.QUEUED, progress="Queued — will be processed soon.",
-        ).model_dump()
+        # If already queued, return queued status
+        if existing and existing["status"] == "queued":
+            return TaskResponse(
+                task_id=video_id,
+                status=TaskStatus.QUEUED,
+                progress="Queued — will be processed soon.",
+                stage="queued",
+            ).model_dump()
 
-    # Check if already processing in-memory
-    existing_task = tasks.get(video_id)
-    if existing_task and existing_task.status == TaskStatus.PROCESSING:
-        return TaskResponse(
-            task_id=video_id, status=TaskStatus.PROCESSING, progress=existing_task.progress,
-        ).model_dump()
+        # Check if already processing in-memory
+        existing_task = tasks.get(video_id)
+        if existing_task and existing_task.status == TaskStatus.PROCESSING:
+            return TaskResponse(
+                task_id=video_id,
+                status=TaskStatus.PROCESSING,
+                progress=existing_task.message,
+                stage=existing_task.stage,
+                completed=existing_task.completed,
+                total=existing_task.total,
+                video=existing_task.video,
+                claims=existing_task.claims,
+            ).model_dump()
 
-    # Per-IP rate limit (skip for unresolvable IPs to avoid false positives)
-    ip_count = await db.count_videos_today_by_ip(client_ip) if client_ip else 0
-    if ip_count >= settings.IP_DAILY_LIMIT:
-        raise HTTPException(
-            status_code=429,
-            detail=f"You've reached the limit of {settings.IP_DAILY_LIMIT} videos per day. Please try again tomorrow.",
+        # Per-IP rate limit (skip for unresolvable IPs to avoid false positives)
+        ip_count = await db.count_videos_today_by_ip(client_ip) if client_ip else 0
+        if ip_count >= settings.IP_DAILY_LIMIT:
+            raise HTTPException(
+                status_code=429,
+                detail=f"You've reached the limit of {settings.IP_DAILY_LIMIT} videos per day. Please try again tomorrow.",
+            )
+
+        # Site-wide daily limit — queue if exceeded
+        if not await capacity_available():
+            if not existing:
+                await db.create_video(video_id, req.youtube_url, ip_address=client_ip, status="queued")
+            else:
+                await db.update_video_status(video_id, "queued")
+            return TaskResponse(
+                task_id=video_id,
+                status=TaskStatus.QUEUED,
+                progress="Queued — will be processed soon.",
+                stage="queued",
+            ).model_dump()
+
+        # Under limits — process immediately
+        task_id = video_id
+
+        # Re-check after awaits: another coroutine may have reserved this task
+        # while we were awaiting rate-limit DB queries above.
+        existing_task = tasks.get(task_id)
+        if existing_task and existing_task.status == TaskStatus.PROCESSING:
+            return TaskResponse(
+                task_id=task_id,
+                status=TaskStatus.PROCESSING,
+                progress=existing_task.message,
+                stage=existing_task.stage,
+                completed=existing_task.completed,
+                total=existing_task.total,
+                video=existing_task.video,
+                claims=existing_task.claims,
+            ).model_dump()
+
+        tasks[task_id] = TaskState(
+            task_id=task_id,
+            status=TaskStatus.PROCESSING,
+            message="Starting...",
         )
 
-    # Site-wide daily limit — queue if exceeded
-    daily_count = await db.count_videos_today()
-    if daily_count >= settings.DAILY_VIDEO_LIMIT:
-        if not existing:
-            await db.create_video(video_id, req.youtube_url, ip_address=client_ip, status="queued")
-        else:
-            await db.update_video_status(video_id, "queued")
+        try:
+            if not existing:
+                await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
+            elif existing["status"] in ("failed", "processing"):
+                await db.update_video_status(video_id, "processing")
+        except Exception:
+            tasks.pop(task_id, None)
+            raise
+
+        background_tasks.add_task(pipeline.process_video, task_id, video_id, req.youtube_url)
+
         return TaskResponse(
-            task_id=video_id, status=TaskStatus.QUEUED, progress="Queued — will be processed soon.",
+            task_id=task_id,
+            status=TaskStatus.PROCESSING,
+            progress="Starting...",
         ).model_dump()
-
-    # Under limits — process immediately
-    task_id = video_id
-
-    # Re-check after awaits: another coroutine may have reserved this task
-    # while we were awaiting rate-limit DB queries above.
-    existing_task = tasks.get(task_id)
-    if existing_task and existing_task.status == TaskStatus.PROCESSING:
-        return TaskResponse(
-            task_id=task_id, status=TaskStatus.PROCESSING, progress=existing_task.progress,
-        ).model_dump()
-
-    tasks[task_id] = TaskResponse(
-        task_id=task_id,
-        status=TaskStatus.PROCESSING,
-        progress="Starting...",
-    )
-
-    try:
-        if not existing:
-            await db.create_video(video_id, req.youtube_url, ip_address=client_ip)
-        elif existing["status"] in ("failed", "processing"):
-            await db.update_video_status(video_id, "processing")
-    except Exception:
-        tasks.pop(task_id, None)
-        raise
-
-    background_tasks.add_task(process_video, task_id, video_id, req.youtube_url)
-
-    return TaskResponse(
-        task_id=task_id, status=TaskStatus.PROCESSING, progress="Starting...",
-    ).model_dump()
 
 
 @app.get("/api/check/{task_id}")
@@ -603,7 +326,7 @@ async def get_task_status(task_id: str):
     # Check in-memory first (in-flight tasks)
     if task_id in tasks:
         task = tasks[task_id]
-        return task.model_dump()
+        return _task_response(task).model_dump()
 
     # Fall back to DB
     video = await db.get_video(task_id)
@@ -618,6 +341,8 @@ async def get_task_status(task_id: str):
             status=TaskStatus.COMPLETED,
             progress="Done!",
             data=result,
+            stage="completed",
+            claims=[claim_row_to_public(row) for row in await db.get_claims_for_video(task_id)],
         ).model_dump()
 
     if video["status"] == "failed":
@@ -625,6 +350,7 @@ async def get_task_status(task_id: str):
             task_id=task_id,
             status=TaskStatus.FAILED,
             error=video.get("error"),
+            stage="failed",
         ).model_dump()
 
     if video["status"] == "queued":
@@ -632,6 +358,7 @@ async def get_task_status(task_id: str):
             task_id=task_id,
             status=TaskStatus.QUEUED,
             progress="Queued — will be processed soon.",
+            stage="queued",
         ).model_dump()
 
     # Still processing but not in memory
@@ -644,7 +371,7 @@ async def get_task_status(task_id: str):
 
 @app.get("/api/health")
 async def health():
-    return {"status": "ok"}
+    return {"status": "ok", "version": "2.0.0", "pipeline_version": PIPELINE_VERSION}
 
 
 _stats_cache: dict | None = None
@@ -683,21 +410,24 @@ def _calculate_public_score(claims: list[dict]) -> int:
 
 
 @app.get("/api/videos")
-async def public_list_videos(page: int = 1, limit: int = 50):
+async def public_list_videos(page: int = 1, limit: int = 50, sort: str = "newest", q: str = ""):
     """List completed videos with pagination."""
+    sort = sort if sort in {"newest", "highest", "lowest"} else "newest"
+    q = q[:100]
     limit = max(1, min(limit, 100))
     page = max(1, page)
 
-    total = await db.count_videos(status="completed")
+    total = await db.count_videos(status="completed", q=q)
     total_pages = (total + limit - 1) // limit if total > 0 else 1
     if page > total_pages:
         page = total_pages
     offset = (page - 1) * limit
 
-    videos = await db.list_videos(status="completed", limit=limit, offset=offset)
+    videos = await db.list_videos(status="completed", limit=limit, offset=offset, sort=sort, q=q)
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
-    items = [_build_video_summary(v, all_claims.get(v["id"], [])).model_dump() for v in videos]
+    counts = await db.get_verdict_counts(video_ids)
+    items = [_build_video_summary(v, all_claims.get(v["id"], []), counts.get(v["id"])).model_dump() for v in videos]
     return {
         "items": items,
         "total": total,
@@ -720,23 +450,16 @@ async def public_get_video(video_id: str):
         raise HTTPException(status_code=404, detail="Video not found.")
 
     claims = await db.get_claims_for_video(video_id)
-    public_score = _calculate_public_score(claims)
-
-    public_claims = [
-        PublicClaimDetail(
-            text=c["text"],
-            timestamp_seconds=c["timestamp_seconds"],
-            truth_percentage=c["truth_percentage"],
-            confidence=c["confidence"],
-            reasoning=c["reasoning"],
-            category=c["category"],
-            sources=[
-                Source(title=s["title"], url=s["url"], snippet=s["snippet"])
-                for s in c.get("sources", [])
-            ],
-        )
-        for c in claims
-    ]
+    public_score = _calculate_public_score(claims) if video.get("pipeline_version", 1) == 1 else overall_score(claims)
+    feedback = await db.get_feedback_counts(video_id)
+    public_claims = [claim_row_to_public(c, feedback.get(c["claim_index"])) for c in claims]
+    counts = await db.get_verdict_counts([video_id])
+    try:
+        key_issues = json_module.loads(video.get("key_issues") or "[]")
+        if not isinstance(key_issues, list):
+            key_issues = []
+    except (ValueError, TypeError):
+        key_issues = []
 
     return PublicVideoDetail(
         id=video["id"],
@@ -750,6 +473,13 @@ async def public_get_video(video_id: str):
         processing_time_seconds=video.get("processing_time_seconds", 0),
         created_at=video["created_at"] or "",
         claims=public_claims,
+        channel_id=video.get("channel_id", ""),
+        published_at=video.get("published_at", ""),
+        key_issues=key_issues,
+        verdict_counts=counts.get(video_id, {}),
+        pipeline_version=video.get("pipeline_version", 1),
+        model=video.get("model", ""),
+        thumbnail_url=f"https://i.ytimg.com/vi/{video_id}/hqdefault.jpg",
     ).model_dump()
 
 
@@ -779,7 +509,8 @@ async def public_get_channel(channel_name: str):
     video_ids = [v["id"] for v in videos]
     all_claims = await db.get_claims_for_videos(video_ids)
 
-    video_summaries = [_build_video_summary(v, all_claims.get(v["id"], [])) for v in videos]
+    counts = await db.get_verdict_counts(video_ids)
+    video_summaries = [_build_video_summary(v, all_claims.get(v["id"], []), counts.get(v["id"])) for v in videos]
 
     all_scores = [vs.public_score for vs in video_summaries]
     avg_score = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
@@ -797,16 +528,7 @@ async def public_get_channel(channel_name: str):
 
 @app.get("/robots.txt")
 async def robots_txt():
-    body = (
-        "User-agent: *\n"
-        "Allow: /\n"
-        "Allow: /videos\n"
-        "Allow: /video/\n"
-        "Allow: /channel/\n"
-        "Disallow: /api/\n"
-        f"\nSitemap: {settings.BASE_URL}/sitemap.xml\n"
-    )
-    return Response(content=body, media_type="text/plain")
+    return Response(content=build_robots(), media_type="text/plain")
 
 
 _sitemap_cache: str | None = None
@@ -821,31 +543,8 @@ async def sitemap():
     if _sitemap_cache is not None and now - _sitemap_cache_time < _SITEMAP_TTL:
         return Response(content=_sitemap_cache, media_type="application/xml")
 
-    base = settings.BASE_URL
-    parts = [
-        '<?xml version="1.0" encoding="UTF-8"?>',
-        '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-        f"  <url><loc>{base}/</loc><changefreq>daily</changefreq><priority>1.0</priority></url>",
-        f"  <url><loc>{base}/videos</loc><changefreq>daily</changefreq><priority>0.8</priority></url>",
-    ]
-
-    videos, channels = await asyncio.gather(
-        db.list_videos(status="completed", limit=1000),
-        db.list_channels(),
-    )
-    for v in videos:
-        vid = _html_escape(v["id"])
-        lastmod = ""
-        if v.get("created_at"):
-            lastmod = f"<lastmod>{_html_escape(v['created_at'][:10])}</lastmod>"
-        parts.append(f"  <url><loc>{base}/video/{vid}</loc>{lastmod}<changefreq>monthly</changefreq><priority>0.7</priority></url>")
-
-    for ch in channels:
-        name = _html_escape(url_quote(ch["channel"]))
-        parts.append(f"  <url><loc>{base}/channel/{name}</loc><changefreq>weekly</changefreq><priority>0.6</priority></url>")
-
-    parts.append("</urlset>")
-    xml = "\n".join(parts)
+    videos, channels = await asyncio.gather(db.list_videos(status="completed", limit=1000), db.list_channels())
+    xml = build_sitemap(videos, channels)
     _sitemap_cache = xml
     _sitemap_cache_time = now
     return Response(content=xml, media_type="application/xml")
@@ -936,6 +635,36 @@ async def serve_channel_page(channel_name: str):
         "__JSON_LD__": jsonld,
     }
     return HTMLResponse(_inject_meta(_CHANNEL_TEMPLATE, replacements))
+
+
+class FeedbackRequest(BaseModel):
+    helpful: bool
+
+
+@app.post("/api/videos/{video_id}/claims/{claim_index}/feedback", status_code=204)
+async def claim_feedback(video_id: str, claim_index: int, body: FeedbackRequest, request: Request):
+    video = await db.get_video(video_id)
+    if not video or video["status"] != "completed":
+        raise HTTPException(status_code=404, detail="Video not found.")
+    claims = await db.get_claims_for_video(video_id)
+    if not any(c["claim_index"] == claim_index for c in claims):
+        raise HTTPException(status_code=404, detail="Claim not found.")
+    await db.upsert_claim_feedback(video_id, claim_index, body.helpful, _get_client_ip(request))
+    return Response(status_code=204)
+
+
+_ABOUT_PATH = FRONTEND_DIR / "about.html"
+_ABOUT_TEMPLATE: str | None = None
+
+
+@app.get("/about")
+async def serve_about():
+    global _ABOUT_TEMPLATE
+    if not _ABOUT_PATH.is_file():
+        raise HTTPException(status_code=404, detail="Page not found.")
+    if _ABOUT_TEMPLATE is None:
+        _ABOUT_TEMPLATE = _ABOUT_PATH.read_text(encoding="utf-8")
+    return HTMLResponse(_ABOUT_TEMPLATE.replace("__CANONICAL_URL__", f"{settings.BASE_URL}/about"))
 
 
 app.mount("/", StaticFiles(directory=FRONTEND_DIR), name="static")

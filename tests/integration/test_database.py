@@ -1,7 +1,7 @@
 """Integration tests for backend.database — real SQLite, no mocks."""
 
 import pytest
-import pytest_asyncio
+
 from backend import database as db
 
 
@@ -10,6 +10,7 @@ class TestInitDb:
     async def test_creates_tables(self, tmp_db):
         await db.init_db()
         import aiosqlite
+
         async with aiosqlite.connect(tmp_db) as conn:
             cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
             tables = {row[0] for row in await cursor.fetchall()}
@@ -97,11 +98,24 @@ class TestClaimsCrud:
     async def test_create_and_get_claims(self, init_test_db):
         await db.create_video("clm1234567a", "https://youtube.com/watch?v=clm1234567a")
         claims = [
-            {"text": "Claim 1", "timestamp_seconds": 10, "truth_percentage": 80,
-             "confidence": 0.9, "reasoning": "r1", "category": "fact",
-             "sources": [{"title": "S1", "url": "https://s1.com", "snippet": "sn1"}]},
-            {"text": "Claim 2", "timestamp_seconds": 20, "truth_percentage": 60,
-             "confidence": 0.7, "reasoning": "r2", "category": "opinion", "sources": []},
+            {
+                "text": "Claim 1",
+                "timestamp_seconds": 10,
+                "truth_percentage": 80,
+                "confidence": 0.9,
+                "reasoning": "r1",
+                "category": "fact",
+                "sources": [{"title": "S1", "url": "https://s1.com", "snippet": "sn1"}],
+            },
+            {
+                "text": "Claim 2",
+                "timestamp_seconds": 20,
+                "truth_percentage": 60,
+                "confidence": 0.7,
+                "reasoning": "r2",
+                "category": "opinion",
+                "sources": [],
+            },
         ]
         await db.create_claims("clm1234567a", claims)
         fetched = await db.get_claims_for_video("clm1234567a")
@@ -129,9 +143,14 @@ class TestChannels:
     async def test_list_channels(self, init_test_db):
         await db.create_video("ch_12345678", "https://youtube.com/watch?v=ch_12345678")
         await db.update_video_results(
-            "ch_12345678", title="V", channel="MyChannel",
-            duration_seconds=60, transcript_text="t",
-            overall_truth_percentage=70, summary="s", processing_time_seconds=1,
+            "ch_12345678",
+            title="V",
+            channel="MyChannel",
+            duration_seconds=60,
+            transcript_text="t",
+            overall_truth_percentage=70,
+            summary="s",
+            processing_time_seconds=1,
         )
         channels = await db.list_channels()
         names = [c["channel"] for c in channels]
@@ -140,9 +159,14 @@ class TestChannels:
     async def test_channel_videos(self, init_test_db):
         await db.create_video("cv_12345678", "https://youtube.com/watch?v=cv_12345678")
         await db.update_video_results(
-            "cv_12345678", title="V", channel="ChanVids",
-            duration_seconds=60, transcript_text="t",
-            overall_truth_percentage=70, summary="s", processing_time_seconds=1,
+            "cv_12345678",
+            title="V",
+            channel="ChanVids",
+            duration_seconds=60,
+            transcript_text="t",
+            overall_truth_percentage=70,
+            summary="s",
+            processing_time_seconds=1,
         )
         vids = await db.get_channel_videos("ChanVids")
         assert len(vids) == 1
@@ -171,3 +195,141 @@ class TestQueueAndStale:
         stale = await db.get_stale_processing_videos(stale_minutes=10)
         # Might be empty since we just created it
         assert isinstance(stale, list)
+
+
+async def test_v1_migration_preserves_data(tmp_db):
+    import sqlite3
+
+    with sqlite3.connect(tmp_db) as connection:
+        connection.executescript("""
+            CREATE TABLE videos (
+                id TEXT PRIMARY KEY, youtube_url TEXT NOT NULL, title TEXT DEFAULT '', channel TEXT DEFAULT '',
+                duration_seconds REAL DEFAULT 0, transcript_text TEXT DEFAULT '', overall_truth_percentage INTEGER DEFAULT 0,
+                summary TEXT DEFAULT '', processing_time_seconds REAL DEFAULT 0, status TEXT DEFAULT 'processing',
+                error TEXT, approval_status TEXT DEFAULT 'pending', created_at TEXT DEFAULT (datetime('now')),
+                updated_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE claims (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, video_id TEXT REFERENCES videos(id), claim_index INTEGER,
+                text TEXT, timestamp_seconds REAL DEFAULT 0, truth_percentage INTEGER DEFAULT 50,
+                confidence REAL DEFAULT 0.5, reasoning TEXT DEFAULT '', category TEXT DEFAULT 'fact',
+                attributed_to_creator INTEGER DEFAULT 1, created_at TEXT DEFAULT (datetime('now'))
+            );
+            CREATE TABLE claim_sources (
+                id INTEGER PRIMARY KEY AUTOINCREMENT, claim_id INTEGER REFERENCES claims(id),
+                title TEXT DEFAULT '', url TEXT DEFAULT '', snippet TEXT DEFAULT ''
+            );
+            INSERT INTO videos (id, youtube_url, title, status) VALUES ('legacy12345', 'https://youtube.com/watch?v=legacy12345', 'Preserved', 'completed');
+            INSERT INTO claims (video_id, claim_index, text) VALUES ('legacy12345', 1, 'Old claim');
+            INSERT INTO claim_sources (claim_id, title, url) VALUES (1, 'Old source', 'https://example.org');
+            PRAGMA user_version=0;
+        """)
+    await db.init_db()
+    await db.init_db()  # the migration must be idempotent
+    with sqlite3.connect(tmp_db) as connection:
+        expected = {
+            "videos": {
+                "ip_address",
+                "channel_id",
+                "published_at",
+                "key_issues",
+                "pipeline_version",
+                "model",
+                "cost_usd",
+                "input_tokens",
+                "output_tokens",
+                "search_requests",
+            },
+            "claims": {
+                "verdict",
+                "quote",
+                "speaker",
+                "topic",
+                "checkworthiness",
+                "confidence_label",
+                "corrected_claim",
+                "relies_on_general_knowledge",
+            },
+            "claim_sources": {"domain", "reliability", "stance", "quote", "kind", "rating", "position"},
+        }
+        for table, additions in expected.items():
+            assert additions <= {row[1] for row in connection.execute(f"PRAGMA table_info({table})")}
+        assert connection.execute("PRAGMA user_version").fetchone()[0] == 2
+        tables = {r[0] for r in connection.execute("SELECT name FROM sqlite_master WHERE type='table'")}
+        assert {"search_cache", "claim_feedback"} <= tables
+    video = await db.get_video("legacy12345")
+    claims = await db.get_claims_for_video("legacy12345")
+    assert video["title"] == "Preserved" and video["pipeline_version"] == 1
+    assert claims[0]["text"] == "Old claim" and claims[0]["verdict"] is None
+    assert claims[0]["sources"][0]["title"] == "Old source"
+
+
+async def test_cache_ttl_and_prune(init_test_db):
+    await db.put_search_cache("key", "brave", "query", '[{"title": "Cached"}]')
+    assert await db.get_search_cache("key", 14) == '[{"title": "Cached"}]'
+    assert await db.get_search_cache("missing", 14) is None
+    async with db._db() as connection:
+        await connection.execute("UPDATE search_cache SET created_at=datetime('now', '-15 days') WHERE cache_key='key'")
+        await connection.commit()
+    assert await db.get_search_cache("key", 14) is None
+    await db.prune_search_cache(14)
+    async with db._db() as connection:
+        assert (await (await connection.execute("SELECT COUNT(*) FROM search_cache")).fetchone())[0] == 0
+
+
+async def test_v2_accounting_source_order_and_verdict_counts(seed_v2_video):
+    assert await db.spend_today_usd() == pytest.approx(0.12)
+    video = await db.get_video(seed_v2_video)
+    assert video["input_tokens"] == 2000 and video["output_tokens"] == 500 and video["search_requests"] == 4
+    assert await db.get_verdict_counts([seed_v2_video]) == {seed_v2_video: {"true": 1, "false": 1}}
+    claims = await db.get_claims_for_video(seed_v2_video)
+    assert claims[0]["sources"][0]["quote"] == "Earth orbits the Sun."
+    assert (await db.get_claims_for_videos([seed_v2_video]))[seed_v2_video] == claims
+
+
+async def test_legacy_verdict_counts(init_test_db):
+    await db.create_video("legacy", "https://youtube.com/watch?v=legacy")
+    await db.create_claims(
+        "legacy",
+        [
+            dict(text="claim", category=category, truth_percentage=score)
+            for category, score in [
+                ("opinion", 95),
+                ("unclear", 95),
+                ("fact", 90),
+                ("fact", 70),
+                ("fact", 50),
+                ("fact", 30),
+                ("fact", 10),
+            ]
+        ],
+    )
+    assert await db.get_verdict_counts(["legacy"]) == {
+        "legacy": {v: 1 for v in ["opinion", "unverifiable", "true", "mostly_true", "mixed", "mostly_false", "false"]}
+    }
+    assert await db.get_verdict_counts([]) == {}
+
+
+async def test_source_position_order(init_test_db):
+    await db.create_video("ordered", "https://youtube.com/watch?v=ordered")
+    await db.create_claims(
+        "ordered",
+        [
+            dict(
+                text="claim",
+                sources=[
+                    dict(title="Second", url="https://example.org/2"),
+                    dict(title="First", url="https://example.org/1"),
+                ],
+            )
+        ],
+    )
+    async with db._db() as connection:
+        await connection.execute("UPDATE claim_sources SET position=CASE title WHEN 'First' THEN 0 ELSE 1 END")
+        await connection.commit()
+    claims = await db.get_claims_for_video("ordered")
+    assert [s["title"] for s in claims[0]["sources"]] == ["First", "Second"]
+    assert [s["title"] for s in (await db.get_claims_for_videos(["ordered"]))["ordered"][0]["sources"]] == [
+        "First",
+        "Second",
+    ]
