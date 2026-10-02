@@ -1,6 +1,7 @@
 """Integration tests for /api/channels endpoints."""
 
 import pytest
+
 from backend import database as db
 
 
@@ -16,9 +17,14 @@ class TestChannelsEndpoint:
     async def test_excludes_unknown(self, client, init_test_db):
         await db.create_video("unk1234567a", "https://youtube.com/watch?v=unk1234567a")
         await db.update_video_results(
-            "unk1234567a", title="V", channel="Unknown",
-            duration_seconds=60, transcript_text="t",
-            overall_truth_percentage=50, summary="s", processing_time_seconds=1,
+            "unk1234567a",
+            title="V",
+            channel="Unknown",
+            duration_seconds=60,
+            transcript_text="t",
+            overall_truth_percentage=50,
+            summary="s",
+            processing_time_seconds=1,
         )
         resp = await client.get("/api/channels")
         data = resp.json()

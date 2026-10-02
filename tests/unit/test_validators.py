@@ -1,6 +1,5 @@
 """Tests for backend.utils.validators."""
 
-import pytest
 from backend.utils.validators import extract_video_id, is_valid_youtube_url
 
 

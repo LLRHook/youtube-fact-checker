@@ -1,140 +1,108 @@
-"""Tests for backend.services.claim_extractor."""
+from unittest.mock import AsyncMock
 
 import pytest
-from unittest.mock import patch, MagicMock
-from backend.services.claim_extractor import extract_claims
+
+from backend.services import claim_extractor as ce
+from backend.services.llm import LLMResult, Usage
+from backend.services.transcript_service import TranscriptResult, TranscriptSegment
 
 
-def _make_llm_response(text: str):
-    """Build a mock Anthropic response with the given text."""
-    block = MagicMock()
-    block.text = text
-    resp = MagicMock()
-    resp.content = [block]
-    return resp
+@pytest.fixture
+def transcript():
+    return TranscriptResult(
+        "dQw4w9WgXcQ",
+        "Example title",
+        "Example channel",
+        120,
+        [TranscriptSegment("Exact words", 12, 5)],
+        "Exact words",
+        published_at="2020-02-03",
+        language="de",
+    )
 
 
-class TestExtractClaims:
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_valid_extraction(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '[{"text": "The sky is blue", "timestamp_seconds": 10, "category": "fact"}]'
-        )
-        result = extract_claims("Some transcript text")
-        assert len(result) == 1
-        assert result[0]["text"] == "The sky is blue"
-        assert result[0]["timestamp_seconds"] == 10
-        assert result[0]["category"] == "fact"
+def item(text="A specific claim", weight=5, timestamp=12, **kwargs):
+    return dict(
+        claim=text,
+        quote="Exact words",
+        timestamp_seconds=timestamp,
+        speaker="creator",
+        topic="science",
+        checkworthiness=weight,
+        search_queries=["neutral query", "primary source"],
+        **kwargs,
+    )
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_empty_array(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response("[]")
-        result = extract_claims("Some transcript text")
-        assert result == []
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_malformed_json(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response("not json")
-        result = extract_claims("text")
-        assert result == []
+async def extract(monkeypatch, transcript, items):
+    mock = AsyncMock(return_value=LLMResult({"claims": items}, Usage(input_tokens=30, cost_usd=0.01), "end_turn"))
+    monkeypatch.setattr(ce, "structured_call", mock)
+    result = await ce.extract_claims(transcript)
+    return result, mock
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_markdown_fenced(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '```json\n[{"text": "claim", "timestamp_seconds": 0, "category": "fact"}]\n```'
-        )
-        result = extract_claims("text")
-        assert len(result) == 1
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_timestamp_clamping(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '[{"text": "claim", "timestamp_seconds": 999, "category": "fact"}]'
-        )
-        result = extract_claims("text", max_duration_seconds=300)
-        assert result[0]["timestamp_seconds"] == 300
+async def test_filter_dedupe_and_order(monkeypatch, transcript):
+    (claims, usage), mock = await extract(
+        monkeypatch,
+        transcript,
+        [
+            item("Lower priority", 3, 10),
+            item("More important", 5, 30),
+            item("MORE IMPORTANT", 5, 60),
+            item("Trivial", 2, 0),
+            item(" ", 5, 0),
+            item("First", 4, 0),
+        ],
+    )
+    assert [c["text"] for c in claims] == ["First", "Lower priority", "More important"]
+    assert claims[-1]["timestamp_seconds"] == 30
+    assert set(claims[0]) == {
+        "text",
+        "quote",
+        "timestamp_seconds",
+        "speaker",
+        "topic",
+        "checkworthiness",
+        "search_queries",
+    }
+    assert usage.cost_usd == 0.01
+    kwargs = mock.call_args.kwargs
+    assert kwargs["max_tokens"] == 16000
+    assert kwargs["schema"]["additionalProperties"] is False
+    assert "Transcript language: de" in kwargs["messages"][0]["content"]
+    assert "Uploaded: 2020-02-03" in kwargs["messages"][0]["content"]
+    assert "[00:12] Exact words" in kwargs["messages"][0]["content"]
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_invalid_timestamp(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '[{"text": "claim", "timestamp_seconds": "not_a_number", "category": "fact"}]'
-        )
-        result = extract_claims("text")
-        assert result[0]["timestamp_seconds"] == 0.0
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_cap_at_max_claims(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        # Generate 40 claims (max is 30)
-        claims = [{"text": f"Claim {i}", "timestamp_seconds": i, "category": "fact"} for i in range(40)]
-        import json
-        client.messages.create.return_value = _make_llm_response(json.dumps(claims))
-        result = extract_claims("text")
-        assert len(result) == 30
+async def test_cap_prefers_weight_then_time(monkeypatch, transcript):
+    monkeypatch.setattr(ce.settings, "MAX_CLAIMS_PER_VIDEO", 2)
+    (claims, _), _ = await extract(
+        monkeypatch, transcript, [item("Low", 3, 0), item("Late", 5, 50), item("Early", 5, 20), item("Later", 5, 80)]
+    )
+    assert [c["text"] for c in claims] == ["Early", "Late"]
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_missing_text_dropped(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '[{"timestamp_seconds": 10, "category": "fact"}, {"text": "valid", "category": "fact"}]'
-        )
-        result = extract_claims("text")
-        assert len(result) == 1
-        assert result[0]["text"] == "valid"
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_invalid_category_defaults_to_fact(self, mock_get_client):
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '[{"text": "claim", "timestamp_seconds": 0, "category": "bogus"}]'
-        )
-        result = extract_claims("text")
-        assert result[0]["category"] == "fact"
+async def test_truncation_and_timestamp_clamping(monkeypatch, transcript):
+    data = item("word " * 130, timestamp=500)
+    data.update(quote="q" * 400, topic="t" * 60, search_queries=[" ", " first ", "x" * 250, "third", "fourth"])
+    (claims, _), _ = await extract(monkeypatch, transcript, [data, item("Negative", timestamp=-5)])
+    assert claims[0]["timestamp_seconds"] == 0
+    long = claims[1]
+    assert long["timestamp_seconds"] == 120
+    assert len(long["text"]) <= 500 and long["text"].endswith("\u2026")
+    assert len(long["quote"]) == 300 and len(long["topic"]) == 40
+    assert long["search_queries"] == ["first", "x" * 200, "third"]
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_dict_unwrap(self, mock_get_client):
-        """When LLM returns {"claims": [...]} instead of bare array."""
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response(
-            '{"claims": [{"text": "claim", "timestamp_seconds": 0, "category": "fact"}]}'
-        )
-        result = extract_claims("text")
-        assert len(result) == 1
 
-    def test_no_api_key(self, monkeypatch):
-        from backend.config import settings
-        monkeypatch.setattr(settings, "ANTHROPIC_API_KEY", "")
-        with pytest.raises(ValueError, match="ANTHROPIC_API_KEY"):
-            extract_claims("text")
+async def test_empty_claims(monkeypatch, transcript):
+    (claims, _), _ = await extract(monkeypatch, transcript, [])
+    assert claims == []
 
-    @patch("backend.services.claim_extractor._get_anthropic_client")
-    def test_segments_formatting(self, mock_get_client):
-        """Verify that segments produce timestamped transcript for LLM."""
-        client = MagicMock()
-        mock_get_client.return_value = client
-        client.messages.create.return_value = _make_llm_response("[]")
 
-        seg = MagicMock()
-        seg.text = "Hello"
-        seg.start = 65.0  # 1:05
-        extract_claims("text", segments=[seg])
-
-        call_args = client.messages.create.call_args
-        user_msg = call_args.kwargs["messages"][0]["content"]
-        assert "[01:05]" in user_msg
+@pytest.mark.parametrize("error", ["refusal", "max_tokens", "invalid_json", "api_error: APIError"])
+async def test_failed_call_raises(monkeypatch, transcript, error):
+    usage = Usage(100, 20, cost_usd=0.01)
+    monkeypatch.setattr(ce, "structured_call", AsyncMock(return_value=LLMResult(None, usage, "", error)))
+    with pytest.raises(ce.ClaimExtractionError, match="Could not analyze this transcript. Please try again later.") as exc:
+        await ce.extract_claims(transcript)
+    assert exc.value.usage is usage

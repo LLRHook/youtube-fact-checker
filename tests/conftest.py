@@ -1,8 +1,6 @@
 """Shared fixtures for the YouTube Fact Checker test suite."""
 
 import os
-import tempfile
-import asyncio
 
 import pytest
 import pytest_asyncio
@@ -33,6 +31,7 @@ async def init_test_db(tmp_db):
 async def client(init_test_db):
     """Async HTTP test client against the FastAPI app (no background tasks)."""
     import httpx
+
     from backend.main import app
 
     transport = httpx.ASGITransport(app=app)
@@ -79,3 +78,99 @@ async def seed_video(init_test_db):
     ]
     await db.create_claims(video_id, claims)
     return video_id
+
+
+@pytest_asyncio.fixture()
+async def seed_v2_video(init_test_db):
+    """A v2 report with grounded verdicts and publication metadata."""
+    video_id = "v2test12345"
+    await db.create_video(video_id, f"https://youtube.com/watch?v={video_id}")
+    await db.update_video_results(
+        video_id,
+        title="V2 Science Report",
+        channel="ScienceChannel",
+        duration_seconds=180,
+        transcript_text="Grounded claims.",
+        overall_truth_percentage=50,
+        summary="A mixed report.",
+        processing_time_seconds=2,
+        channel_id="UCscience",
+        published_at="2024-01-02",
+        key_issues=["The second claim is false."],
+        pipeline_version=2,
+        model="claude-sonnet-5-5",
+        cost_usd=0.12,
+        input_tokens=2000,
+        output_tokens=500,
+        search_requests=4,
+    )
+    await db.create_claims(
+        video_id,
+        [
+            dict(
+                text="Earth orbits the Sun.",
+                quote="Earth orbits the Sun.",
+                timestamp_seconds=12,
+                speaker="creator",
+                topic="science",
+                checkworthiness=5,
+                verdict="true",
+                confidence_label="high",
+                confidence=0.9,
+                truth_percentage=95,
+                category="fact",
+                reasoning="NASA confirms this.",
+                sources=[
+                    dict(
+                        title="NASA",
+                        url="https://nasa.gov/facts",
+                        snippet="Earth orbits the Sun.",
+                        domain="nasa.gov",
+                        reliability="high",
+                        stance="supports",
+                        quote="Earth orbits the Sun.",
+                        kind="web",
+                        rating="",
+                    )
+                ],
+            ),
+            dict(
+                text="The Sun orbits Earth.",
+                timestamp_seconds=30,
+                verdict="false",
+                confidence_label="high",
+                confidence=0.9,
+                truth_percentage=5,
+                category="fact",
+                reasoning="The reverse is true.",
+                corrected_claim="Earth orbits the Sun.",
+                sources=[],
+            ),
+        ],
+    )
+    return video_id
+
+
+@pytest.fixture(autouse=True)
+def block_external_http(request, monkeypatch):
+    """Fail immediately if a mocked test accidentally attempts external HTTP."""
+    if "e2e" in request.node.path.parts:
+        return
+    import httpx
+    import httpx2
+    import requests
+
+    original_send = httpx.AsyncClient.send
+
+    async def local_send(client, *args, **kwargs):
+        if isinstance(client._transport, httpx.ASGITransport):
+            return await original_send(client, *args, **kwargs)
+        raise AssertionError("External HTTP must be mocked")
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("External HTTP must be mocked")
+
+    monkeypatch.setattr(httpx.AsyncClient, "send", local_send)
+    monkeypatch.setattr(httpx.Client, "send", forbidden)
+    monkeypatch.setattr(httpx2.AsyncClient, "send", forbidden)
+    monkeypatch.setattr(requests.Session, "request", forbidden)
