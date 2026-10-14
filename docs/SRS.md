@@ -662,4 +662,4 @@ Six issues remain open or partially open: TBD-001–TBD-006. TBD-007 and TBD-008
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Initial approved pilot scope; FR-001–FR-018, NFR-001–NFR-007, IR-001–IR-002, CON-001–CON-004; eight explicit TBDs; documentation-only authorization |
 
-| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Record approved backlog/UI defaults; add NFR-008 and CON-005; resolve TBD-007/TBD-008 and partially resolve TBD-005/TBD-006 |
+| 2 | 2026-10-14T14:51:28-04:00 | 0141d9746e3f | REVISION | Record approved backlog/UI defaults; add NFR-008 and CON-005; resolve TBD-007/TBD-008 and partially resolve TBD-005/TBD-006 |

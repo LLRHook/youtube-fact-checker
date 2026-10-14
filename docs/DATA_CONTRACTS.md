@@ -410,4 +410,4 @@ No database migration or production change was performed by this documentation t
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed ENT-001–ENT-009 and API-001–API-015 for approved private pilot; export, deletion, policy, and usage invariants; documentation-only authorization |
 
-| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Reconcile approved owner login/session, byte ceiling, fixed expiry, and no-automatic-backup defaults with filed backlog |
+| 2 | 2026-10-14T14:51:28-04:00 | 0141d9746e3f | REVISION | Reconcile approved owner login/session, byte ceiling, fixed expiry, and no-automatic-backup defaults with filed backlog |
