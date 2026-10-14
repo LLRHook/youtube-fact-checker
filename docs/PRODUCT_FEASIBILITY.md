@@ -1,5 +1,7 @@
 # Product feasibility: research and evidence workbench
 
+Current-scope note: this is the dated feasibility research record. The stakeholder has since approved and filed the pilot/UI backlog; [SRS](SRS.md), [UI_OVERHAUL.md](UI_OVERHAUL.md), and [GROOMING.md](GROOMING.md) own current decisions. Historical proposed defaults below do not override their accepted dispositions; actual provider entitlements remain unverified.
+
 Checked: 2026-10-14. Status: feasibility findings and proposed scope, not an approved implementation specification.
 
 ## Decision context

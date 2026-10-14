@@ -1,12 +1,23 @@
 # YouTube Fact Checker
 
-Paste a YouTube URL to get an evidence-backed report on the factual claims in its transcript.
+This repository contains the existing YouTube-based fact checker and the approved plan for a private research workbench. The new pilot is groomed and ready for its first implementation ticket; its features are not yet implemented or deployed.
 
 [![CI](https://github.com/LLRHook/youtube-fact-checker/actions/workflows/ci.yml/badge.svg)](https://github.com/LLRHook/youtube-fact-checker/actions/workflows/ci.yml)
 
 ![Fact-check report on desktop](docs/images/report-desktop.png)
 
-## Features
+## Product direction and implementation status
+
+The current code is the legacy YouTube-based application described below. The approved next pilot is a **private research workbench** for one authenticated researcher using authorized non-confidential pasted text and TXT/SRT/VTT files. The workbench and UI overhaul are planned, not implemented or deployed. A reachable health endpoint does not establish working ingestion or research.
+
+- [Requirements](docs/SRS.md), [Data Contracts](docs/DATA_CONTRACTS.md), [Architecture](docs/ARCHITECTURE.md).
+- [Approved UI overhaul](docs/UI_OVERHAUL.md), [groomed implementation order](docs/GROOMING.md).
+- [Feature tickets](features.md), [bug tickets](bugs.md), [verification procedure](VERIFICATION.md), [changelog](CHANGELOG.md).
+- [Product feasibility](docs/PRODUCT_FEASIBILITY.md) and [evidence-provider constraints](docs/EVIDENCE_PROVIDER_FEASIBILITY.md).
+
+The pilot uses private reports and explicit Markdown/JSON exports, fixed 30-day investigation retention, a USD 25 monthly operating envelope, and one executing paid job. Provider licenses/prices and measured operating/quality limits remain gates to live research and release. Network/proxy access is not proof of terms-compliant acquisition.
+
+## Existing application features
 
 - Claim extraction with check-worthiness ranking.
 - Brave LLM Context evidence and Google Fact Check results.
@@ -78,7 +89,7 @@ See [.env.example](.env.example) for all settings and defaults.
 | `MAX_VIDEO_DURATION_SECONDS` | Maximum accepted video duration |
 | `TRANSCRIPT_PROXY_URL` | Proxy for transcript and video metadata access |
 
-YouTube often blocks cloud IPs, so production may need a residential proxy configured through `TRANSCRIPT_PROXY_URL`.
+The legacy pipeline exposes `TRANSCRIPT_PROXY_URL`, but network/proxy access does not establish permission to acquire content. The approved pilot uses supplied text/transcript files and does not depend on automatic YouTube extraction; see the provider feasibility and SRS documents.
 
 ## Tests
 
@@ -103,3 +114,11 @@ Build the Docker image or deploy it on Railway. Mount a persistent volume and se
 - Verdicts are automated evidence assessments; read the cited sources before relying on them.
 - Search coverage, provider quotas, and network access affect evidence quality and processing availability.
 - Prompt instructions and citation checks reduce errors but cannot eliminate them.
+
+## The cycle-file contract
+
+Use `features.md` and `bugs.md` for working tickets; `docs/GROOMING.md` records dependencies and initial readiness. New IDs use real UNIX epoch seconds (`FEAT-<epoch>` / `BUG-<epoch>`), never sequential counters. Append at the end of `## Open`; preserve every ID and archive. Status changes are in place. The three trackers/ledger use `merge=union`.
+
+The development cycle is `/groom` -> `/implement` or explicitly authorized `/implement-batch` -> `/protocol-v-and-v` -> `/release`. Ticket filing is not permission to deploy. After implementation, add the Implementation/Fix and Docs notes, tick only verified work, and set its pending-migration status. Only a full successful protocol run migrates completed tickets and appends a Verified entry. `CHANGELOG.md` is append-only; `VERIFICATION.md` contains procedure/current baselines, while ignored `.vv/` holds local run reports and backups.
+
+No pilot implementation, release, merge, or production change was performed by this planning/bootstrap work. Begin with the first ready ticket named in `docs/GROOMING.md`; keep live provider enablement blocked until its actual permissions and cost facts are established.

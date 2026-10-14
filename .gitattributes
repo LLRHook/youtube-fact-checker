@@ -1,1 +1,6 @@
 *.sh text eol=lf
+
+# Append-only cycle trackers: preserve concurrent appends.
+bugs.md merge=union
+features.md merge=union
+CHANGELOG.md merge=union
