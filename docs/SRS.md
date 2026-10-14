@@ -10,7 +10,7 @@ Status: Draft — stakeholder pilot scope approved; open engineering and provide
 
 Specify a private pilot that helps a researcher identify claims in supplied material, inspect evidence, and produce a reviewed research report. This document owns required behavior and acceptance criteria. The linked documents own data shapes and the proposed implementation. “Research Evidence Workbench” is a descriptive working name.
 
-The requirements interview authorized documentation. The subsequent planning request authorizes a UI overhaul plan, grooming, and committing/pushing the planning work. Backlog filing follows its explicit review gate. Implementation, purchases, account changes, merges, and deployment remain separate. Requirements describe the intended product, not the current application's conformance.
+The requirements interview authorized documentation. The subsequent planning request authorizes a UI overhaul plan, grooming, and committing/pushing the planning work. The stakeholder subsequently approved the complete backlog, UI plan, and engineering defaults; tracker bootstrap and ticket filing are authorized. Implementation, purchases, account changes, merges, and deployment remain separate. Requirements describe the intended product, not the current application's conformance.
 
 ### 1.2 Scope
 
@@ -30,9 +30,9 @@ Owner-facing REST operations are API-001–API-015. Provider interaction is desc
 
 #### 1.3.2 User interfaces
 
-Browser surfaces: sign-in, investigation list, document import/preview, candidate-claim selection, job progress, evidence/assessment review, report editor/export, and deletion. Desktop browser first; supported browsers and accessibility target are TBD-007. Private content is absent from anonymous navigation and public indexing.
+Browser surfaces: sign-in, investigation list, document import/preview, candidate-claim selection, job progress, evidence/assessment review, report editor/export, and deletion. Desktop browser first. The approved core-flow target is WCAG 2.2 AA; the browser/layout matrix is recorded in resolved TBD-007 and NFR-008. Private content is absent from anonymous navigation and public indexing.
 
-The requested screen-by-screen overhaul, interaction states, design system, proposed browser/accessibility defaults, and migration map are in [UI_OVERHAUL.md](UI_OVERHAUL.md). The complete proposed implementation backlog and its decision gates are in [GROOMING.md](GROOMING.md); its proposed defaults do not silently resolve the TBDs below.
+The requested screen-by-screen overhaul, interaction states, design system, proposed browser/accessibility defaults, and migration map are in [UI_OVERHAUL.md](UI_OVERHAUL.md). The complete proposed implementation backlog and its decision gates are in [GROOMING.md](GROOMING.md); the approved defaults and remaining factual gates are reconciled in §5.2 below.
 
 #### 1.3.3 Hardware interfaces
 
@@ -48,11 +48,11 @@ Browser and external provider traffic use HTTPS outside local development. A ses
 
 #### 1.3.6 Memory constraints
 
-The text/claim limits are NFR-002. Byte-size, resource sizing, and handling of unusually large single tokens are TBD-005; no unbounded upload allocation is acceptable. There is no approved numeric RAM budget.
+The text/claim limits are NFR-002. The accepted upload byte ceiling is CON-005. Resource sizing, bounded model-token work, and handling of unusually large single tokens remain the implementation portion of TBD-005; no unbounded upload allocation is acceptable. There is no approved numeric RAM budget.
 
 #### 1.3.7 Operations
 
-One owner and one executing paid job at a time. Normal operations are import, extraction, selected-claim research, review, export, expiration, and deletion. At an exhausted research allowance, existing authorized data remains available for review/export while new paid work is refused. Backup retention, recovery targets, and external-provider deletion exceptions are TBD-006. Owner-operated pilot; no support-hours or uptime SLA is agreed.
+One owner and one executing paid job at a time. Normal operations are import, extraction, selected-claim research, review, export, expiration, and deletion. At an exhausted research allowance, existing authorized data remains available for review/export while new paid work is refused. No automatic content backups are enabled for the pilot; exported files are owner copies, not a restore guarantee. Physical deletion, accounting reconciliation retention, recovery limitations, and provider-copy exceptions remain in TBD-006. Owner-operated pilot; no support-hours or uptime SLA is agreed.
 
 #### 1.3.8 Site adaptation requirements
 
@@ -110,6 +110,7 @@ Source keys used below:
 | SRC-004 | Stakeholder pre-write approval: retain stack; 10,000 words/document; 10 selected claims/job; one concurrent research job; export-based sharing; explicit TBDs |
 | SRC-005 | Approved pre-write functional summary: claim correction/selection, permitted evidence retrieval, draft assessments, human review, export, spending controls |
 | SRC-006 | Derived engineering proposal necessary to satisfy approved privacy, provenance, deletion, or spending behavior; details remain subject to implementation review |
+| SRC-007 | Stakeholder backlog/defaults approval, 2026-10-14: owner passphrase/revocable sessions; 1 MiB UTF-8 imports; fixed retention; no automatic content backups; UI plan and core-flow WCAG 2.2 AA target |
 
 Supporting research: [Product feasibility](PRODUCT_FEASIBILITY.md), [Evidence-provider feasibility](EVIDENCE_PROVIDER_FEASIBILITY.md), checked 2026-10-14. These record primary platform/provider sources and unresolved account-specific rights. Applicable standards: ISO/IEC/IEEE 29148:2018 outline; no blanket standards conformance is asserted.
 
@@ -293,7 +294,7 @@ The system shall expire an investigation 30 days after its creation without rese
 - Rationale: Agreed retention default.
 - Source: SRC-003; fixed creation-based interpretation SRC-006
 - Verification: Test
-- Status: Approved scope; retention-clock interpretation Proposed
+- Status: Approved, including creation-based clock under SRC-007
 - Acceptance: Given the expiration instant, when a read or job execution is attempted, then access/execution is refused; the expiration path applies the same active-storage deletion as FR-014.
 - Traces: ENT-002, API-005, API-014, CMP-002, CMP-004, CMP-006
 
@@ -385,7 +386,19 @@ The system shall distinguish model draft state from researcher-reviewed state in
 - Acceptance: Given a draft and a reviewed revision, when each is displayed/exported, then their labels distinguish them and do not imply platform or professional certification.
 - Traces: ENT-006, API-012, API-013, CMP-001
 
-Accessibility/browser targets remain TBD-007. Keyboard and assistive-technology checks are proposed verification work, not an invented stakeholder-approved certification target.
+#### NFR-008 — Core-flow accessibility
+
+The system shall target WCAG 2.2 AA for the pilot's sign-in, import, claim selection, evidence review, report review/export, and deletion flows.
+
+- Priority: Must
+- Source: SRC-007, UI_OVERHAUL.md §5
+- Verification: Test, Demonstration, Inspection
+- Status: Approved target; no current conformance claim
+- Measure: Evaluate applicable WCAG 2.2 A/AA criteria for the named flows using automated checks and manual keyboard/focus/reflow/contrast review.
+- Acceptance: Given the implemented core flows, when tested across the approved layouts/themes, then controls have names, errors and status are accessible, keyboard focus is operable and unobscured, and applicable A/AA findings are resolved or remain explicit release blockers.
+- Traces: API-001, API-006, API-009, API-012, API-013, API-014, CMP-001, CMP-002
+
+The approved browser/layout matrix is the resolved disposition of TBD-007. Test evidence, rather than this target statement, establishes conformance.
 
 ### 3.4 Interface requirements
 
@@ -477,6 +490,17 @@ The pilot shall obtain research input from submitted text/transcript files rathe
 - Acceptance: Given a YouTube/source URL reference, when saved, then no metadata, captions, audio, or page content is fetched as an ingestion side effect.
 - Traces: ENT-003, API-006, CMP-003
 
+#### CON-005 — Bounded UTF-8 uploads
+
+The pilot shall reject a supplied input exceeding 1 MiB (1,048,576 bytes) before accepting or fully buffering it.
+
+- Priority: Must
+- Source: SRC-007
+- Verification: Test
+- Status: Approved
+- Acceptance: Given an input above the byte ceiling or invalid UTF-8, when submitted, then it is rejected before persistence or paid processing; the same bound applies to pasted-text request content and files.
+- Traces: ENT-003, API-006, CMP-002, CMP-003
+
 ### 3.7 Software system attributes
 
 #### 3.7.1 Reliability
@@ -501,7 +525,7 @@ The system shall enforce owner authentication on every content-bearing API, file
 - Acceptance: Given unauthenticated, expired, or logged-out sessions, when any private resource is requested, then no investigation content is returned; mutation endpoints also reject requests lacking the required session-bound CSRF protection.
 - Traces: ENT-001, ENT-002, API-001, API-002, API-014, CMP-002, CMP-006
 
-Cookie/session, transport, uploaded-text rendering, prompt-injection boundaries, and secret handling are proposed mechanisms in Architecture §7.1. Authentication method is TBD-008.
+Cookie/session, transport, uploaded-text rendering, prompt-injection boundaries, and secret handling are proposed mechanisms in Architecture §7.1. The approved authentication mechanism is recorded in resolved TBD-008 and Architecture ADR-008; detailed integration still requires its ticket tests.
 
 #### 3.7.4 Maintainability
 
@@ -509,7 +533,7 @@ Existing lint, unit/service/integration, and browser-test layers are retained un
 
 #### 3.7.5 Portability
 
-The existing container remains the deployment unit. Markdown and versioned JSON exports provide readable and structured portability under FR-013. Platform-specific authentication/storage decisions remain documented dependencies.
+The existing container remains the deployment unit; automatic content backups are disabled for this pilot under SRC-007. Markdown and versioned JSON exports provide readable and structured portability under FR-013. Platform-specific authentication/storage decisions remain documented dependencies.
 
 #### 3.7.6 Privacy and compliance
 
@@ -596,12 +620,14 @@ Existing CI commands: `ruff check backend tests`; `pytest tests/unit tests/servi
 | NFR-005 | Must | ENT-001, ENT-002 | API-001, API-002, API-014 | CMP-002, CMP-006 | Test |
 | NFR-006 | Must | ENT-009 | — | CMP-002, CMP-004, CMP-005 | Test, Inspection |
 | NFR-007 | Must | ENT-007 | API-008, API-011 | CMP-001, CMP-005 | Inspection, Demonstration |
+| NFR-008 | Must | — | API-001, API-006, API-009, API-012, API-013, API-014 | CMP-001, CMP-002 | Test, Demonstration, Inspection |
 | IR-001 | Must | — | API-001, API-005, API-010, API-013 | CMP-002 | Test |
 | IR-002 | Must | ENT-007 | API-011, API-013 | CMP-004, CMP-005 | Test, Inspection |
 | CON-001 | Must | — | — | CMP-001–CMP-006 | Inspection |
 | CON-002 | Must | ENT-007, ENT-009 | API-015 | CMP-004, CMP-006 | Analysis |
 | CON-003 | Must | — | API-013 | CMP-001, CMP-002 | Test, Inspection |
 | CON-004 | Must | ENT-003 | API-006 | CMP-003 | Test, Inspection |
+| CON-005 | Must | ENT-003 | API-006 | CMP-002, CMP-003 | Test |
 
 ### 5.2 Open issues (TBD)
 
@@ -611,12 +637,12 @@ Existing CI commands: `ruff check backend tests`; `pytest tests/unit tests/servi
 | TBD-002 | What are measured hosting/job costs, account billing boundaries, and monthly report volume? | USD 25 allowance; proposed allocation in §3.6; no promised report count | CON-002, FR-017, FR-018 | Owner/operator |
 | TBD-003 | Which measured quality, time-saved, latency, and availability thresholds define pilot success? | Evaluate representative jobs; deterministic integrity gates apply; empirical targets deferred | NFR-003, §4 | Owner/researcher |
 | TBD-004 | Which topics, languages, and representative research corpus should the pilot evaluate? | Preserve supplied text/language; do not promise coverage before evaluation | FR-006, FR-010, §4 | Owner/researcher |
-| TBD-005 | What upload-byte/token limits and UTF-8/markup handling bounds fit available resources? | Word/claim limits approved; reject unsafe/unbounded inputs; numeric transport bound unresolved | FR-003, NFR-002, API-006 | Implementer/operator |
-| TBD-006 | What backup purge, content-free ledger/session retention, provider deletion limits, and recovery objectives are acceptable? | Immediate active-content deletion; fixed investigation expiry; no external immediate-deletion guarantee; ledger persists for current budget reconciliation | FR-014, FR-015, FR-018, NFR-007 | Owner/operator |
-| TBD-007 | Which supported browsers and accessibility standard should be required? | Desktop browser pilot; numeric/standards targets not invented | §1.3.2, §3.3, §4 | Owner/implementer |
-| TBD-008 | Which owner authentication mechanism and recovery process fit the budget/deployment? | Server-validated private session; no public registration; choice unresolved | FR-001, NFR-005, API-001 | Owner/operator |
+| TBD-005 | Partially resolved: 1 MiB transport bound and UTF-8 accepted; what token/markup/resource bounds are verified by implementation? | Enforce CON-005 and NFR-002; bound model-token work before paid calls and prove parser memory behavior | FR-003, NFR-002, CON-005, API-006 | Implementer/operator |
+| TBD-006 | Partially resolved: fixed creation-based expiry, no automatic content backups, and eight-hour revocable sessions accepted; what physical cleanup/provider-copy and accounting reconciliation limits are verified? | Immediate active-content deletion; exports are owner copies; no external instant-erasure/restore guarantee; keep content-free current/previous-period reconciliation records with final purge window set/tested in accounting ticket | FR-014, FR-015, FR-018, NFR-007 | Owner/operator |
+| TBD-007 | Resolved by SRC-007: core-flow WCAG 2.2 AA target and UI-plan browser/layout matrix | Current stable Chromium automation; Firefox/WebKit core smoke when installed; 1440/1024/768/390 CSS pixels, themes and reduced motion; no current conformance claim | NFR-008, §1.3.2, §4 | Owner/implementer |
+| TBD-008 | Resolved by SRC-007: one owner passphrase with Argon2 and opaque server-side SQLite sessions | No signup/email/OAuth subscription; revoke on logout/hash rotation; eight-hour maximum; operator rotates configured hash for recovery; dependency version verified when implemented | FR-001, NFR-005, API-001, ADR-008 | Owner/operator |
 
-TBD-001, TBD-005, TBD-008, and the deletion/retention portions of TBD-006 need concrete decisions before enabling affected deployed workflows. Cost feasibility must be demonstrated before paid deployment. Other empirical targets remain visible evaluation decisions; they must not be silently marked passed.
+Six issues remain open or partially open: TBD-001–TBD-006. TBD-007 and TBD-008 retain their IDs as resolved decisions. Actual provider entitlements (TBD-001), verified token/parser bounds (remaining TBD-005), and physical retention/accounting limits (remaining TBD-006) must be established before enabling affected deployed workflows. Cost feasibility must be demonstrated before paid deployment. Other empirical targets remain visible evaluation decisions; they must not be silently marked passed.
 
 ### 5.3 Acronyms, abbreviations, and definitions
 
@@ -635,3 +661,5 @@ TBD-001, TBD-005, TBD-008, and the deletion/retention portions of TBD-006 need c
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Initial approved pilot scope; FR-001–FR-018, NFR-001–NFR-007, IR-001–IR-002, CON-001–CON-004; eight explicit TBDs; documentation-only authorization |
+
+| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Record approved backlog/UI defaults; add NFR-008 and CON-005; resolve TBD-007/TBD-008 and partially resolve TBD-005/TBD-006 |

@@ -1,7 +1,7 @@
 # Architecture — Research Evidence Workbench
 
 Related: [SRS](SRS.md) · [Data Contracts](DATA_CONTRACTS.md)
-Status: Draft proposed implementation of the approved pilot scope. No application changes have been made.
+Status: Approved pilot scope and selected engineering defaults; detailed implementation remains a draft design. No application changes have been made.
 
 ## 1. Goals and quality drivers
 
@@ -15,7 +15,7 @@ Status: Draft proposed implementation of the approved pilot scope. No applicatio
 | Provider-use limits | FR-008, IR-002 | Disabled-by-default unverified integrations; policy filtering at retrieval, persistence, and export |
 | Existing technology | CON-001 | FastAPI plus existing static UI, Python services, SQLite, Docker |
 
-Performance/quality thresholds are SRS TBD-003. Resource/transport sizing, provider entitlements, authentication, and backup details remain explicit TBDs; diagrams are not claims that those choices are resolved.
+Performance/quality thresholds are SRS TBD-003. The owner-session design, 1 MiB byte ceiling, no-automatic-backup policy, fixed expiry and core-flow accessibility target are now approved. Provider entitlements, token/parser sizing, physical-copy and accounting/recovery limits remain explicit TBDs; diagrams are not claims that those choices are resolved.
 
 ## 2. Constraints
 
@@ -79,7 +79,7 @@ flowchart TB
 | CMP-005 | Provider policies and adapters | Check intended-use rights and dated prices, call permitted APIs, validate/filter evidence, disclose handling | Existing Anthropic/httpx adapters, proposed policy layer | ENT-007 configuration; produces permitted ENT-005 | Internal provider operations and export filters | External APIs; CMP-006 |
 | CMP-006 | Persistence | Ownership/expiry transactions, immutable content/revisions, executor lease, usage ledger, purge | SQLite/aiosqlite on persistent volume | System of record for ENT-001–ENT-009 except credential secrets | Repository/transaction operations | Persistent disk |
 
-These are logical components, not six deployed services. A single service plus SQLite fits the approved scale. Owner authentication scheme is TBD-008. Session secret storage follows that scheme and is not defined by an improvised login form in these documents.
+These are logical components, not six deployed services. A single service plus SQLite fits the approved scale. Owner authentication is the approved ADR-008 mechanism (resolved TBD-008). Session secret storage follows that scheme and is not defined by an improvised login form in these documents.
 
 ## 5. Runtime views
 
@@ -213,7 +213,7 @@ Automatic SDK retries/fallbacks are part of paid operations and must be bounded/
 
 Proposed pilot deployment: one Docker service hosting the static UI, FastAPI, one background executor, and maintenance routines; one persistent SQLite volume. Local development uses the same stack with isolated fixture data. No production deployment is authorized by this documentation task.
 
-Railway is the existing hosting candidate. A region, exact resource size, storage/backup entitlement, auth method, and measured operating cost are not inferred from a reachable URL. Use a separate pilot database and configured private-mode routes so historical public reports do not become accidentally accessible or lose their provenance. Existing public-site operation is a separate deployment decision.
+Railway is the existing hosting candidate. A region, exact resource size, host retention/physical-copy facts and measured operating cost are not inferred from a reachable URL. The approved owner-session design is ADR-008; automatic content backups are disabled for this pilot. Use a separate pilot database and configured private-mode routes so historical public reports do not become accidentally accessible or lose their provenance. Existing public-site operation is a separate deployment decision.
 
 Browser traffic terminates at HTTPS hosting ingress; only the authenticated API can reach investigation storage. Model/evidence credentials remain server-side. The public liveness endpoint may report service process availability but cannot certify research capability. A capability check must separately report configuration/policy/pricing readiness without exposing secrets; a permitted live research trial is still needed for operational verification.
 
@@ -223,9 +223,9 @@ Scale unit: the single deployment at the approved concurrency. Additional replic
 
 ### 7.1 Security (authn, authz, secrets, encryption in transit/at rest)
 
-- Resolve authentication/recovery through TBD-008; only the configured owner is permitted. No anonymous registration or bearer share link is in scope.
+- Implement the approved ADR-008 authentication/recovery design; only the configured owner is permitted. No anonymous registration or bearer share link is in scope.
 - Enforce session validation, server-side ownership, expiry, and mutation CSRF centrally and again at background admission/write boundaries. Do not rely on hidden buttons or opaque identifiers alone.
-- Proposed session cookie attributes: HttpOnly, Secure outside localhost, and appropriate SameSite scope; logout invalidates server-side state. Session lifetimes and rate limits depend on the chosen method.
+- Approved session cookie attributes: HttpOnly, Secure outside localhost, and SameSite=Strict; logout invalidates server-side state. The maximum session lifetime is eight hours; bounded login-throttle parameters are set and tested in the auth ticket.
 - Use HTTPS to hosting/provider services; validate certificates. At-rest volume/backup encryption facts require deployment verification, not a documentation assumption.
 - Escape imported/provider text; no raw HTML execution or filename-based paths. Restrict links to intended schemes and prevent secret-bearing URLs. External full-page fetch is not an implicit feature.
 - Treat source/evidence as untrusted model context. Ignore embedded instructions; only schema-validated outputs can become records. Provider/model output cannot change access, retention, policy, or budget settings.
@@ -245,11 +245,11 @@ Bound token output, search requests, timeouts, retries, and any fallback model p
 
 ### 7.4 Configuration and environments
 
-Proposed configuration responsibilities, not newly implemented environment variables:
+Approved design responsibilities, not newly implemented environment variables:
 
 | Responsibility | Required setting/basis |
 |---|---|
-| Private mode | Configured owner method and no public-content routes |
+| Private mode | Approved owner passphrase/session mechanism and no public-content routes |
 | Data store | Pilot database/volume distinct from legacy data |
 | Input bounds | NFR-002 plus byte/token/parser limits from TBD-005 |
 | Provider enablement | ENT-007 entitlement, use fields, attribution, price and disclosure versions |
@@ -287,7 +287,7 @@ Consequences: Reuse Python services and test layers; explicit job durability, ac
 
 ### ADR-003 — Private reports and export-based sharing
 
-Status: Accepted scope; authentication mechanism TBD-008.
+Status: Accepted scope and owner-session mechanism; implementation pending.
 Context: FR-001, FR-013, NFR-005, CON-003.
 Decision: Owner-only content and explicit Markdown/JSON attachment downloads; no hosted public reports or share tokens.
 Alternatives: anonymous public reports violate approved privacy defaults; team/link sharing is later scope.
@@ -323,7 +323,15 @@ Status: Proposed; physical storage/backup rules TBD-006.
 Context: FR-014–FR-015, FR-018.
 Decision: Close admission, cancel/fence local work, purge active content, and detach content-free usage. Late results settle accounting only.
 Alternatives: deleting usage refunds incurred costs; soft-deleted readable content or a late response repopulating it violates immediate deletion.
-Consequences: Deletion has transaction/executor coordination and external-copy limitations. Fixed creation-based expiration is the proposed interpretation in FR-015, not a hidden sliding retention rule.
+Consequences: Deletion has transaction/executor coordination and external-copy limitations. Fixed creation-based expiration and no automatic content backups are approved defaults; neither creates a sliding retention rule or an external physical-erasure guarantee.
+
+### ADR-008 — Single-owner passphrase and revocable server sessions
+
+Status: Accepted by stakeholder backlog/defaults approval on 2026-10-14; not implemented.
+Context: FR-001, NFR-005, resolved TBD-008, CON-002.
+Decision: One configured Argon2 owner-passphrase hash through a verified/pinned `pwdlib[argon2]` dependency; opaque high-entropy cookie tokens with hash-only SQLite session storage; eight-hour maximum; Secure/HttpOnly/SameSite=Strict outside localhost; session-bound CSRF; generic bounded login throttling. Logout and credential rotation revoke sessions. Recovery is operator rotation of the configured hash, with no signup/email/OAuth service.
+Alternatives: A hosted identity subscription adds an unapproved account dependency; JWTs need separate revocation machinery for the agreed behavior.
+Consequences: No new paid identity service. The auth implementation must verify dependency support, same-origin login handling, token entropy/hash treatment, rate limits, and all legacy/pilot access boundaries. Approval is a design decision, not a claim that existing APIs are private.
 
 ## 9. Risks and technical debt
 
@@ -336,7 +344,7 @@ Consequences: Deletion has transaction/executor coordination and external-copy l
 | Existing job state/retries cause duplicate paid calls | Present legacy assumptions | Budget breach and misleading status | Durable snapshot/lease/reservations; bounded SDK behavior; explicit restart outcomes | ADR-004, FR-017 |
 | Deletion/expiration races recreate data or backups restore it | Requires verification | Retention failure | Executor fencing, parent checks, purge, restore reconciliation; settle physical purge policy | TBD-006, ADR-007 |
 | Large single-token input passes word count | Bound not yet chosen | Resource exhaustion | Enforce byte/token bounds before buffering/provider calls | TBD-005, NFR-002 |
-| Owner authentication/recovery not chosen | Known unresolved | Private pilot cannot launch | Resolve method and test all content-bearing boundaries | TBD-008, FR-001 |
+| Approved owner authentication not yet implemented | Planned work | Private pilot cannot launch until delivered | Implement/test ADR-008 and the filed auth ticket across all content boundaries | ADR-008, FR-001 |
 | Price configuration differs from checked provider schedule | Observed cache-read discrepancy | Misrated usage | Dated complete price configuration and invoice reconciliation; do not silently assume prices | TBD-001, TBD-002, §7.4 |
 | Existing seeded tests are mistaken for live proof | Known verification limit | False launch confidence | Run supplied-material private E2E plus permitted real-provider trials | SRS §4 |
 
@@ -345,3 +353,5 @@ Consequences: Deletion has transaction/executor coordination and external-copy l
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed CMP-001–CMP-006 and ADR-001–ADR-007; private supplied-material pilot, policy/budget dependencies, durable jobs, reviewed exports, deletion fencing; documentation-only authorization |
+
+| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Accept owner-session ADR-008 and UI/retention/input defaults; preserve factual provider/cost and physical-cleanup gates |

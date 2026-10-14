@@ -1,8 +1,8 @@
 # UI overhaul — Research Evidence Workbench
 
-Status: proposed design and implementation plan for the approved private pilot. The user requested a UI overhaul on 2026-10-14. This document does not describe implemented screens.
+Status: design and implementation plan approved with the complete backlog on 2026-10-14; implementation not started. The user requested a UI overhaul on 2026-10-14. This document does not describe implemented screens.
 
-Related: [SRS](SRS.md), [Data Contracts](DATA_CONTRACTS.md), [Architecture](ARCHITECTURE.md). Product limits and privacy requirements remain owned by the SRS. Backlog approval also reviews the concrete UI/engineering defaults in §8; it does not approve a deployment.
+Related: [SRS](SRS.md), [Data Contracts](DATA_CONTRACTS.md), [Architecture](ARCHITECTURE.md). Product limits and privacy requirements remain owned by the SRS. Backlog approval accepted the concrete UI/engineering defaults in §8; it does not approve a deployment.
 
 ## 1. Product experience
 
@@ -124,7 +124,7 @@ Source | Claims | Evidence | Report
 
 ## 4. Visual system and reusable components
 
-Proposed system, to review through the backlog approval:
+Approved design system for implementation:
 
 | Element | Direction |
 |---|---|
@@ -138,13 +138,13 @@ Proposed system, to review through the backlog approval:
 | Components | Shell/navigation; form field/error; import panel; investigation row; claim row/editor; source viewer; evidence card; progress banner; report editor; export menu; confirmation dialog; empty/error state |
 | Motion | Short feedback transitions only; honor reduced-motion; no looping processing animation needed |
 
-Breakpoints proposed for implementation: three columns at >=1280px; claim list plus one reading pane at 768–1279px; stacked tabs/panels below 768px. Match the task to available space without hiding the original quote or evidence coverage. These are design choices, not invented usage/performance promises.
+Approved implementation breakpoints: three columns at >=1280px; claim list plus one reading pane at 768–1279px; stacked tabs/panels below 768px. Match the task to available space without hiding the original quote or evidence coverage. These are design choices, not invented usage/performance promises.
 
 ## 5. Accessibility, responsiveness, and interaction checks
 
-Propose WCAG 2.2 AA as the target for core pilot flows, subject to backlog approval; there is no current conformance claim. Use semantic controls, visible labels, programmatically associated errors, keyboard operation, focus restoration in dialogs, and status announcements that do not repeat every poll. Sticky headers must not hide keyboard focus. Follow [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/).
+WCAG 2.2 AA is the approved target for core pilot flows; there is no current conformance claim. Use semantic controls, visible labels, programmatically associated errors, keyboard operation, focus restoration in dialogs, and status announcements that do not repeat every poll. Sticky headers must not hide keyboard focus. Follow [W3C WCAG 2.2](https://www.w3.org/TR/WCAG22/).
 
-Verify the agreed browser matrix at implementation time. Proposed matrix: current stable Chromium for automated coverage, with Firefox and WebKit core-flow smoke tests when installed; desktop remains primary. Test layouts at 1440, 1024, 768, and 390 CSS pixels, zoom/reflow, both themes, and reduced motion. Mobile must support reading, basic edits, and export without pretending it is the preferred dense-comparison environment.
+Verify the agreed browser matrix at implementation time. Approved matrix: current stable Chromium for automated coverage, with Firefox and WebKit core-flow smoke tests when installed; desktop remains primary. Test layouts at 1440, 1024, 768, and 390 CSS pixels, zoom/reflow, both themes, and reduced motion. Mobile must support reading, basic edits, and export without pretending it is the preferred dense-comparison environment.
 
 No test may rely on color alone or a matching screenshot to establish meaningful research correctness. Browser checks must cover actual authentication and the private supplied-material journey using clearly labeled fixtures, plus separately permitted live-provider trials for capability/cost.
 
@@ -172,19 +172,19 @@ New module paths listed in tickets are proposed additions, not files claimed to 
 
 Each screen lands with meaningful integration/browser tests and all applicable empty, loading, validation, unavailable, expired, and error states. A UI ticket is not done because static fixture screenshots look correct. Changes must update implementation docs and verification steps in the same ticket. No ticket may claim research success from a liveness endpoint alone.
 
-## 8. Proposed defaults and remaining decision gates
+## 8. Approved defaults and remaining factual gates
 
-The backlog approval reviews these concrete engineering choices once as a group:
+The stakeholder approved these concrete engineering choices as a group on 2026-10-14:
 
-| Decision | Proposal | Decision ownership |
+| Decision | Approved default | Decision ownership |
 |---|---|---|
-| Owner authentication | One configured owner passphrase; Argon2 password hash through `pwdlib[argon2]`; opaque server-side SQLite sessions; no signup/email/OAuth dependency; operator rotates hash and revokes sessions for recovery | SRS TBD-008; proposed, not implemented |
+| Owner authentication | One configured owner passphrase; Argon2 password hash through `pwdlib[argon2]`; opaque server-side SQLite sessions; no signup/email/OAuth dependency; operator rotates hash and revokes sessions for recovery | SRS TBD-008 resolved; ADR-008; not implemented |
 | Session behavior | Eight-hour maximum session, revoke on logout/credential rotation, Secure/HttpOnly/SameSite cookie, session-bound CSRF, bounded generic login throttling | Security implementation; exact throttle tuned/tested in auth ticket |
-| Input bounds | Reject uploads above 1 MiB before buffering, reject invalid UTF-8/unsupported formats, keep approved word limit, and enforce a separately estimated provider-token ceiling before paid calls | SRS TBD-005; prototype performance test confirms memory behavior |
-| Retention clock | Fixed 30 days from investigation creation; no reset on edit/access | Proposed interpretation already recorded in FR-015 |
-| Pilot backup model | No automatic content backups initially; explicit exports are owner copies, not an application restore guarantee. Use dedicated SQLite store and verified deletion behavior; disclose host/provider physical-copy limits | SRS TBD-006; loss/recovery trade-off needs backlog approval |
+| Input bounds | Reject uploads above 1 MiB before buffering, reject invalid UTF-8/unsupported formats, keep approved word limit, and enforce a separately estimated provider-token ceiling before paid calls | SRS TBD-005 partially resolved; parser/token resource behavior still requires testing |
+| Retention clock | Fixed 30 days from investigation creation; no reset on edit/access | Approved creation-based interpretation in FR-015 |
+| Pilot backup model | No automatic content backups initially; explicit exports are owner copies, not an application restore guarantee. Use dedicated SQLite store and verified deletion behavior; disclose host/provider physical-copy limits | SRS TBD-006 partially resolved; no automatic backup/restore guarantee, physical-copy facts still need verification |
 | Ledger/session retention | Content-free usage records through current/previous billing-period reconciliation; expired/revoked sessions promptly purged; operational diagnostics contain no document/query text | Proposed policy detail; final numeric reconciliation window reviewed in accounting ticket |
-| Browser/accessibility | Core-flow WCAG 2.2 AA target and browser/layout matrix in §5 | SRS TBD-007; no certification claim |
+| Browser/accessibility | Core-flow WCAG 2.2 AA target and browser/layout matrix in §5 | SRS TBD-007 resolved; NFR-008; no current conformance claim |
 
 The authentication dependency is a plan only. Recheck current official documentation and pin a tested version when implementing. FastAPI documents `pwdlib` with Argon2 for hashing; opaque cookie sessions are our architectural choice, not its JWT tutorial copied as a requirement. See [FastAPI password hashing](https://fastapi.tiangolo.com/tutorial/security/oauth2-jwt/), [OWASP session guidance](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html), and [OWASP CSRF guidance](https://cheatsheetseries.owasp.org/cheatsheets/Cross-Site_Request_Forgery_Prevention_Cheat_Sheet.html).
 

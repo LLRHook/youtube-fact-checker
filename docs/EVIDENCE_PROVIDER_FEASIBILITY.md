@@ -1,5 +1,7 @@
 # Evidence-provider feasibility
 
+Current-scope note: this is the dated feasibility research record. The stakeholder has since approved and filed the pilot/UI backlog; [SRS](SRS.md), [UI_OVERHAUL.md](UI_OVERHAUL.md), and [GROOMING.md](GROOMING.md) own current decisions. Historical proposed defaults below do not override their accepted dispositions; actual provider entitlements remain unverified.
+
 Checked: 2026-10-14. Scope: Brave Search / LLM Context, Google Fact Check Tools, and Anthropic commercial API handling of transcripts and evidence. Primary sources only; no authenticated provider account, contract, API response headers, or production configuration inspected. This is a product-planning assessment, not a legal clearance.
 
 ## Decision-relevant findings

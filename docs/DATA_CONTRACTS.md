@@ -11,7 +11,7 @@ Status: Draft proposed contracts for the approved pilot; not implemented API doc
 - Text: UTF-8. Word count is the number of nonempty whitespace-separated tokens in parsed source text. Character offsets count Unicode code points and use half-open ranges `[start, end)` in `normalized_text`; they are not UTF-16 JavaScript indices.
 - Money: non-negative integer USD microdollars (`1 USD = 1,000,000 usd_micros`); do not use binary floats for admission/accounting. Prices have a version/date and provider/account scope.
 - Required fields are non-null unless their type explicitly permits null. Optional means absent is permitted. All supplied/retrieved text is untrusted data.
-- Proposed API mechanisms implement approved behavior; stakeholder product decisions remain in SRS. Authentication format, numeric byte/token ceilings, and account-specific policies remain SRS TBDs.
+- Proposed API mechanisms implement approved behavior; stakeholder product decisions remain in SRS. Owner authentication and the 1 MiB byte ceiling are approved; token/parser bounds and actual provider policies remain SRS TBDs.
 
 ## 2. Versioning and compatibility
 
@@ -25,12 +25,12 @@ Common investigation-content fields: `id: uuid`, `investigation_id: uuid` where 
 
 ### ENT-001 — OwnerPrincipal (v1.0.0)
 
-The single allowed pilot identity. System of record: CMP-002 through CMP-006. Account/session retention: TBD-006, independent of investigation retention.
+The single allowed pilot identity. System of record: CMP-002 through CMP-006. Owner account configuration is separate from investigations. Sessions have an approved eight-hour maximum and are revoked on logout/credential rotation; purge/reconciliation details are in TBD-006.
 
 | Field | Type | Required | Constraints | Classification | Description |
 |---|---|---|---|---|---|
 | id | uuid | yes | Server-set | internal | Owner key |
-| auth_subject | string | yes | Unique configured subject; scheme TBD-008 | PII | Authenticated identity binding |
+| auth_subject | string | yes | Unique configured owner subject; approved mechanism ADR-008 | PII | Authenticated identity binding |
 | enabled | bool | yes | Operator-controlled | internal | Whether owner access is permitted |
 | created_at | timestamp | yes | Server-set | internal | Provisioning time |
 
@@ -46,7 +46,7 @@ Private research case. System of record: CMP-006. Retention: FR-014/FR-015.
 | owner_id | uuid | yes | ENT-001 | internal | Sole authorized owner |
 | title | string | yes | Nonempty; byte bound TBD-005 | confidential | Owner label; not an inferred video title |
 | created_at | timestamp | yes | Server-set | internal | Retention origin |
-| expires_at | timestamp | yes | Proposed `created_at + 30 days`; FR-015 | internal | Fixed expiration |
+| expires_at | timestamp | yes | Approved `created_at + 30 days`; FR-015 | internal | Fixed expiration |
 | revision | int | yes | Positive monotonic optimistic-lock version | internal | Content mutation guard |
 
 Invariants: expiration blocks access and execution even before purge runs; expiration is not refreshed by edits. Deletion invalidates active jobs before success is returned. The deletion transaction removes content-bearing descendants and disconnects content-free accounting identifiers. Physical SQLite page/WAL handling and backup purge are TBD-006 implementation decisions; logical row removal alone is not a promise of erasure from every copy.
@@ -221,11 +221,11 @@ Common rules: authenticated configured owner; no anonymous content responses; ex
 
 ### API-001 — Establish owner session (v1.0.0)
 
-Style: REST. Endpoint: `POST /api/v1/session`. Auth: configured owner authentication method, SRS TBD-008.
-Request: method-specific credential/assertion fields, deliberately unresolved; no public signup.
+Style: REST. Endpoint: `POST /api/v1/session`. Auth: the configured single-owner passphrase, resolved SRS TBD-008 / ADR-008.
+Request: `{passphrase: string}` for the one configured owner; verify an Argon2 hash via the approved dependency. No public signup, username enumeration or email recovery. Validate same-origin login intent; authenticated mutations additionally use session-bound CSRF.
 Response: 200 `{owner_id, expires_at, csrf_token}` and an HttpOnly session cookie; credentials are never returned.
 Errors: 401 `authentication_failed`; 429 `rate_limited`; generic messages do not enumerate accounts.
-Idempotency / pagination / rate limit: session establishment is not a paid operation; throttling/recovery method TBD-008.
+Idempotency / pagination / rate limit: session establishment is not a paid operation; enforce bounded generic failed-login throttling. Sessions use opaque high-entropy tokens, hash-only server-side token storage, an eight-hour maximum, and revocation on logout/hash rotation. Operator recovery rotates the configured hash and revokes sessions; exact tested throttle parameters belong in the auth implementation.
 Satisfies: FR-001, NFR-005.
 
 ### API-002 — End session (v1.0.0)
@@ -254,7 +254,7 @@ Satisfies: FR-002, FR-015.
 ### API-005 — Retrieve investigations (v1.0.0)
 
 Style: REST. Endpoints: `GET /api/v1/investigations`, `GET /api/v1/investigations/{id}`. Auth: owner.
-Request: list uses optional opaque `cursor` and bounded `limit`; ceiling TBD-005. Detail uses opaque ID.
+Request: list uses optional opaque `cursor` and bounded `limit`; pagination ceiling is a bounded implementation setting. Detail uses opaque ID.
 Response: list `{items: InvestigationSummary[], next_cursor: string|null}`; detail ENT-002 plus child identifiers/counts, not automatically the full transcript.
 Errors: 404 `not_found`; 422 `invalid_input`.
 Idempotency / pagination / rate limit: read-only; deterministic `(created_at, id)` ordering; expired content excluded.
@@ -265,7 +265,7 @@ Satisfies: FR-002, FR-015.
 Style: REST. Endpoint: `POST /api/v1/investigations/{id}/documents`. Auth: owner and CSRF.
 Request: multipart form with exactly one `text` or `file`, `format`, `source_label`, optional reference/context fields, `acquisition_basis`, optional `basis_note`, `authorized_to_process=true`, and permitted `confidentiality`.
 Response: 201 source metadata and parser preview; no provider call. Errors: 413 `input_too_large`, 422 `malformed_transcript`/`unsupported_format`/`ineligible_material`, 404 `not_found`.
-Idempotency / pagination / rate limit: `Idempotency-Key` binds the accepted input hash and metadata; byte/word ceilings checked before persistent acceptance; no archive/media inputs.
+Idempotency / pagination / rate limit: `Idempotency-Key` binds the accepted input hash and metadata; CON-005 byte and NFR-002 word ceilings checked before buffering/persistent acceptance; no archive/media inputs.
 Satisfies: FR-003–FR-005, NFR-002, CON-004.
 
 ### API-007 — Retrieve source (v1.0.0)
@@ -384,7 +384,7 @@ Application records remain private even when input material is public. `confiden
 
 | Entity | Classification | Retention | Residency | Deletion rule |
 |---|---|---|---|---|
-| ENT-001 | PII/internal | Account/session policy TBD-006 | Deployment/auth choice TBD-008 | Disable sessions on logout/revocation; account handling separate from case deletion |
+| ENT-001 | PII/internal | Owner configuration separate; eight-hour session maximum/revocation; purge details TBD-006 | Deployment plus approved local owner-session mechanism | Disable sessions on logout/revocation; account handling separate from case deletion |
 | ENT-002–ENT-004 | Confidential/internal | Parent deadline or earlier user deletion | Existing hosting candidate; actual region unresolved | Active-content purge and access refusal |
 | ENT-005 | Confidential/internal | Minimum of parent deadline and source/provider-use bound | Deployment plus disclosed provider handling | Purge/withhold fields and dependent citation availability |
 | ENT-006 | Confidential/internal | Parent deadline; earlier rights restrictions apply | Deployment; owner-controlled downloads outside application | Remove retained reports; downloads not recallable |
@@ -392,7 +392,7 @@ Application records remain private even when input material is public. `confiden
 | ENT-008 | Internal/content references | Parent deadline or earlier deletion | Deployment | Fence and remove; no late writes |
 | ENT-009 | Internal, content-free | At least current-period reconciliation; final duration TBD-006 | Deployment | Detach content links; no refund of incurred charges |
 
-Backups, SQLite WAL/page remnants, temporary uploads, and external-provider copies need explicit handling under TBD-006. Expired records are immediately unavailable at request/executor checks; physical cleanup runs at startup, before job execution, and in periodic maintenance while the service runs. On offline restart, purge occurs before private access/work resumes. There is no claim of physical erasure from a stopped external host at an exact instant.
+Automatic content backups are disabled for the approved pilot; downloaded exports are owner-controlled copies, not a restore guarantee. SQLite WAL/page remnants, temporary uploads, manual verification copies, accounting retention, and external-provider copies still need explicit verified handling under TBD-006. Expired records are immediately unavailable at request/executor checks; physical cleanup runs at startup, before job execution, and in periodic maintenance while the service runs. On offline restart, purge occurs before private access/work resumes. There is no claim of physical erasure from a stopped external host at an exact instant.
 
 ## 9. Migrations and deprecations
 
@@ -409,3 +409,5 @@ No database migration or production change was performed by this documentation t
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed ENT-001–ENT-009 and API-001–API-015 for approved private pilot; export, deletion, policy, and usage invariants; documentation-only authorization |
+
+| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Reconcile approved owner login/session, byte ceiling, fixed expiry, and no-automatic-backup defaults with filed backlog |
