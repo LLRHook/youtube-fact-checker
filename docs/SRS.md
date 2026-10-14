@@ -634,4 +634,4 @@ TBD-001, TBD-005, TBD-008, and the deletion/retention portions of TBD-006 need c
 
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
-| 1 | 2026-10-14T12:40:45-04:00 | uncommitted | INIT | Initial approved pilot scope; FR-001–FR-018, NFR-001–NFR-007, IR-001–IR-002, CON-001–CON-004; eight explicit TBDs; documentation-only authorization |
+| 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Initial approved pilot scope; FR-001–FR-018, NFR-001–NFR-007, IR-001–IR-002, CON-001–CON-004; eight explicit TBDs; documentation-only authorization |

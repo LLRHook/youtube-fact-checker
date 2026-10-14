@@ -408,4 +408,4 @@ No database migration or production change was performed by this documentation t
 
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
-| 1 | 2026-10-14T12:40:45-04:00 | uncommitted | INIT | Proposed ENT-001–ENT-009 and API-001–API-015 for approved private pilot; export, deletion, policy, and usage invariants; documentation-only authorization |
+| 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed ENT-001–ENT-009 and API-001–API-015 for approved private pilot; export, deletion, policy, and usage invariants; documentation-only authorization |

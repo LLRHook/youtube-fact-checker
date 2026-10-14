@@ -344,4 +344,4 @@ Consequences: Deletion has transaction/executor coordination and external-copy l
 
 | Rev | Date | Commit | Mode | Summary |
 |---|---|---|---|---|
-| 1 | 2026-10-14T12:40:45-04:00 | uncommitted | INIT | Proposed CMP-001–CMP-006 and ADR-001–ADR-007; private supplied-material pilot, policy/budget dependencies, durable jobs, reviewed exports, deletion fencing; documentation-only authorization |
+| 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed CMP-001–CMP-006 and ADR-001–ADR-007; private supplied-material pilot, policy/budget dependencies, durable jobs, reviewed exports, deletion fencing; documentation-only authorization |
