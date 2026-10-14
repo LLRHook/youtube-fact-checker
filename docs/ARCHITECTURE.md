@@ -354,4 +354,4 @@ Consequences: No new paid identity service. The auth implementation must verify 
 |---|---|---|---|---|
 | 1 | 2026-10-14T14:40:10-04:00 | 46b1345ef45f | INIT | Proposed CMP-001–CMP-006 and ADR-001–ADR-007; private supplied-material pilot, policy/budget dependencies, durable jobs, reviewed exports, deletion fencing; documentation-only authorization |
 
-| 2 | 2026-10-14T14:47:49-04:00 | uncommitted | REVISION | Accept owner-session ADR-008 and UI/retention/input defaults; preserve factual provider/cost and physical-cleanup gates |
+| 2 | 2026-10-14T14:51:28-04:00 | 0141d9746e3f | REVISION | Accept owner-session ADR-008 and UI/retention/input defaults; preserve factual provider/cost and physical-cleanup gates |
