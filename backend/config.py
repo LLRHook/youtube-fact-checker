@@ -24,10 +24,11 @@ class Settings:
     SEARCH_RESULTS_PER_CLAIM: int = 5
     FACT_CHECK_CONCURRENCY: int = _int_env("FACT_CHECK_CONCURRENCY", 3, 1, 10)
     DATABASE_PATH: str = os.getenv("DATABASE_PATH", "data/factchecker.db")
+    DATABASE_URL: str = os.getenv("DATABASE_URL", "")
     DAILY_VIDEO_LIMIT: int = _int_env("DAILY_VIDEO_LIMIT", 20, 1, 1000)
     IP_DAILY_LIMIT: int = _int_env("IP_DAILY_LIMIT", 3, 1, 100)
     QUEUE_INTERVAL_MINUTES: int = _int_env("QUEUE_INTERVAL_MINUTES", 60, 1, 1440)
-    BASE_URL: str = os.getenv("BASE_URL", "https://backend-production-e740.up.railway.app").rstrip("/")
+    BASE_URL: str = os.getenv("BASE_URL", "http://localhost:8000").rstrip("/")
 
 
 settings = Settings()

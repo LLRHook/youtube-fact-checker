@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: youtube-fact-checker
+    runtime: docker
+    plan: free
+    region: virginia
+    healthCheckPath: /api/health
+    envVars:
+      - key: DATABASE_URL
+        sync: false
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      - key: BRAVE_API_KEY
+        sync: false
+      - key: BASE_URL
+        sync: false

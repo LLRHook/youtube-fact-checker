@@ -1,4 +1,4 @@
-"""Integration tests for backend.database — real SQLite, no mocks."""
+"""Database contracts run against SQLite and, with TEST_DATABASE_URL, Postgres."""
 
 import pytest
 import pytest_asyncio
@@ -9,13 +9,21 @@ from backend import database as db
 class TestInitDb:
     async def test_creates_tables(self, tmp_db):
         await db.init_db()
-        import aiosqlite
-        async with aiosqlite.connect(tmp_db) as conn:
-            cursor = await conn.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            tables = {row[0] for row in await cursor.fetchall()}
+        if db._DATABASE_URL:
+            query = "SELECT tablename AS name FROM pg_tables WHERE schemaname = current_schema()"
+        else:
+            query = "SELECT name FROM sqlite_master WHERE type='table'"
+        async with db._db() as conn:
+            async with conn.execute(query) as cursor:
+                tables = {row["name"] for row in await cursor.fetchall()}
         assert "videos" in tables
         assert "claims" in tables
         assert "claim_sources" in tables
+
+    async def test_init_is_idempotent(self, init_test_db):
+        await db.create_video("persist1234", "https://youtube.com/watch?v=persist1234")
+        await db.init_db()
+        assert (await db.get_video("persist1234"))["id"] == "persist1234"
 
 
 @pytest.mark.asyncio
@@ -94,6 +102,15 @@ class TestVideoListing:
 
 @pytest.mark.asyncio
 class TestClaimsCrud:
+    async def test_invalid_claim_rolls_back_whole_batch(self, init_test_db):
+        await db.create_video("rollback123", "https://youtube.com/watch?v=rollback123")
+        with pytest.raises(Exception):
+            await db.create_claims("rollback123", [
+                {"text": "First claim", "sources": []},
+                {"text": "Invalid source", "sources": [{"title": {"invalid": "type"}}]},
+            ])
+        assert await db.get_claims_for_video("rollback123") == []
+
     async def test_create_and_get_claims(self, init_test_db):
         await db.create_video("clm1234567a", "https://youtube.com/watch?v=clm1234567a")
         claims = [

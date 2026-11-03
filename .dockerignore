@@ -17,3 +17,7 @@ node_modules
 *.md
 Dockerfile
 .dockerignore
+.venv
+venv
+tests
+*.log

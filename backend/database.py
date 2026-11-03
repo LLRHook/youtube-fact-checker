@@ -1,4 +1,4 @@
-"""SQLite database layer for persistent video/claim storage."""
+"""Persistent video/claim storage: SQLite locally, Postgres when DATABASE_URL is set."""
 
 import logging
 import sqlite3
@@ -11,11 +11,17 @@ from backend.config import settings
 logger = logging.getLogger(__name__)
 
 _DB_PATH = settings.DATABASE_PATH
+_DATABASE_URL = settings.DATABASE_URL
 
 
 @asynccontextmanager
 async def _db():
     """Async context manager for DB connections with WAL and FK enabled."""
+    if _DATABASE_URL:
+        from backend.postgres import connect
+        async with connect(_DATABASE_URL) as connection:
+            yield connection
+        return
     try:
         db = await aiosqlite.connect(_DB_PATH, timeout=10.0)
     except Exception:
@@ -32,9 +38,10 @@ async def _db():
 
 async def init_db():
     """Create tables if they don't exist. Call once on startup."""
-    Path(_DB_PATH).parent.mkdir(parents=True, exist_ok=True)
+    if not _DATABASE_URL:
+        Path(_DB_PATH).parent.mkdir(parents=True, exist_ok=True)
 
-    async with aiosqlite.connect(_DB_PATH) as db:
+    async with _db() as db:
         await db.executescript("""
             CREATE TABLE IF NOT EXISTS videos (
                 id TEXT PRIMARY KEY,
@@ -86,10 +93,13 @@ async def init_db():
         """)
 
         # Migration: add ip_address column
-        try:
-            await db.execute("ALTER TABLE videos ADD COLUMN ip_address TEXT DEFAULT ''")
-        except sqlite3.OperationalError:
-            pass  # column already exists
+        if _DATABASE_URL:
+            await db.execute("ALTER TABLE videos ADD COLUMN IF NOT EXISTS ip_address TEXT DEFAULT ''")
+        else:
+            try:
+                await db.execute("ALTER TABLE videos ADD COLUMN ip_address TEXT DEFAULT ''")
+            except sqlite3.OperationalError:
+                pass  # column already exists
 
         await db.execute("CREATE INDEX IF NOT EXISTS idx_videos_ip_status_created ON videos(ip_address, status, created_at)")
         await db.commit()
@@ -197,7 +207,7 @@ async def list_videos(status: str | None = None, *, limit: int = 0, offset: int 
 
 async def count_videos(status: str | None = None) -> int:
     """Count videos with optional status filter."""
-    query = "SELECT COUNT(*) FROM videos WHERE 1=1"
+    query = "SELECT COUNT(*) AS count FROM videos WHERE 1=1"
     params: list = []
     if status:
         query += " AND status = ?"
@@ -206,28 +216,28 @@ async def count_videos(status: str | None = None) -> int:
     async with _db() as db:
         async with db.execute(query, params) as cursor:
             row = await cursor.fetchone()
-            return row[0] if row else 0
+            return row["count"] if row else 0
 
 
 async def count_videos_today() -> int:
     """Count processing or completed videos created today (excludes queued and failed)."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE status IN ('processing', 'completed') AND created_at >= date('now')"
+            "SELECT COUNT(*) AS count FROM videos WHERE status IN ('processing', 'completed') AND created_at >= date('now')"
         ) as cursor:
             row = await cursor.fetchone()
-            return row[0] if row else 0
+            return row["count"] if row else 0
 
 
 async def count_videos_today_by_ip(ip: str) -> int:
     """Count non-failed videos submitted by a specific IP today."""
     async with _db() as db:
         async with db.execute(
-            "SELECT COUNT(*) FROM videos WHERE ip_address = ? AND status != 'failed' AND created_at >= date('now')",
+            "SELECT COUNT(*) AS count FROM videos WHERE ip_address = ? AND status != 'failed' AND created_at >= date('now')",
             (ip,),
         ) as cursor:
             row = await cursor.fetchone()
-            return row[0] if row else 0
+            return row["count"] if row else 0
 
 
 async def get_queued_videos(limit: int = 5) -> list[dict]:
@@ -423,15 +433,15 @@ async def get_stats() -> dict:
     async with _db() as db:
         async with db.execute("""
             SELECT
-                (SELECT COUNT(*) FROM videos WHERE status = 'completed'),
+                (SELECT COUNT(*) FROM videos WHERE status = 'completed') AS video_count,
                 (SELECT COUNT(*) FROM claims WHERE video_id IN
-                    (SELECT id FROM videos WHERE status = 'completed')),
+                    (SELECT id FROM videos WHERE status = 'completed')) AS claim_count,
                 (SELECT COUNT(DISTINCT channel) FROM videos
-                    WHERE status = 'completed' AND channel != '' AND channel != 'Unknown')
+                    WHERE status = 'completed' AND channel != '' AND channel != 'Unknown') AS channel_count
         """) as c:
             row = await c.fetchone()
             return {
-                "video_count": row[0],
-                "claim_count": row[1],
-                "channel_count": row[2],
+                "video_count": row["video_count"],
+                "claim_count": row["claim_count"],
+                "channel_count": row["channel_count"],
             }

@@ -16,10 +16,28 @@ from backend import database as db  # noqa: E402
 
 @pytest.fixture()
 def tmp_db(monkeypatch, tmp_path):
-    """Create a temporary SQLite database and patch _DB_PATH."""
+    """Use SQLite by default; run the same contracts on an isolated PG schema."""
     db_path = str(tmp_path / "test.db")
     monkeypatch.setattr(db, "_DB_PATH", db_path)
-    return db_path
+    url = os.getenv("TEST_DATABASE_URL", "")
+    if not url:
+        monkeypatch.setattr(db, "_DATABASE_URL", "")
+        yield db_path
+        return
+    import uuid
+    import psycopg
+    from psycopg import sql
+    from psycopg.conninfo import make_conninfo
+    schema = "test_" + uuid.uuid4().hex
+    with psycopg.connect(url, autocommit=True) as admin:
+        admin.execute(sql.SQL("CREATE SCHEMA {}").format(sql.Identifier(schema)))
+        monkeypatch.setattr(db, "_DATABASE_URL", make_conninfo(
+            url, options="-csearch_path=" + schema,
+        ))
+        try:
+            yield db_path
+        finally:
+            admin.execute(sql.SQL("DROP SCHEMA {} CASCADE").format(sql.Identifier(schema)))
 
 
 @pytest_asyncio.fixture()

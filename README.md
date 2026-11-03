@@ -2,6 +2,9 @@
 
 Paste a YouTube URL and get AI-powered fact-checking of every claim the creator makes.
 
+See [Hosting without Railway](docs/hosting.md) for Render Free deployment,
+durable Postgres storage, and importing an existing SQLite database.
+
 ## Quick Start
 
 ### 1. Install dependencies

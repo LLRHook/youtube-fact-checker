@@ -11,8 +11,8 @@ _TITLE_RE = re.compile(r".+")
 
 
 @pytest.fixture(scope="session")
-def live_url():
-    return "https://backend-production-e740.up.railway.app"
+def live_url(base_url):
+    return base_url
 
 
 class TestFrontend:
