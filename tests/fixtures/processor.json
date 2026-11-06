@@ -1,0 +1,1125 @@
+[
+  {
+    "name": "parse_object",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"a\":1}"
+    },
+    "expected": {
+      "a": 1
+    }
+  },
+  {
+    "name": "parse_array",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "[1,2]"
+    },
+    "expected": [
+      1,
+      2
+    ]
+  },
+  {
+    "name": "parse_fenced",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "```json\n{\"a\": \"\u754c \ud83c\udf0d\"}\n```"
+    },
+    "expected": {
+      "a": "\u754c \ud83c\udf0d"
+    }
+  },
+  {
+    "name": "parse_fenced_plain",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "```\n[1]\n```"
+    },
+    "expected": [
+      1
+    ]
+  },
+  {
+    "name": "parse_fence_same_line",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "```[1]```"
+    },
+    "expected": [
+      1
+    ]
+  },
+  {
+    "name": "parse_fence_unclosed",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "```json\n[1]"
+    },
+    "expected": [
+      1
+    ]
+  },
+  {
+    "name": "parse_prose",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "Result: [{\"text\":\"claim\"}] done"
+    },
+    "expected": [
+      {
+        "text": "claim"
+      }
+    ]
+  },
+  {
+    "name": "parse_array_before_object",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "[1] then {\"a\":1}"
+    },
+    "expected": [
+      1
+    ]
+  },
+  {
+    "name": "parse_object_before_array",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"a\":1} then [2]"
+    },
+    "expected": {
+      "a": 1
+    }
+  },
+  {
+    "name": "parse_adjacent_objects",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"a\":1} {\"b\":2}"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_adjacent_arrays",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "[1] [2]"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_broken",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "[{\"text\": ]"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_empty",
+    "request": {
+      "op": "parse_llm_json",
+      "text": ""
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_whitespace",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "\u00a0\n"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_duplicate_keys",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"a\":1,\"a\":2}"
+    },
+    "expected": {
+      "a": 2
+    }
+  },
+  {
+    "name": "parse_nested",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"a\":{\"b\":[1,2]}}"
+    },
+    "expected": {
+      "a": {
+        "b": [
+          1,
+          2
+        ]
+      }
+    }
+  },
+  {
+    "name": "parse_scalar",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "42"
+    },
+    "expected": 42
+  },
+  {
+    "name": "parse_bool",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "true"
+    },
+    "expected": true
+  },
+  {
+    "name": "parse_null",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "null"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_wrong_type",
+    "request": {
+      "op": "parse_llm_json",
+      "text": null
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_nonfinite",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "NaN"
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_unpaired_surrogate",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "\"\\ud800\""
+    },
+    "expected": null
+  },
+  {
+    "name": "parse_control_escape",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"text\":\"\\u0000\"}"
+    },
+    "expected": {
+      "text": "\u0000"
+    }
+  },
+  {
+    "name": "claims_basic",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"  Claim \u754c  \",\"timestamp_seconds\":\"65.5\",\"category\":\"opinion\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "Claim \u754c",
+        "timestamp_seconds": 65.5,
+        "category": "opinion"
+      }
+    ]
+  },
+  {
+    "name": "claims_wrapped",
+    "request": {
+      "op": "normalize_claims",
+      "text": "```json\n{\"claims\":[{\"text\":\"one\"}]}\n```",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_clamp",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":999}]",
+      "max_duration": 300,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 300.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_negative",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":-4}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_day_cap",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":999999}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 86400.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_untrusted_fields",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[null,8,[],{}, {\"text\":null}, {\"text\":7}, {\"text\":[]}, {\"text\":{}}, {\"text\":\" \"}, {\"text\":\"one\",\"category\":{},\"timestamp_seconds\":[]}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_nan_string",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":\"NaN\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_inf_string",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":\"inf\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 86400.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_bad_timestamp",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\",\"timestamp_seconds\":\"oops\",\"category\":null}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_zero_cap",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\"}]",
+      "max_duration": 0,
+      "max_claims": 0
+    },
+    "expected": []
+  },
+  {
+    "name": "claims_cap_after_filter",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":null},{\"text\":\"one\"},{\"text\":\"two\"}]",
+      "max_duration": 0,
+      "max_claims": 1
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_duplicates",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"one\"},{\"text\":\"one\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "one",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_wrong_wrapper",
+    "request": {
+      "op": "normalize_claims",
+      "text": "{\"claims\":{}}",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": []
+  },
+  {
+    "name": "claims_scalar",
+    "request": {
+      "op": "normalize_claims",
+      "text": "42",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": []
+  },
+  {
+    "name": "claims_invalid",
+    "request": {
+      "op": "normalize_claims",
+      "text": "not json",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": []
+  },
+  {
+    "name": "claims_empty",
+    "request": {
+      "op": "normalize_claims",
+      "text": "",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": []
+  },
+  {
+    "name": "claims_unicode_long",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\": \"\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\\u754c\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u754c\u2026",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_word_boundary",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\": \"xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\u2026",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "claims_configured_cap",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\": \"0\"}, {\"text\": \"1\"}, {\"text\": \"2\"}, {\"text\": \"3\"}, {\"text\": \"4\"}, {\"text\": \"5\"}, {\"text\": \"6\"}, {\"text\": \"7\"}, {\"text\": \"8\"}, {\"text\": \"9\"}, {\"text\": \"10\"}, {\"text\": \"11\"}, {\"text\": \"12\"}, {\"text\": \"13\"}, {\"text\": \"14\"}, {\"text\": \"15\"}, {\"text\": \"16\"}, {\"text\": \"17\"}, {\"text\": \"18\"}, {\"text\": \"19\"}, {\"text\": \"20\"}, {\"text\": \"21\"}, {\"text\": \"22\"}, {\"text\": \"23\"}, {\"text\": \"24\"}, {\"text\": \"25\"}, {\"text\": \"26\"}, {\"text\": \"27\"}, {\"text\": \"28\"}, {\"text\": \"29\"}, {\"text\": \"30\"}, {\"text\": \"31\"}, {\"text\": \"32\"}, {\"text\": \"33\"}, {\"text\": \"34\"}, {\"text\": \"35\"}, {\"text\": \"36\"}, {\"text\": \"37\"}, {\"text\": \"38\"}, {\"text\": \"39\"}]",
+      "max_duration": 0,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "0",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "1",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "2",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "3",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "4",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "5",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "6",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "7",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "8",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "9",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "10",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "11",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "12",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "13",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "14",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "15",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "16",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "17",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "18",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "19",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "20",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "21",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "22",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "23",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "24",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "25",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "26",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "27",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "28",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      },
+      {
+        "text": "29",
+        "timestamp_seconds": 0.0,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "url_bare",
+    "request": {
+      "op": "extract_video_id",
+      "url": "a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_watch",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://www.youtube.com/watch?v=a-b_c-D_E-f&t=30"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_short",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtu.be/a-b_c-D_E-f?si=synthetic"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_embed",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com/embed/a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_shorts",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://m.youtube.com/shorts/a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_v",
+    "request": {
+      "op": "extract_video_id",
+      "url": "http://youtube.com/v/a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_query_order",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com/watch?feature=share&v=a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_schemeless",
+    "request": {
+      "op": "extract_video_id",
+      "url": "youtube.com/watch?v=a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_uppercase",
+    "request": {
+      "op": "extract_video_id",
+      "url": "HTTPS://WWW.YOUTUBE.COM/watch?v=a-b_c-D_E-f"
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_lookalike",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://evilyoutube.com/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_embedded",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://example.com/youtube.com/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_userinfo",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com@evil.example/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_suffix",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com.evil.example/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_id_suffix",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtu.be/a-b_c-D_E-fextra"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_id_path",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtu.be/a-b_c-D_E-f/extra"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_ambiguous",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com/watch?v=a-b_c-D_E-f&v=xxxxxxxxxxx"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_unsafe_scheme",
+    "request": {
+      "op": "extract_video_id",
+      "url": "javascript://youtube.com/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_short_id",
+    "request": {
+      "op": "extract_video_id",
+      "url": "abc"
+    },
+    "expected": null
+  },
+  {
+    "name": "url_wrong_type",
+    "request": {
+      "op": "extract_video_id",
+      "url": null
+    },
+    "expected": null
+  },
+  {
+    "name": "url_whitespace",
+    "request": {
+      "op": "extract_video_id",
+      "url": " https://youtu.be/a-b_c-D_E-f "
+    },
+    "expected": "a-b_c-D_E-f"
+  },
+  {
+    "name": "url_backslash",
+    "request": {
+      "op": "extract_video_id",
+      "url": "https://youtube.com\\@evil.example/watch?v=a-b_c-D_E-f"
+    },
+    "expected": null
+  },
+  {
+    "name": "transcript_filter_and_repetition",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": [
+        {
+          "text": "  hello \u754c  ",
+          "start": "1.25",
+          "duration": "2.5"
+        },
+        {
+          "text": "[Music]",
+          "start": 3,
+          "duration": 1
+        },
+        {
+          "text": " ",
+          "start": 4,
+          "duration": 1
+        },
+        {
+          "text": "hello \u754c",
+          "start": 5,
+          "duration": 1
+        }
+      ]
+    },
+    "expected": {
+      "segments": [
+        {
+          "text": "hello \u754c",
+          "start": 1.25,
+          "duration": 2.5
+        },
+        {
+          "text": "hello \u754c",
+          "start": 5.0,
+          "duration": 1.0
+        }
+      ],
+      "full_text": "hello \u754c hello \u754c"
+    }
+  },
+  {
+    "name": "transcript_wrong_types",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": [
+        null,
+        {},
+        {
+          "text": null,
+          "start": 0,
+          "duration": 1
+        },
+        {
+          "text": 7,
+          "start": 0,
+          "duration": 1
+        },
+        {
+          "text": "bad",
+          "start": {},
+          "duration": 1
+        },
+        {
+          "text": "bad",
+          "start": "NaN",
+          "duration": 1
+        },
+        {
+          "text": "bad",
+          "start": 0,
+          "duration": "inf"
+        }
+      ]
+    },
+    "expected": {
+      "segments": [],
+      "full_text": ""
+    }
+  },
+  {
+    "name": "transcript_negative_clamp",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": [
+        {
+          "text": "valid",
+          "start": -5,
+          "duration": -1
+        }
+      ]
+    },
+    "expected": {
+      "segments": [
+        {
+          "text": "valid",
+          "start": 0.0,
+          "duration": 0.0
+        }
+      ],
+      "full_text": "valid"
+    }
+  },
+  {
+    "name": "transcript_empty",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": []
+    },
+    "expected": {
+      "segments": [],
+      "full_text": ""
+    }
+  },
+  {
+    "name": "transcript_bad_batch",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": {}
+    },
+    "error": "invalid_entries"
+  },
+  {
+    "name": "transcript_format",
+    "request": {
+      "op": "format_transcript",
+      "entries": [
+        {
+          "text": "hello",
+          "start": 65.9
+        },
+        {
+          "text": "negative",
+          "start": -1
+        },
+        {
+          "text": "late",
+          "start": 999999
+        },
+        {
+          "text": "string",
+          "start": "65"
+        }
+      ]
+    },
+    "expected": "[01:05] hello\n[00:00] negative\n[1440:00] late\n[00:00] string"
+  },
+  {
+    "name": "duration_ok",
+    "request": {
+      "op": "validate_duration",
+      "duration": "120",
+      "max_duration": 600
+    },
+    "expected": {
+      "duration": 120.0,
+      "too_long": false
+    }
+  },
+  {
+    "name": "duration_limit",
+    "request": {
+      "op": "validate_duration",
+      "duration": 600,
+      "max_duration": 600
+    },
+    "expected": {
+      "duration": 600.0,
+      "too_long": false
+    }
+  },
+  {
+    "name": "duration_too_long",
+    "request": {
+      "op": "validate_duration",
+      "duration": 601,
+      "max_duration": 600
+    },
+    "expected": {
+      "duration": 601.0,
+      "too_long": true
+    }
+  },
+  {
+    "name": "duration_zero",
+    "request": {
+      "op": "validate_duration",
+      "duration": 0,
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_negative",
+    "request": {
+      "op": "validate_duration",
+      "duration": -3,
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_nan",
+    "request": {
+      "op": "validate_duration",
+      "duration": "NaN",
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_inf",
+    "request": {
+      "op": "validate_duration",
+      "duration": "inf",
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_null",
+    "request": {
+      "op": "validate_duration",
+      "duration": null,
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_object",
+    "request": {
+      "op": "validate_duration",
+      "duration": {},
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "duration_invalid",
+    "request": {
+      "op": "validate_duration",
+      "duration": "oops",
+      "max_duration": 600
+    },
+    "error": "invalid_duration"
+  },
+  {
+    "name": "unknown_operation",
+    "request": {
+      "op": "unknown"
+    },
+    "error": "unknown_operation"
+  },
+  {
+    "name": "parse_decimal",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "0.9844465794255455"
+    },
+    "expected": 0.9844465794255455
+  },
+  {
+    "name": "parse_large_integer",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "184467440737095516170"
+    },
+    "expected": 184467440737095516170
+  },
+  {
+    "name": "parse_private_number_key",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"$serde_json::private::Number\":\"123\"}"
+    },
+    "expected": {
+      "$serde_json::private::Number": "123"
+    }
+  },
+  {
+    "name": "parse_escaped_reserved_key",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "{\"\\u0024serde_json::private::Number\":\"not a number\"}"
+    },
+    "expected": {
+      "$serde_json::private::Number": "not a number"
+    }
+  },
+  {
+    "name": "parse_depth_limit",
+    "request": {
+      "op": "parse_llm_json",
+      "text": "[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[0]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]"
+    },
+    "expected": null
+  },
+  {
+    "name": "claims_overflow_timestamp",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\":\"claim\",\"timestamp_seconds\":1e400}]",
+      "max_duration": 300,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "claim",
+        "timestamp_seconds": 300.0,
+        "category": "fact"
+      }
+    ]
+  }
+]

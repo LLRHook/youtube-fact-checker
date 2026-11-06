@@ -1,0 +1,15 @@
+[package]
+name = "factcheck-core"
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.85"
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[dependencies]
+serde_json = { version = "=1.0.154", features = ["arbitrary_precision", "raw_value"] }
+
+[profile.release]
+strip = true
