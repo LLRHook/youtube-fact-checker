@@ -12,6 +12,8 @@ Set these secrets in the host's environment:
 
 `render.yaml` declares the free service and `/api/health` probe. The container
 honors the host's `PORT`; its default remains 8000 for local development.
+Its build includes the required Rust normalization library; the runtime image does
+not compile Rust or start another service.
 Never put SQLite files, environment files, or credentials in a Docker build context.
 
 ## Migrate existing data
@@ -46,6 +48,7 @@ make model inference free.
 ## Verify locally
 
 ```sh
+python scripts/build_native.py
 pytest tests/unit tests/services tests/integration
 TEST_DATABASE_URL=postgresql://... pytest tests/integration
 ```

@@ -10,6 +10,7 @@ from youtube_transcript_api._errors import (
 import yt_dlp
 
 from backend.utils.validators import extract_video_id
+from backend.utils.native_core import NativeInputError, process, segment_entries, wire_value
 
 logger = logging.getLogger(__name__)
 
@@ -90,10 +91,13 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     except Exception as e:
         raise TranscriptError(f"Could not fetch video info: {str(e)[:200]}") from e
 
-    duration = float(info.get("duration") or 0)
-    if not duration:
-        raise TranscriptError("Could not determine video duration.")
-    if duration > max_duration_seconds:
+    try:
+        validated = process("validate_duration", duration=wire_value(info.get("duration")),
+                            max_duration=max_duration_seconds)
+    except NativeInputError as e:
+        raise TranscriptError("Could not determine video duration.") from e
+    duration = validated["duration"]
+    if validated["too_long"]:
         raise VideoTooLongError(
             f"Video is {duration}s ({duration/60:.1f} min). "
             f"Maximum allowed is {max_duration_seconds}s ({max_duration_seconds/60:.0f} min)."
@@ -112,30 +116,13 @@ def extract_transcript(youtube_url: str, max_duration_seconds: int = 600) -> Tra
     except Exception as e:
         raise TranscriptError(f"Could not extract transcript: {str(e)[:200]}") from e
 
-    # Build segments and full text
-    segments = []
-    text_parts = []
-    for entry in transcript_list:
-        try:
-            text = str(entry.text).strip()
-            start = float(entry.start)
-            dur = float(entry.duration)
-        except (TypeError, ValueError, AttributeError) as e:
-            logger.warning("Skipping malformed transcript segment: %s", e)
-            continue
-        # Skip empty or music/sound effect markers
-        if not text or (text.startswith("[") and text.endswith("]")):
-            continue
-        segments.append(
-            TranscriptSegment(
-                text=text,
-                start=start,
-                duration=dur,
-            )
-        )
-        text_parts.append(text)
-
-    full_text = " ".join(text_parts)
+    # Validate/filter the entire caption batch in one in-process Rust call.
+    try:
+        normalized = process("normalize_transcript", entries=segment_entries(transcript_list))
+    except NativeInputError as e:
+        raise TranscriptError("Could not extract transcript: invalid transcript data.") from e
+    segments = [TranscriptSegment(**entry) for entry in normalized["segments"]]
+    full_text = normalized["full_text"]
 
     if not full_text.strip():
         raise TranscriptError("Transcript is empty after filtering.")

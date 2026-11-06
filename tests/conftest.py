@@ -3,15 +3,37 @@
 import os
 import tempfile
 import asyncio
+import socket
+from unittest.mock import patch
 
 import pytest
 import pytest_asyncio
 
 # Set dummy env vars before any backend imports so config.Settings reads them
-os.environ.setdefault("ANTHROPIC_API_KEY", "test-key")
-os.environ.setdefault("BRAVE_API_KEY", "test-key")
+os.environ["ANTHROPIC_API_KEY"] = "test-key"
+os.environ["BRAVE_API_KEY"] = "test-key"
+os.environ["DATABASE_URL"] = ""
 
-from backend import database as db  # noqa: E402
+# Do not load developer secrets just to run synthetic tests. Config is imported
+# inside this patch before services/application modules are collected.
+with patch("dotenv.load_dotenv", return_value=False):
+    from backend import database as db  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def offline_providers(monkeypatch, request):
+    """Fail immediately if a backend test accidentally reaches a real provider."""
+    if request.node.get_closest_marker("e2e"):
+        return
+
+    def blocked(*args, **kwargs):
+        raise AssertionError("External networking is disabled in backend tests")
+
+    # Postgres is the one opt-in network fixture; still block Python HTTP/SDK
+    # sockets. psycopg's libpq connection does not use Python socket.connect.
+    monkeypatch.setattr(socket.socket, "connect", blocked)
+    monkeypatch.setattr(socket.socket, "connect_ex", blocked)
+    monkeypatch.setattr(socket, "create_connection", blocked)
 
 
 @pytest.fixture()

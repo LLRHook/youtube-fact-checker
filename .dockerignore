@@ -21,3 +21,6 @@ Dockerfile
 venv
 tests
 *.log
+
+native/target
+backend/_native

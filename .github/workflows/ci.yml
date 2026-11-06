@@ -29,6 +29,16 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Set up Rust
+        run: rustup toolchain install 1.93.1 --profile minimal --component rustfmt,clippy && rustup default 1.93.1
+
+      - name: Verify Rust processor
+        run: |
+          cargo fmt --manifest-path native/Cargo.toml --check
+          cargo test --locked --manifest-path native/Cargo.toml
+          cargo clippy --locked --manifest-path native/Cargo.toml --all-targets -- -D warnings
+          python scripts/build_native.py
+
       - name: Test
         run: pytest tests/unit tests/services tests/integration
 
@@ -53,4 +63,6 @@ jobs:
           python-version: "3.11"
           cache: pip
       - run: pip install -r requirements.txt
+      - run: rustup toolchain install 1.93.1 --profile minimal && rustup default 1.93.1
+      - run: python scripts/build_native.py
       - run: pytest tests/integration

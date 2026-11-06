@@ -33,6 +33,7 @@ from backend.models import (
     ChannelDetail,
 )
 from backend.utils.validators import extract_video_id, is_valid_youtube_url
+from backend.utils.native_core import ensure_native
 from backend.services.transcript_service import (
     extract_transcript,
     TranscriptError,
@@ -68,6 +69,7 @@ _queue_task: asyncio.Task | None = None
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     global _queue_task
+    ensure_native()
     validate_settings()
     await db.init_db()
     _queue_task = asyncio.create_task(queue_processor())

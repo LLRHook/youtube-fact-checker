@@ -3,7 +3,7 @@
 import logging
 import anthropic
 from backend.config import settings
-from backend.utils.json_parser import parse_llm_json
+from backend.utils.native_core import NativeInputError, process, segment_entries, wire_value
 
 logger = logging.getLogger(__name__)
 
@@ -73,16 +73,7 @@ def extract_claims(transcript_text: str, segments: list = None, max_duration_sec
 
     # Build transcript with timestamps if segments available
     if segments:
-        timestamped = []
-        for seg in segments:
-            start = seg.start
-            if not isinstance(start, (int, float)) or start < 0:
-                start = 0.0
-            start = min(start, 86400.0)
-            mins = int(start // 60)
-            secs = int(start % 60)
-            timestamped.append(f"[{mins:02d}:{secs:02d}] {seg.text}")
-        transcript_for_llm = "\n".join(timestamped)
+        transcript_for_llm = process("format_transcript", entries=segment_entries(segments))
     else:
         transcript_for_llm = transcript_text
 
@@ -103,59 +94,13 @@ Return ONLY a JSON array of claims. No other text."""
     if not response.content or not hasattr(response.content[0], 'text'):
         logger.warning("LLM returned empty content for claim extraction")
         return []
-    response_text = response.content[0].text.strip()
-    claims = parse_llm_json(response_text)
-    if claims is None:
-        logger.warning("LLM returned unparseable JSON for claim extraction (len=%d)", len(response_text))
+    try:
+        return process(
+            "normalize_claims",
+            text=wire_value(response.content[0].text),
+            max_duration=wire_value(max_duration_seconds),
+            max_claims=settings.MAX_CLAIMS_PER_VIDEO,
+        )
+    except NativeInputError:
+        logger.warning("LLM claim extraction exceeded the processor input limit")
         return []
-    if isinstance(claims, dict):
-        claims = claims.get("claims", [])
-    if not isinstance(claims, list):
-        logger.warning("LLM returned unexpected type for claims: %s", type(claims).__name__)
-        return []
-
-    # Validate and normalize
-    valid_categories = {"fact", "opinion", "unclear"}
-    valid_claims = []
-    dropped = 0
-    for claim in claims:
-        if not isinstance(claim, dict) or "text" not in claim:
-            dropped += 1
-            continue
-        category = claim.get("category", "fact")
-        if category not in valid_categories:
-            category = "fact"
-        try:
-            ts = min(86400.0, max(0.0, float(claim.get("timestamp_seconds", 0))))
-            if max_duration_seconds > 0 and ts > max_duration_seconds:
-                logger.warning(
-                    "Claim timestamp %.0f exceeds video duration %.0f, clamping: '%.50s'",
-                    ts, max_duration_seconds, claim.get("text", ""),
-                )
-                ts = max_duration_seconds
-        except (TypeError, ValueError):
-            logger.warning("Invalid timestamp for claim: %.50s", claim.get("text", ""))
-            ts = 0.0
-        text = claim["text"].strip()
-        if len(text) > 500:
-            truncated = text[:500]
-            last_space = truncated.rfind(' ')
-            if last_space > 400:
-                text = truncated[:last_space] + "…"
-            else:
-                text = truncated + "…"
-            logger.info("Truncated claim from %d to %d chars", len(claim["text"]), len(text))
-        if not text:
-            dropped += 1
-            continue
-        valid_claims.append({
-            "text": text,
-            "timestamp_seconds": ts,
-            "category": category,
-        })
-
-    if dropped:
-        logger.warning("Dropped %d/%d invalid items from LLM claim extraction", dropped, len(claims))
-
-    # Cap at max claims
-    return valid_claims[: settings.MAX_CLAIMS_PER_VIDEO]

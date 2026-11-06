@@ -14,3 +14,6 @@ GRADING_REPORT.md
 # Local agent context
 CLAUDE.md
 .claude/
+
+native/target/
+backend/_native/
