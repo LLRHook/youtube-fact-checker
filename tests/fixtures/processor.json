@@ -1121,5 +1121,86 @@
         "category": "fact"
       }
     ]
+  },
+  {
+    "name": "claims_python_numeric_strings",
+    "request": {
+      "op": "normalize_claims",
+      "text": "[{\"text\": \"Synthetic 0\", \"timestamp_seconds\": \"١٢.٥\"}, {\"text\": \"Synthetic 1\", \"timestamp_seconds\": \"１２.５\"}, {\"text\": \"Synthetic 2\", \"timestamp_seconds\": \"1_2.5\"}]",
+      "max_duration": 300,
+      "max_claims": 30
+    },
+    "expected": [
+      {
+        "text": "Synthetic 0",
+        "timestamp_seconds": 12.5,
+        "category": "fact"
+      },
+      {
+        "text": "Synthetic 1",
+        "timestamp_seconds": 12.5,
+        "category": "fact"
+      },
+      {
+        "text": "Synthetic 2",
+        "timestamp_seconds": 12.5,
+        "category": "fact"
+      }
+    ]
+  },
+  {
+    "name": "transcript_python_numeric_strings",
+    "request": {
+      "op": "normalize_transcript",
+      "entries": [
+        {
+          "text": "Synthetic 0",
+          "start": "١٢.٥",
+          "duration": "١٢.٥"
+        },
+        {
+          "text": "Synthetic 1",
+          "start": "１２.５",
+          "duration": "１２.５"
+        },
+        {
+          "text": "Synthetic 2",
+          "start": "1_2.5",
+          "duration": "1_2.5"
+        }
+      ]
+    },
+    "expected": {
+      "segments": [
+        {
+          "text": "Synthetic 0",
+          "start": 12.5,
+          "duration": 12.5
+        },
+        {
+          "text": "Synthetic 1",
+          "start": 12.5,
+          "duration": 12.5
+        },
+        {
+          "text": "Synthetic 2",
+          "start": 12.5,
+          "duration": 12.5
+        }
+      ],
+      "full_text": "Synthetic 0 Synthetic 1 Synthetic 2"
+    }
+  },
+  {
+    "name": "duration_python_numeric_string",
+    "request": {
+      "op": "validate_duration",
+      "duration": "١٢.٥",
+      "max_duration": 300
+    },
+    "expected": {
+      "duration": 12.5,
+      "too_long": false
+    }
   }
 ]

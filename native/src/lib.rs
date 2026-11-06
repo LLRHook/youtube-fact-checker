@@ -73,10 +73,52 @@ pub fn parse_llm_json(text: &str) -> Value {
     Value::Null
 }
 
+// Unicode 15.1 Nd blocks, matching Python 3.13's decimal-digit database.
+// Numeric strings accept these decimal digits, not other numeric characters.
+const DECIMAL_ZEROS: &[u32] = &[
+    0x30, 0x660, 0x6f0, 0x7c0, 0x966, 0x9e6, 0xa66, 0xae6, 0xb66, 0xbe6, 0xc66, 0xce6, 0xd66,
+    0xde6, 0xe50, 0xed0, 0xf20, 0x1040, 0x1090, 0x17e0, 0x1810, 0x1946, 0x19d0, 0x1a80, 0x1a90,
+    0x1b50, 0x1bb0, 0x1c40, 0x1c50, 0xa620, 0xa8d0, 0xa900, 0xa9d0, 0xa9f0, 0xaa50, 0xabf0, 0xff10,
+    0x104a0, 0x10d30, 0x11066, 0x110f0, 0x11136, 0x111d0, 0x112f0, 0x11450, 0x114d0, 0x11650,
+    0x116c0, 0x11730, 0x118e0, 0x11950, 0x11c50, 0x11d50, 0x11da0, 0x11f50, 0x16a60, 0x16ac0,
+    0x16b50, 0x1d7ce, 0x1d7d8, 0x1d7e2, 0x1d7ec, 0x1d7f6, 0x1e140, 0x1e2f0, 0x1e4f0, 0x1e950,
+    0x1fbf0,
+];
+
+fn python_float(text: &str) -> Option<f64> {
+    let normalized: String = text
+        .trim()
+        .chars()
+        .map(|ch| {
+            let codepoint = ch as u32;
+            let index = DECIMAL_ZEROS.partition_point(|zero| *zero <= codepoint);
+            if index > 0 && codepoint - DECIMAL_ZEROS[index - 1] < 10 {
+                char::from(b'0' + (codepoint - DECIMAL_ZEROS[index - 1]) as u8)
+            } else {
+                ch
+            }
+        })
+        .collect();
+    let bytes = normalized.as_bytes();
+    // Python permits underscores only between decimal digits, including in the
+    // exponent. Validate placement before removing them for Rust's converter.
+    for (index, &byte) in bytes.iter().enumerate() {
+        if byte == b'_'
+            && (index == 0
+                || index + 1 == bytes.len()
+                || !bytes[index - 1].is_ascii_digit()
+                || !bytes[index + 1].is_ascii_digit())
+        {
+            return None;
+        }
+    }
+    normalized.replace('_', "").parse().ok()
+}
+
 fn number(value: &Value) -> Option<f64> {
     match value {
         Value::Number(n) => n.as_f64().or_else(|| n.to_string().parse().ok()),
-        Value::String(s) => trim(s).parse().ok(),
+        Value::String(s) => python_float(s),
         Value::Bool(b) => Some(if *b { 1.0 } else { 0.0 }),
         _ => None,
     }

@@ -5,6 +5,7 @@ import ctypes
 import json
 from pathlib import Path
 import random
+import unicodedata
 
 import pytest
 
@@ -63,6 +64,32 @@ def test_concurrent_calls_own_their_responses():
         return parse_llm_json(json.dumps({"i": i, "text": "界\x00"}))
     with ThreadPoolExecutor(max_workers=4) as pool:
         assert list(pool.map(call, range(100))) == [{"i": i, "text": "界\x00"} for i in range(100)]
+
+
+def test_python_numeric_strings_preserve_claim_caption_and_duration_values():
+    zeros = [chr(codepoint) for codepoint in range(0x110000)
+             if unicodedata.category(chr(codepoint)) == "Nd"
+             and unicodedata.decimal(chr(codepoint)) == 0]
+    values = ["1_2.5", "1.2_5e2", "+.1_2e+٢", "  １２.５  "]
+    values.extend("".join(chr(ord(zero) + int(char)) if char.isdigit() else char
+                          for char in "12.5") for zero in zeros)
+    for value in values:
+        expected = float(value)
+        claims = native_core.process("normalize_claims", text=json.dumps([
+            {"text": "Synthetic", "timestamp_seconds": value},
+        ]), max_duration=300, max_claims=1)
+        assert claims[0]["timestamp_seconds"] == expected
+        transcript = native_core.process("normalize_transcript", entries=[
+            {"text": "Synthetic", "start": value, "duration": value},
+        ])
+        assert transcript["segments"][0]["start"] == expected
+        assert transcript["segments"][0]["duration"] == expected
+        assert native_core.process("validate_duration", duration=value, max_duration=300) == {
+            "duration": expected, "too_long": False,
+        }
+    for value in ("_1", "1_", "1__2", "1_.2", "1._2", "1_e2", "1e_2", "1e+_2", "²", "١٢٫٥"):
+        with pytest.raises(native_core.NativeInputError, match="invalid_duration"):
+            native_core.process("validate_duration", duration=value, max_duration=300)
 
 
 def test_native_boundary_rejects_invalid_bytes_and_frees_result():

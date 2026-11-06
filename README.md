@@ -72,6 +72,9 @@ Wrong-type claim text is dropped, invalid categories default to `fact`, and clai
 text is truncated at 500 Unicode code points plus an ellipsis. Transcript rows with
 missing/wrong-type text or invalid/non-finite times are skipped; negative caption
 times are clamped to zero. Video duration must be finite and positive.
+Numeric strings retain Python-compatible Unicode decimal digits and digit
+separators, so claim timestamps, caption times and video durations keep their
+accepted values. The native digit table follows Unicode 15.1.
 
 JSON parsing retains the outermost-fragment fallback in first-start order. Two
 adjacent structures of the same kind are not treated as one valid response. The

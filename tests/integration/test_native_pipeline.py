@@ -11,7 +11,10 @@ from backend.services import claim_extractor, transcript_service, fact_checker
 
 
 @pytest.mark.asyncio
-async def test_request_pipeline_and_cached_replay(client, monkeypatch):
+@pytest.mark.parametrize("timestamp,expected_timestamp", [
+    (999, 120), ("١٢.٥", 12.5), ("１２.５", 12.5), ("1_2.5", 12.5),
+])
+async def test_request_pipeline_and_cached_replay(client, monkeypatch, timestamp, expected_timestamp):
     from backend.main import tasks
     video_id = "a-b_c-D_E-f"
     tasks.pop(video_id, None)
@@ -22,7 +25,7 @@ async def test_request_pipeline_and_cached_replay(client, monkeypatch):
     monkeypatch.setattr(transcript_service, "YouTubeTranscriptApi", captions)
     model = MagicMock()
     model.messages.create.return_value = SimpleNamespace(content=[SimpleNamespace(text='```json\n' + json.dumps({"claims": [
-        {"text": None}, {"text": "  Synthetic claim 界  ", "timestamp_seconds": 999, "category": []},
+        {"text": None}, {"text": "  Synthetic claim 界  ", "timestamp_seconds": timestamp, "category": []},
     ]}) + '\n```')])
     monkeypatch.setattr(claim_extractor, "_get_anthropic_client", lambda: model)
     monkeypatch.setattr(fact_checker, "search_brave", AsyncMock(return_value=[]))
@@ -38,7 +41,7 @@ async def test_request_pipeline_and_cached_replay(client, monkeypatch):
     claims = await db.get_claims_for_video(video_id)
     assert len(claims) == 1
     assert claims[0]["text"] == "Synthetic claim 界"
-    assert claims[0]["timestamp_seconds"] == 120
+    assert claims[0]["timestamp_seconds"] == expected_timestamp
     assert claims[0]["category"] == "fact"
     assert claims[0]["truth_percentage"] == 80
     assert "[01:05] Synthetic caption 界" in model.messages.create.call_args.kwargs["messages"][0]["content"]
@@ -46,7 +49,7 @@ async def test_request_pipeline_and_cached_replay(client, monkeypatch):
     # Cached replay must preserve results and avoid processing/provider calls.
     response = await client.post("/api/check", json={"youtube_url": video_id})
     assert response.json()["status"] == "completed"
-    assert response.json()["data"]["claims"][0]["timestamp_seconds"] == 120
+    assert response.json()["data"]["claims"][0]["timestamp_seconds"] == expected_timestamp
     model.messages.create.assert_called_once()
     captions.assert_called_once()
     scorer.messages.create.assert_awaited_once()
